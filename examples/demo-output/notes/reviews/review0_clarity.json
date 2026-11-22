@@ -1,0 +1,68 @@
+{
+  "summary": "The paper proposes out-of-fold filtering for logistic regression under label noise: 5-fold cross-validated predictions, drop samples whose out-of-fold prediction disagrees with the label, refit. On digits and breast cancer with synthetic symmetric noise (20/40%, 5 seeds) it recovers 66-78% of the accuracy lost at 20% noise and 68% on digits at 40%, beats an untuned MLP, costs little on clean labels, and drops mostly (65-76%) truly flipped samples. The limits (weak baselines, symmetric noise, small seeds count) are stated openly.",
+  "strengths": [
+    "Very readable and honest: each claim is paired with its limit (breast cancer at 40%, weak MLP baseline, clean-label cost, no confident learning or Wilson baseline). The abstract and the discussion say the same thing.",
+    "The method is stated in a few lines with one equation, and the compute cost (K+1 fits) is explicit.",
+    "The paired per-seed ranges and the drop precision/recall analysis (Fig. 2) are informative and go beyond means; the stacked bar with the flip-rate tick is easy to read.",
+    "The teaser figure and Table 1 are clean, consistent with the text, and the error-bar convention is described.",
+    "Section 3 gives a clear argument for when the filter should work (the epsilon < (k-1)/k majority condition) and links it to the failure case in the results."
+  ],
+  "weaknesses": [
+    {
+      "issue": "The recovery metric is central to the abstract and contributions but is only defined in the dense final paragraph of Sec. 4, after it has been used several times. It is also unstable for small losses (66% on a 4.4-point loss), yet it is headline material in the abstract.",
+      "where": "Abstract, Sec. 1 contribution 2, Sec. 4 'Methods and protocol'",
+      "severity": "major",
+      "suggestion": "Define recovery in one sentence at first use (abstract or intro), and report it in Table 1 or a small extra column next to the paired range. In the abstract, pair the breast cancer 66% with the 4.4-point loss or drop it."
+    },
+    {
+      "issue": "The 'Methods and protocol' paragraph is one long block that mixes the models, seeds, reporting conventions, paired differences and recovery. A reader cannot find the settings easily, and key details are missing: whether the MLP and LogReg use the same standardization, the optimizer/solver, and whether the filter's out-of-fold models use C=1.",
+      "where": "Sec. 4, 'Methods and protocol'",
+      "severity": "major",
+      "suggestion": "Split into 'Baselines', 'Protocol' and 'Metrics' paragraphs. Put the formula for recovery and the paired difference in display or a short list."
+    },
+    {
+      "issue": "Contribution 2 and the abstract blur which claims hold where: 'improves on noisy logistic regression in every seed on digits' is mixed with the 66-78% range that spans both datasets, and breast cancer at 20% is positive in only 4 of 5 seeds. The contribution bullets read as stronger than Sec. 5.",
+      "where": "Sec. 1 contributions, abstract",
+      "severity": "minor",
+      "suggestion": "Reword the bullet as separate statements: digits (all seeds, 78% and 68%), breast cancer 20% (4/5 seeds, 66% of a small loss), breast cancer 40% (unclear)."
+    },
+    {
+      "issue": "Table 1 bolding rule is complicated (best mean bolded except where the best means are within one sd), so the unbolded breast cancer 40% row and the clean rows leave the reader to infer the point. The table also gives no paired differences or recovery, which the text relies on, so the reader must jump between table and text.",
+      "where": "Table 1 caption",
+      "severity": "minor",
+      "suggestion": "Add a 'Filter − LogReg (paired range)' column or move the rule to a one-line note; avoid bolding conditioned on sd."
+    },
+    {
+      "issue": "Fig. 2 error bars show sd of the total only, and the caption is long and partly interpretive ('purple reaches nearly the tick'). The precision percentages above bars are not tied to the text numbers explicitly, and the figure lacks the clean-label precision (undefined). The tick vs bar relationship is explained only in the caption.",
+      "where": "Fig. 2 and caption",
+      "severity": "minor",
+      "suggestion": "Shorten the caption, move the interpretation into the text, and say 'precision not defined with clean labels'. Consider adding the recall values as labels or stating them in the caption."
+    },
+    {
+      "issue": "Sec. 3's argument is tersely stated: the sentence 'The argument needs the true class to remain the most common label around x_i' mixes local neighbourhood majority with global flip rate, and the (k-1)/k bound is about the label distribution, not local density. A linear model does not use a neighborhood majority, so the intuition is only loosely connected to the method.",
+      "where": "Sec. 3 'Why disagreement singles out flipped labels'",
+      "severity": "minor",
+      "suggestion": "State the claim as heuristic and explain in one sentence why a linear model's prediction approximates the true-class majority under symmetric noise. Label it as intuition, not a derivation."
+    },
+    {
+      "issue": "Sec. 5.4 closes with an awkward sentence ('we only say that the worst seed changed by -1.3'), and the 'Discussion' mixes a limitations list with the summary. The title of the subsection 5.1 is a long full sentence. Minor flow issues for a 4-page paper.",
+      "where": "Sec. 5.1, 5.4, Sec. 6",
+      "severity": "minor",
+      "suggestion": "Rephrase the 5.4 ending as 'the worst-seed cost is 1.3 points on digits'. Shorten subsection titles. Check the paper is within 4 pages of main text; the page count was not confirmed here."
+    },
+    {
+      "issue": "The title says 'for label noise in linear classifiers' but experiments cover only logistic regression, and no figure or table shows K or C sensitivity; the reader cannot tell what the 'no threshold' claim buys when C is an implicit hidden setting.",
+      "where": "Title, Sec. 3",
+      "severity": "minor",
+      "suggestion": "Say 'logistic regression' in the title or abstract consistently; mention C once more where 'no tuning' is claimed."
+    }
+  ],
+  "questions": [
+    "Is 'filter beats the MLP in every seed' a statement over 5 seeds only, and would the MLP trained on the filtered labels be the natural fairer comparison?",
+    "For breast cancer at 40% noise, does the 9-point sd come from the test split (171 samples) or from the noise draw? A paired breakdown would help.",
+    "Why report recovery from 5-seed means instead of per-seed recovery with a spread?"
+  ],
+  "scores": {"soundness": 3, "presentation": 3, "contribution": 2},
+  "overall": 5,
+  "confidence": 4
+}

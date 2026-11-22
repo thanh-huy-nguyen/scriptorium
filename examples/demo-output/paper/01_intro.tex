@@ -1,0 +1,29 @@
+\section{Introduction}\label{sec:intro}
+
+Labels gathered by crowdsourcing, heuristics or hurried annotation contain errors \citep{frenay2014classification,song2023learning}.
+Practitioners with small tabular data often work with linear models, and for them noise has a direct cost.
+On digits, logistic regression loses 13.2\src{loss_dg_40_logreg} points of clean test accuracy when 40\%\src{cfg_noise_high_pct} of the training labels are flipped (Fig.~\ref{fig:teaser}).
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/teaser.pdf}
+  \caption{Out-of-fold filtering helps logistic regression under symmetric label noise on digits and at 20\% noise on breast cancer, while an untuned MLP degrades. Clean test accuracy against the rate of symmetric label noise in the training set, for logistic regression and a one-hidden-layer MLP trained on the noisy labels, and for the filter (logistic regression refitted after dropping samples whose out-of-fold prediction disagrees with their label). Points are means and error bars are sample standard deviations over 5\src{n_seeds} seeds (points at the same noise rate are offset slightly for legibility); the dashed line is logistic regression with clean labels on digits (96.8\%\src{acc_dg_00_logreg_mean}; on breast cancer it is 96.7\%\src{acc_bc_00_logreg_mean}). Error bars are wide on breast cancer at 40\%\src{cfg_noise_high_pct} noise: the test set is small, and nearly half of the 398\src{n_train_bc} training labels are flipped.}
+  \label{fig:teaser}
+\end{figure}
+
+Many noise-robust methods assume a clean validation set, an estimate of the noise rate, or deep networks trained with special schedules (Sec.~\ref{sec:related}).
+A bigger model does not help: an untuned MLP trained on the same noisy labels falls to 64.9\%\src{acc_dg_40_mlp_mean} on digits at 40\%\src{cfg_noise_high_pct} noise, because it fits the flipped labels (Fig.~\ref{fig:teaser}).
+
+We take a simpler route.
+A model that never saw a sample cannot have memorized its label, so disagreement between a sample's label and its out-of-fold prediction flags a likely flip.
+We fit logistic regression with $K$-fold cross-validation, drop every sample whose out-of-fold prediction disagrees with its label, and refit on the rest.
+Because our noise is synthetic, we know which labels were flipped and can measure exactly what the filter drops.
+
+Our contributions are:
+\begin{itemize}
+  \item We state the filter as a three-step procedure with no clean validation set and no noise-rate estimate.
+  \item We show that it improves on noisy logistic regression in every seed on digits (recovery 78\%\src{recovery_dg_20} at 20\%\src{cfg_noise_low_pct} noise and 68\%\src{recovery_dg_40} at 40\%\src{cfg_noise_high_pct}); on breast cancer at 20\%\src{cfg_noise_low_pct} it is better in 4\src{wins_bc_20_filter_over_logreg} of 5\src{n_seeds} seeds, and at 40\%\src{cfg_noise_high_pct} the gain is unclear. Recovery is the share of the accuracy lost to noise that the filter regains (Sec.~\ref{sec:setup}).
+  \item We show that it beats an untuned MLP in every seed of every noisy setting, a weak comparison, and that its mean cost on clean labels is within seed variation.
+  \item We measure what it drops: about two thirds to three quarters of the dropped samples are flipped, and the rest are clean.
+\end{itemize}
+These results hold for symmetric noise on two small scikit-learn datasets, and Sec.~\ref{sec:results} marks where they stop.

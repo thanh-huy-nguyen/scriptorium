@@ -1,0 +1,19 @@
+{
+  "name": "scriptorium",
+  "version": "0.1.0",
+  "description": "A team of agents that writes a research paper from your repository. Every number recomputes from the data (PaperAnchor) and every citation is fetched from DBLP, arXiv or Crossref.",
+  "keywords": ["latex", "papers", "research", "multi-agent", "writing", "citations", "reproducibility"],
+  "userConfig": {
+    "mode": {
+      "type": "string",
+      "title": "Number check mode",
+      "description": "feedback: report numbers that do not recompute after each edit (default). gate: refuse such edits.",
+      "options": ["feedback", "gate", "log"],
+      "default": "feedback"
+    }
+  },
+  "author": {"name": "Thanh-Huy Nguyen and Ulas Bagci"},
+  "license": "MIT",
+  "homepage": "https://github.com/thanh-huy-nguyen/scriptorium",
+  "repository": "https://github.com/thanh-huy-nguyen/scriptorium"
+}

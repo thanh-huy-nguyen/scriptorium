@@ -1,0 +1,69 @@
+{
+  "summary": "The paper studies out-of-fold filtering for logistic regression. It runs K-fold cross-validation, drops every training sample whose out-of-fold prediction disagrees with its label, and refits on the rest. It is tested on digits and breast cancer with synthetic symmetric noise (0, 20 and 40%) over 5 seeds, against plain logistic regression and an untuned MLP. The filter gives clear gains on digits and at 20% noise on breast cancer, an uncertain gain at 40% on breast cancer, and a small cost on clean labels. About two thirds to three quarters of the dropped samples are truly flipped.",
+  "strengths": [
+    "The claims are consistently hedged, and the text says where they stop: breast cancer at 40%, the weak MLP baseline, the untested K and C, and the untested noise types. A reader always knows what is and is not shown.",
+    "The method is simple, and Sec. 3 states it in one equation plus a compute note. The paper separates the explicit setting K from the implicit setting C, which is honest.",
+    "Table 1 pairs means and sds with per-seed paired ranges, so the reader can see seed variation directly. Recovery is defined by an equation, and the text warns that it is unstable when the loss is small.",
+    "Fig. 2 is a useful diagnostic. It stacks dropped-flipped under dropped-clean, marks the true flip rate with a tick, and prints precision. This shows what the filter removes, not only accuracy.",
+    "The structure is clear: a claim-led teaser figure, then setup, results and limitations, with subsection headings that state the finding."
+  ],
+  "weaknesses": [
+    {
+      "issue": "The abstract is a dense block of numbers and caveats. It packs about a dozen figures, the recovery definition and a long negation list into one paragraph. The key message (a gain on digits, a weaker gain on breast cancer, a small clean cost) is hard to extract. It also says the method needs 'no confidence threshold' and that its settings 'were fixed and not tuned', while Sec. 3 says the filter is 'not setting-free'. The two statements pull in different directions.",
+      "where": "Abstract; Sec. 3 'The filter'",
+      "severity": "major",
+      "suggestion": "Cut the abstract to about 150 words: the method in one sentence, one headline number per dataset, one sentence on the clean cost, and one sentence on limits. Move the per-seed counts and the recovery definition to the body. State that K=5 and C=1 were fixed rather than tuned, and say that sensitivity is untested."
+    },
+    {
+      "issue": "The headline metric, 'recovery', is hard to interpret and is used before it is defined. The abstract and intro cite 78%, 68% and 66% and point to Sec. 4. Recovery is computed from 5-seed means, so it has no spread. The reader cannot tell how much of it is seed noise (see breast cancer at 20%, where the loss is only 4.4 points and the paired range includes -1.2).",
+      "where": "Abstract; Sec. 1 contributions; Sec. 4 Metrics",
+      "severity": "major",
+      "suggestion": "Lead with the absolute accuracies (89.1 to 95.1 and 83.6 to 92.6 on digits) and use recovery as a secondary gloss. Define it in one clause where it first appears. Drop it for breast cancer, or report it only with the paired range next to it. Alternatively give per-seed recovery ranges."
+    },
+    {
+      "issue": "Several claims in the text are not tied to specific evidence or a table. The intro says 'A bigger model does not help' and attributes the MLP's decline to 'because it fits the flipped labels', but no memorization measurement is shown. The paper later calls the MLP a weak, untuned baseline. In the method section, the explanation for why the filter works is offered as 'intuition', but it is presented in a paragraph that mixes the bound ε<(k-1)/k, the weak out-of-fold model and the claim about atypical clean samples.",
+      "where": "Sec. 1 para 2; Sec. 3 'Why disagreement...'; Sec. 5.3",
+      "severity": "minor",
+      "suggestion": "Reword the intro to 'an untuned MLP degrades faster, consistent with memorization'. In Sec. 3, give the majority condition as a short display (1-ε > ε/(k-1)) and split the paragraph into a condition and a caveat, so the logic is easy to follow."
+    },
+    {
+      "issue": "Results are reported in several places (abstract, intro bullets, Sec. 5 text, caption, Table 1) with the same numbers repeated. This costs a lot of the 4-page budget and makes the story slower to follow. The Table 1 caption does not say which entries are paired wins. The last column gives ranges but not the count of positive seeds, which the text gives (5/5, 4/5). The bold convention hides ties (breast cancer clean, 96.7 for both LogReg and MLP).",
+      "where": "Sec. 1 contributions; Sec. 5.1; Table 1",
+      "severity": "minor",
+      "suggestion": "Shorten the contribution bullets to claims without numbers and point to Table 1. Add a 'wins/5' entry to the last column of Table 1. Say in the caption that ties are bolded for both."
+    },
+    {
+      "issue": "Fig. 2 is hard to read in places. The precision labels float above the bars with no label saying what they are (the caption has to explain). The error bars cover only the total dropped share, which the caption admits. The tick for flipped labels sits very close to the top of the purple segment, so the 'missed flips' gap is hard to see. The finding that precision is lower at 20% than at 40% on digits (65% vs 76%) is stated but not explained. A reader needs to be told that precision rises with noise because the base rate of flips rises.",
+      "where": "Fig. 2 and Sec. 5.2",
+      "severity": "minor",
+      "suggestion": "Label the numbers on the figure itself, e.g. 'precision 65%', or put them in a small table. Add one sentence in Sec. 5.2 on why precision rises with the noise rate, i.e. the base rate of flips. Consider adding recall values to the figure, since the text quotes them."
+    },
+    {
+      "issue": "Fig. 1 conveys the main message, but breast cancer at 40% has overlapping error bars for the filter and logistic regression. The caption asserts that the filter 'helps' on digits and at 20% on breast cancer, which overstates what is visible at 20% on breast cancer (the paired range includes a negative seed). The Fig. 1 y-axis starts at 55%, which exaggerates the gaps for the MLP.",
+      "where": "Fig. 1 and its caption",
+      "severity": "minor",
+      "suggestion": "Soften the caption to 'improves on average'. Consider overlaying the individual seeds as dots, so that the paired comparison is visible without relying on the text."
+    },
+    {
+      "issue": "Terminology and the setup are slightly inconsistent. 'Noise' is used for the nominal and the realized rate (Table 1 uses nominal, Fig. 2 uses both). 'Drops', 'dropped share' and 'removed' are used interchangeably. The abstract says 'regaining 78% ... of the accuracy that noise costs', while Sec. 4 says the clean reference is logistic regression on clean labels. The compute note ('K+1 fits') is the only cost discussion. The title in main.tex refers to 'symmetric label noise in logistic regression' but the brief's title omits this; check consistency.",
+      "where": "Sec. 3, 4, 5.2; title",
+      "severity": "minor",
+      "suggestion": "Fix one term for each concept: 'nominal rate' vs 'realized flip rate'; 'dropped'. State the clean reference once in the abstract. Check that the title matches the brief."
+    },
+    {
+      "issue": "The scope of the experiments limits what the reader can conclude, and the text is not clear about how much that matters for the story. With only two datasets and 5 seeds, and no comparison to logistic regression at a tuned C, to Wilson editing or to confident learning, the method has no context in terms of a strong baseline. The related-work section says what is not compared, but the paper does not say why these comparisons were left out, and a clarity-focused reader is left wondering what the contribution is beyond a known editing rule.",
+      "where": "Sec. 2; Sec. 6",
+      "severity": "major",
+      "suggestion": "In the intro, say plainly that the paper is a careful measurement of a simple known filter (a Wilson-style editing rule with cross-validation), not a new method. Say that the paper's novelty is the measurement of what it drops. If a one-line tuned-C logistic regression can be run with existing code, add it; otherwise say explicitly in the intro that regularization may explain part of the gain."
+    }
+  ],
+  "questions": [
+    "Is a stronger L2 penalty (smaller C) on plain logistic regression enough to close much of the digits gap at 40% noise?",
+    "Why is the precision of drops higher at 40% than at 20% on digits? Is it only the higher base rate of flipped labels?",
+    "On breast cancer at 40%, is the large seed sd (9 points) driven by one or two splits? Can the per-seed values be shown?",
+    "Does the filter ever drop an entire small class on digits, given that about a third of the drops at 20% noise are clean?"
+  ],
+  "scores": {"soundness": 3, "presentation": 3, "contribution": 2},
+  "overall": 5,
+  "confidence": 4
+}

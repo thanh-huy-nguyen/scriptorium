@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use Scriptorium, please cite it as below."
+title: "Scriptorium: a team of agents that writes a paper from your repository, with every number and citation checked"
+authors:
+  - family-names: Nguyen
+    given-names: Thanh-Huy
+    affiliation: Northwestern University
+  - family-names: Bagci
+    given-names: Ulas
+    affiliation: Northwestern University
+version: 0.1.0
+date-released: 2026-11-21
+license: MIT
+repository-code: "https://github.com/thanh-huy-nguyen/scriptorium"

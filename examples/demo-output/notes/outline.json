@@ -1,0 +1,218 @@
+{
+  "title": "Drop what the model disagrees with: out-of-fold filtering for label noise in linear classifiers",
+  "storyline": "Flipped training labels cost a linear classifier accuracy. The obvious fix, a model with more capacity, makes things worse because the larger model fits the flipped labels. Our key idea is that a model which never saw a sample cannot have memorised that sample's label. So we fit logistic regression with K-fold cross-validation, drop every training sample whose out-of-fold prediction disagrees with its given label, and refit on the rest. This needs no clean validation set and no noise-rate estimate. Under symmetric noise a regularised linear model still predicts the true class for most flipped samples, so the filter catches almost all of them (recall 79 to 98%), and about two thirds to three quarters of what it drops is truly mislabeled. On two small scikit-learn datasets with 20% and 40% synthetic symmetric noise, the filter recovers most of the lost accuracy at 20% noise on both datasets and at 40% on digits. It beats a one-hidden-layer MLP in every noisy run and costs at most 0.2 points when labels are clean. For small linear pipelines, out-of-fold disagreement filtering is therefore a cheap first remedy to try before adding capacity. It recovers much less on the small binary dataset at 40% noise.",
+  "sections": [
+    {
+      "id": "abstract",
+      "file": "abstract",
+      "title": "Abstract",
+      "wave": 2,
+      "words": 150,
+      "goal": "The reader knows the problem (label noise hurts linear models; more capacity does not help), the method in one sentence, the scope of the evaluation (two small datasets, symmetric synthetic noise), and the main insight: out-of-fold disagreement finds most flipped labels and recovers most of the lost accuracy at moderate noise.",
+      "points": [
+        "One paragraph. Problem: label noise costs simple classifiers accuracy, and many remedies need a clean validation set, a noise-rate estimate or deep-network training schedules.",
+        "We present out-of-fold filtering: fit logistic regression with K-fold cross-validation, drop each training sample whose out-of-fold prediction disagrees with its label, refit. No clean data, no noise rate, no threshold.",
+        "Evaluation: two small scikit-learn datasets (digits, breast cancer), synthetic symmetric noise at three rates, five seeds, compared against logistic regression and a one-hidden-layer MLP on the same noisy labels.",
+        "Insight: the filter recovers about two thirds to three quarters of the accuracy lost to noise at 20% noise on both datasets and at 40% on digits. It beats the MLP in every noisy run, and costs almost nothing on clean labels. Gains are small at 40% noise on the binary dataset. Avoid lists of numbers; at most the recovery range."
+      ],
+      "numbers": ["recovery_bc_20", "recovery_dg_20"],
+      "figures": [],
+      "tables": [],
+      "cites": []
+    },
+    {
+      "id": "intro",
+      "file": "01_intro",
+      "title": "Introduction",
+      "wave": 2,
+      "words": 430,
+      "goal": "The reader believes that label noise is a real cost for small linear pipelines, that adding capacity is the wrong reflex, and that a three-step out-of-fold filter with no extra inputs is a strong, cheap remedy within the scope tested.",
+      "points": [
+        "Labels collected by crowdsourcing, heuristics or hurried annotation contain errors, and practitioners with small tabular data often use linear models. Noise costs them: on digits, logistic regression loses 13.2 points of test accuracy at 40% symmetric noise (Fig. 1). Cite the noisy-label surveys.",
+        "Gap: many noise-robust methods assume a clean validation set, an estimate of the noise rate, or deep networks trained with special schedules (co-teaching, confident learning's per-class thresholds). The reflex of a bigger model is worse: an MLP on the same noisy labels falls to 64.9% on digits at 40% noise because it fits the flipped labels (Fig. 1).",
+        "What we do: a model that never saw a sample cannot have memorised its label, so out-of-fold disagreement flags likely flips. We fit logistic regression with K-fold CV, drop every disagreeing sample, and refit. This revisits the classic classification-filter idea; because our noise is synthetic, we know which labels were flipped and can measure exactly what the filter drops.",
+        "Contributions as three bulleted sentences, each starting with a verb: (i) state the filter as a three-step procedure whose only setting is the number of folds; (ii) show that it recovers most of the accuracy lost to noise at 20% noise on both datasets and at 40% on digits, and beats an MLP in every noisy seed; (iii) show that most dropped samples are truly mislabeled and that the filter costs little on clean labels. Do not write counts such as '3 of 4' or '20 runs' (no recipe key); name the settings instead."
+      ],
+      "numbers": ["loss_dg_40_logreg", "acc_dg_40_mlp_mean"],
+      "figures": ["teaser"],
+      "tables": [],
+      "cites": ["noisy_label_surveys", "classification_filtering", "confident_learning", "sample_selection_deep"]
+    },
+    {
+      "id": "related",
+      "file": "02_related",
+      "title": "Related Work",
+      "wave": 2,
+      "words": 220,
+      "goal": "The reader sees where the filter sits: it is the simplest member of the data-cleaning family, it differs from confident learning by having no thresholds or noise-rate estimate, and it targets small linear models rather than deep networks.",
+      "points": [
+        "Surveys and noise models: Song et al. (TNNLS) and Frenay and Verleysen categorise robust losses, loss correction, and sample selection or cleaning. Our work is a cleaning method evaluated under symmetric noise.",
+        "Classification filtering: Brodley and Friedl and earlier editing methods remove training samples misclassified by cross-validated classifiers. We revisit the single-model, single-pass version and measure what it removes using known flips.",
+        "Confident learning (Northcutt et al., JAIR 2021) also uses out-of-fold predicted probabilities, but estimates the joint distribution of noisy and true labels with per-class thresholds. Our filter uses only the hard out-of-fold prediction, with no thresholds and no rate estimate. We do not run it as a baseline.",
+        "Deep sample selection and memorisation: co-teaching (Han et al., NeurIPS 2018) and related small-loss methods exploit the fact that networks fit clean labels before noisy ones (Arpit et al.; Zhang et al.). This explains why our MLP degrades. We target small linear models and do not claim the results carry over to deep networks."
+      ],
+      "numbers": [],
+      "figures": [],
+      "tables": [],
+      "cites": ["noisy_label_surveys", "classification_filtering", "confident_learning", "sample_selection_deep", "memorization"]
+    },
+    {
+      "id": "method",
+      "file": "03_method",
+      "title": "Out-of-Fold Filtering",
+      "wave": 1,
+      "words": 300,
+      "goal": "The reader can implement the filter from this section alone and understands why out-of-fold disagreement singles out flipped labels.",
+      "points": [
+        "Notation: training set {(x_i, \\tilde y_i)} with possibly flipped labels \\tilde y_i; base learner f = standardisation + L2-regularised logistic regression. Define the out-of-fold prediction \\hat y_i as the prediction of the model trained on the K-1 folds that exclude i (stratified, shuffled folds).",
+        "The filter in words, then as a set: keep S = {i : \\hat y_i = \\tilde y_i}, refit f on S, and predict with the refitted model. Applied once, no confidence threshold, no clean validation set, no noise-rate estimate. K is the only setting (K = 5 in all experiments).",
+        "Why it works: the model that predicts \\hat y_i never saw (x_i, \\tilde y_i), so it cannot memorise a flipped label. Under symmetric noise the true class remains the majority label around x_i, and a low-capacity regularised linear model follows the majority. Flipped samples therefore tend to disagree. Clean samples near the decision boundary or atypical ones also disagree; this is the filter's cost, measured in Sec. 5.",
+        "Cost: K fits plus one refit. On digits the filter's wall-clock fit time is about 4.7 times that of plain logistic regression (single measurements, machine-dependent)."
+      ],
+      "numbers": ["cfg_folds", "time_ratio_filter_logreg_digits"],
+      "figures": [],
+      "tables": [],
+      "cites": ["classification_filtering", "confident_learning"]
+    },
+    {
+      "id": "setup",
+      "file": "04_setup",
+      "title": "Experimental Setup",
+      "wave": 1,
+      "words": 180,
+      "goal": "The reader knows the datasets, the noise model, the baselines and the protocol well enough to judge the results, in one compact paragraph or two.",
+      "points": [
+        "Data: scikit-learn digits (1797 samples, multi-class handwritten digits) and breast cancer (569 samples, binary diagnosis). Stratified split with 30% test, giving 1257/540 and 398/171 train/test samples. Do not print class or feature counts (no recipe key); describe them in words ('ten-class' is acceptable only if a recipe is added).",
+        "Noise: each training label is flipped independently with probability equal to the nominal rate to a uniformly random other class (symmetric noise). Test labels stay clean. Nominal rates 0, 0.2 and 0.4; realised rates are close (19.7% and 39.4% on digits, 19.2% and 38.6% on breast cancer). If the checker requires keys for the nominal rates, add a config recipe before printing them.",
+        "Methods: logistic regression on noisy labels (C = 1, also the filter's base model); MLP with one hidden layer of 64 units, max 500 iterations, otherwise scikit-learn defaults; the filter with K = 5. All models standardise features.",
+        "Protocol: 5 seeds per setting; a seed changes the split, the noise draw and the initialisation together. We report mean and sample sd of clean test accuracy over seeds (90 runs in total). No confidence intervals or significance tests."
+      ],
+      "numbers": ["n_total_digits", "n_total_bc", "cfg_test_fraction_pct", "n_train_digits", "n_test_digits", "n_train_bc", "n_test_bc", "noisy_frac_dg_20_mean", "noisy_frac_dg_40_mean", "noisy_frac_bc_20_mean", "noisy_frac_bc_40_mean", "cfg_logreg_C", "cfg_mlp_hidden", "cfg_mlp_max_iter", "cfg_folds", "n_seeds", "n_runs", "cfg_n_noise_rates"],
+      "figures": [],
+      "tables": [],
+      "cites": []
+    },
+    {
+      "id": "results",
+      "file": "05_results",
+      "title": "Results",
+      "wave": 1,
+      "words": 460,
+      "goal": "The reader believes the four narrowed claims and sees where each one stops: recovery is strong at 20% noise on both datasets and at 40% on digits but weak on breast cancer at 40%; drops are mostly but not overwhelmingly mislabeled; the MLP loses in every noisy seed; the clean-label cost is within seed noise.",
+      "points": [
+        "Subsection 'Filtering recovers most of the accuracy lost to noise, except at high noise on the small binary set': the filter beats logistic regression on the same noisy labels in every setting (Table 1). It recovers 78% (digits) and 66% (breast cancer) of the lost accuracy at 20% noise and 68% on digits at 40%. On breast cancer at 40% it recovers only 22%, ends 12.7 points below clean accuracy, and its seed sd (about 9 points) exceeds its gain. State this plainly as the boundary of the claim.",
+        "Subsection 'Most dropped samples are truly mislabeled': precision of the drops is 65 to 76% on average and at least 61% in every seed. Recall is 98% on digits at both noise rates but falls to 79% on breast cancer at 40% (Fig. 2). About a third of drops are clean samples, so the filter trades some clean data for nearly all flipped labels. The lower recall on breast cancer at 40% matches the weaker recovery there.",
+        "Subsection 'More capacity fits the noise instead of removing it': the MLP matches or slightly beats logistic regression on clean labels but collapses under noise. The filter beats it in every seed of every noisy setting (5 of 5 seeds in each), by 11.0 to 27.7 points (Table 1, Fig. 1). Restrict the claim to noisy labels: with clean labels the MLP is 0.7 points better on digits. Note that the MLP uses default settings without early stopping.",
+        "Subsection 'With clean labels the filter costs little': mean accuracy changes by -0.22 points (digits) and -0.12 points (breast cancer), within the seed sd, and the filter is below logistic regression in only 2 and 1 of 5 seeds. It still discards 3.5% and 1.9% of the clean training set. Do not claim significance. Do not contrast breast-cancer MLP and logistic regression at 0% (identical numbers, unverified)."
+      ],
+      "numbers": [
+        "acc_dg_00_logreg_mean", "acc_dg_00_logreg_sd", "acc_dg_00_mlp_mean", "acc_dg_00_mlp_sd", "acc_dg_00_filter_mean", "acc_dg_00_filter_sd",
+        "acc_dg_20_logreg_mean", "acc_dg_20_logreg_sd", "acc_dg_20_mlp_mean", "acc_dg_20_mlp_sd", "acc_dg_20_filter_mean", "acc_dg_20_filter_sd",
+        "acc_dg_40_logreg_mean", "acc_dg_40_logreg_sd", "acc_dg_40_mlp_mean", "acc_dg_40_mlp_sd", "acc_dg_40_filter_mean", "acc_dg_40_filter_sd",
+        "acc_bc_00_logreg_mean", "acc_bc_00_logreg_sd", "acc_bc_00_mlp_mean", "acc_bc_00_mlp_sd", "acc_bc_00_filter_mean", "acc_bc_00_filter_sd",
+        "acc_bc_20_logreg_mean", "acc_bc_20_logreg_sd", "acc_bc_20_mlp_mean", "acc_bc_20_mlp_sd", "acc_bc_20_filter_mean", "acc_bc_20_filter_sd",
+        "acc_bc_40_logreg_mean", "acc_bc_40_logreg_sd", "acc_bc_40_mlp_mean", "acc_bc_40_mlp_sd", "acc_bc_40_filter_mean", "acc_bc_40_filter_sd",
+        "recovery_dg_20", "recovery_dg_40", "recovery_bc_20", "recovery_bc_40",
+        "gap_bc_40_filter_to_clean",
+        "precision_dg_20_mean", "precision_dg_40_mean", "precision_bc_20_mean", "precision_bc_40_mean", "precision_dg_20_min",
+        "recall_dg_20_mean", "recall_dg_40_mean", "recall_bc_40_mean",
+        "wins_dg_20_filter_over_mlp", "wins_dg_40_filter_over_mlp", "wins_bc_20_filter_over_mlp", "wins_bc_40_filter_over_mlp",
+        "diff_bc_20_filter_minus_mlp", "diff_dg_40_filter_minus_mlp", "diff_dg_00_filter_minus_mlp",
+        "clean_cost_dg", "clean_cost_bc", "clean_worse_seeds_dg", "clean_worse_seeds_bc",
+        "dropped_frac_dg_00_mean", "dropped_frac_bc_00_mean"
+      ],
+      "figures": ["drops"],
+      "tables": [
+        {
+          "id": "main",
+          "caption": "Clean test accuracy (%) of logistic regression and an MLP trained on noisy labels and of out-of-fold filtering, mean ± sd over 5 seeds, for each dataset and nominal noise rate. The last column gives the fraction of the accuracy lost by logistic regression to noise that the filter recovers, (filter - noisy) / (clean - noisy); it is undefined without noise. Best mean per row in bold.",
+          "numbers": [
+            "acc_dg_00_logreg_mean", "acc_dg_00_logreg_sd", "acc_dg_00_mlp_mean", "acc_dg_00_mlp_sd", "acc_dg_00_filter_mean", "acc_dg_00_filter_sd",
+            "acc_dg_20_logreg_mean", "acc_dg_20_logreg_sd", "acc_dg_20_mlp_mean", "acc_dg_20_mlp_sd", "acc_dg_20_filter_mean", "acc_dg_20_filter_sd",
+            "acc_dg_40_logreg_mean", "acc_dg_40_logreg_sd", "acc_dg_40_mlp_mean", "acc_dg_40_mlp_sd", "acc_dg_40_filter_mean", "acc_dg_40_filter_sd",
+            "acc_bc_00_logreg_mean", "acc_bc_00_logreg_sd", "acc_bc_00_mlp_mean", "acc_bc_00_mlp_sd", "acc_bc_00_filter_mean", "acc_bc_00_filter_sd",
+            "acc_bc_20_logreg_mean", "acc_bc_20_logreg_sd", "acc_bc_20_mlp_mean", "acc_bc_20_mlp_sd", "acc_bc_20_filter_mean", "acc_bc_20_filter_sd",
+            "acc_bc_40_logreg_mean", "acc_bc_40_logreg_sd", "acc_bc_40_mlp_mean", "acc_bc_40_mlp_sd", "acc_bc_40_filter_mean", "acc_bc_40_filter_sd",
+            "recovery_dg_20", "recovery_dg_40", "recovery_bc_20", "recovery_bc_40"
+          ]
+        }
+      ],
+      "cites": ["memorization"]
+    },
+    {
+      "id": "conclusion",
+      "file": "06_conclusion",
+      "title": "Discussion and Limitations",
+      "wave": 2,
+      "words": 180,
+      "goal": "The reader takes away when to use the filter (small data, linear model, suspected symmetric noise) and what the study does not show, framed as future work.",
+      "points": [
+        "Big picture: for a linear model on small noisy data, removing samples the model disagrees with out of fold helps more than adding capacity. The filter needs only K, so it is a cheap first remedy before tuning anything else.",
+        "Limitations as future work, briefly: two small scikit-learn datasets and synthetic symmetric noise only (class-dependent and real noise untested); no comparison with confident learning or co-teaching; a default MLP without early stopping is a weak capacity baseline; 5 seeds that vary split and noise together, and high variance on breast cancer at 40% noise (filter sd about 9 points); about a third of drops are clean samples, which suggests testing thresholds or iterated filtering. No claim of scaling to deep networks or large data."
+      ],
+      "numbers": ["acc_bc_40_filter_sd"],
+      "figures": [],
+      "tables": [],
+      "cites": ["confident_learning", "sample_selection_deep"]
+    }
+  ],
+  "figures": [
+    {
+      "id": "teaser",
+      "kind": "plot",
+      "section": "intro",
+      "width": "column",
+      "message": "Noise drags logistic regression down and the MLP down further, while the out-of-fold filter stays close to clean-label accuracy on digits and above both baselines everywhere.",
+      "data": ["results/runs.jsonl"],
+      "spec": "Two side-by-side panels sharing the y axis label: left digits, right breast_cancer. x: nominal label-noise rate (%) at 0, 20, 40. y: clean test accuracy (%), range about 55 to 100. Three lines with markers: filter in #4E2A84 (solid, thicker), logistic regression in muted blue-gray, MLP in muted orange; keep these colors in every figure. Error bars: sample sd over 5 seeds. Thin dashed gray horizontal line at clean-label logistic regression accuracy per panel, labelled 'clean'. Legend once, above the panels, off the data. Sans-serif labels, no in-plot titles; panel names as small text labels.",
+      "caption": "Out-of-fold filtering keeps a linear model accurate under label noise, while a larger model degrades. Clean test accuracy against the rate of symmetric label noise in the training set, for logistic regression and a one-hidden-layer MLP trained on the noisy labels and for the filter (logistic regression refitted after dropping samples whose out-of-fold prediction disagrees with their label). Points are means and error bars sd over 5 seeds; the dashed line is logistic regression with clean labels."
+    },
+    {
+      "id": "drops",
+      "kind": "plot",
+      "section": "results",
+      "width": "column",
+      "message": "The filter catches nearly all flipped labels, and most of what it drops is mislabeled, but a fraction of clean samples goes with them; on breast cancer at 40% it misses more flips.",
+      "data": ["results/runs.jsonl"],
+      "spec": "Grouped stacked bars, one bar per (dataset, nominal noise) for noise 0, 20, 40 on digits and breast_cancer (six bars, grouped by dataset). y: share of the training set (%), i.e. counts divided by n_train, mean over 5 seeds. Each bar stacks dropped-and-truly-flipped (#4E2A84) under dropped-but-clean (light gray). Overlay a short black horizontal tick at the mean share of flipped training labels (n_noisy / n_train) so the gap between the purple segment and the tick shows missed flips. Annotate precision (dropped flipped / dropped) above each noisy bar as a percent with no decimals. Error bars: sd over 5 seeds on the total dropped share. Legend above, off the data.",
+      "caption": "Most samples the filter drops are truly mislabeled, and few flipped labels survive. Each bar is the share of the training set dropped by the filter, split into samples whose label was flipped (purple) and clean samples (gray); the black tick marks the share of flipped labels. Numbers above bars give the precision of the drops. Bars are means and error bars sd of the total over 5 seeds. With clean labels the filter still drops a few percent of the data."
+    }
+  ],
+  "related": [
+    {
+      "id": "noisy_label_surveys",
+      "topic": "Learning with noisy labels: surveys and noise models",
+      "why": "Frames label noise, the symmetric noise model we use, and the families of remedies (robust losses, loss correction, sample selection, cleaning).",
+      "queries": ["Learning from noisy labels with deep neural networks: a survey Song TNNLS", "Classification in the presence of label noise: a survey Frenay Verleysen", "learning with noisy labels Natarajan symmetric noise"],
+      "must_cite": ["Song et al., Learning from Noisy Labels with Deep Neural Networks: A Survey, IEEE TNNLS"]
+    },
+    {
+      "id": "classification_filtering",
+      "topic": "Classification filtering and data editing",
+      "why": "The filter is the single-model, single-pass version of removing training samples misclassified by cross-validated classifiers; we must credit this lineage and position our work as a measured revisit.",
+      "queries": ["Brodley Friedl identifying mislabeled training data", "classification filter cross-validation remove mislabeled instances", "Wilson editing nearest neighbor noisy instances"],
+      "must_cite": []
+    },
+    {
+      "id": "confident_learning",
+      "topic": "Confident learning",
+      "why": "Closest modern method: also uses out-of-fold predicted probabilities but estimates the noise joint with per-class thresholds; our filter uses only hard out-of-fold disagreement and no rate estimate.",
+      "queries": ["Confident learning: estimating uncertainty in dataset labels Northcutt JAIR", "cleanlab out-of-fold predicted probabilities label errors", "pervasive label errors in test sets Northcutt"],
+      "must_cite": ["Northcutt et al., Confident Learning: Estimating Uncertainty in Dataset Labels, JAIR 2021"]
+    },
+    {
+      "id": "sample_selection_deep",
+      "topic": "Sample selection for deep networks under label noise",
+      "why": "Co-teaching and related small-loss selection methods filter samples during deep training; we target small linear models and do not compare against them.",
+      "queries": ["Co-teaching robust training of deep neural networks with extremely noisy labels Han", "MentorNet learning data-driven curriculum corrupted labels", "small-loss sample selection noisy labels"],
+      "must_cite": ["Han et al., Co-teaching: Robust Training of Deep Neural Networks with Extremely Noisy Labels, NeurIPS 2018"]
+    },
+    {
+      "id": "memorization",
+      "topic": "Memorisation of noisy labels by over-parameterised models",
+      "why": "Explains why the higher-capacity MLP degrades under noise and why out-of-fold predictions, which never see the sample's own label, avoid memorisation.",
+      "queries": ["Understanding deep learning requires rethinking generalization Zhang random labels", "A closer look at memorization in deep networks Arpit"],
+      "must_cite": []
+    }
+  ]
+}

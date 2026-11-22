@@ -1,0 +1,12 @@
+{
+ "tagged": 182,
+ "citations": 9,
+ "sessions": 22,
+ "output_tokens": 141825,
+ "pages": 4,
+ "score_first": 4.5,
+ "score_last": 4.5,
+ "decisions": {
+  "revise1": "kept: mean score 4.50 -> 4.50"
+ }
+}

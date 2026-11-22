@@ -1,0 +1,10 @@
+{
+  "datasets": ["digits", "breast_cancer"],
+  "noise_rates": [0.0, 0.2, 0.4],
+  "seeds": [0, 1, 2, 3, 4],
+  "test_fraction": 0.3,
+  "logreg_C": 1.0,
+  "mlp_hidden": 64,
+  "mlp_max_iter": 500,
+  "filter_folds": 5
+}

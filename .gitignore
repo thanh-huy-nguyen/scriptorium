@@ -1,0 +1,12 @@
+__pycache__/
+*.egg-info/
+build/
+dist/
+.venv/
+examples/*/.scriptorium/
+examples/*/paper/*.aux
+examples/*/paper/*.log
+examples/*/paper/*.out
+examples/*/paper/*.bbl
+examples/*/paper/*.blg
+.venv/

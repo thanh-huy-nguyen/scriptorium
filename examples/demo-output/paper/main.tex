@@ -1,0 +1,56 @@
+\documentclass[10pt,twocolumn]{article}
+\providecommand{\src}[1]{}
+\providecommand{\val}[2][1]{}
+\usepackage[letterpaper,margin=0.75in,columnsep=0.3in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{titlesec}
+\definecolor{accent}{HTML}{4E2A84}
+\definecolor{ink}{HTML}{1E1A17}
+\usepackage[colorlinks=true,linkcolor=accent,citecolor=accent,urlcolor=accent]{hyperref}
+\titleformat{\section}{\large\bfseries\color{ink}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.1em}{0.5em}
+\titlespacing*{\subsection}{0pt}{0.9em}{0.35em}
+\setlength{\parskip}{0pt}
+
+\makeatletter
+\renewcommand{\maketitle}{\twocolumn[{%
+  \begin{center}
+    {\color{accent}\rule{\textwidth}{0.8pt}}\par\vspace{0.9em}
+    {\LARGE\bfseries\color{ink}\@title\par}\vspace{0.8em}
+    {\large \@author\par}\vspace{0.25em}
+    {\small\itshape Scriptorium example\par}\vspace{0.7em}
+    {\color{accent}\rule{\textwidth}{0.4pt}}
+  \end{center}\vspace{0.6em}}]}
+\makeatother
+
+\title{Drop what the model disagrees with: out-of-fold filtering for symmetric label noise in logistic regression}
+\author{Demo Author}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+\input{01_intro}
+\input{02_related}
+\input{03_method}
+\input{04_setup}
+\input{05_results}
+\input{06_conclusion}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}

@@ -1,0 +1,90 @@
+{"dataset": "digits", "noise": 0.0, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "logreg", "test_acc": 0.9722222222222222, "fit_seconds": 0.009679317474365234}
+{"dataset": "digits", "noise": 0.0, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "mlp", "test_acc": 0.9740740740740741, "fit_seconds": 0.2546415328979492}
+{"dataset": "digits", "noise": 0.0, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "filter", "test_acc": 0.9648148148148148, "fit_seconds": 0.0438389778137207, "n_dropped": 42, "n_dropped_noisy": 0}
+{"dataset": "digits", "noise": 0.0, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "logreg", "test_acc": 0.9666666666666667, "fit_seconds": 0.007166385650634766}
+{"dataset": "digits", "noise": 0.0, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "mlp", "test_acc": 0.975925925925926, "fit_seconds": 0.24315667152404785}
+{"dataset": "digits", "noise": 0.0, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "filter", "test_acc": 0.9685185185185186, "fit_seconds": 0.04093575477600098, "n_dropped": 34, "n_dropped_noisy": 0}
+{"dataset": "digits", "noise": 0.0, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "logreg", "test_acc": 0.9555555555555556, "fit_seconds": 0.008202791213989258}
+{"dataset": "digits", "noise": 0.0, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "mlp", "test_acc": 0.9648148148148148, "fit_seconds": 0.23864126205444336}
+{"dataset": "digits", "noise": 0.0, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "filter", "test_acc": 0.9611111111111111, "fit_seconds": 0.040636301040649414, "n_dropped": 45, "n_dropped_noisy": 0}
+{"dataset": "digits", "noise": 0.0, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "logreg", "test_acc": 0.9777777777777777, "fit_seconds": 0.008137941360473633}
+{"dataset": "digits", "noise": 0.0, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "mlp", "test_acc": 0.9796296296296296, "fit_seconds": 0.26387715339660645}
+{"dataset": "digits", "noise": 0.0, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "filter", "test_acc": 0.9648148148148148, "fit_seconds": 0.041260480880737305, "n_dropped": 49, "n_dropped_noisy": 0}
+{"dataset": "digits", "noise": 0.0, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "logreg", "test_acc": 0.9685185185185186, "fit_seconds": 0.00832509994506836}
+{"dataset": "digits", "noise": 0.0, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "mlp", "test_acc": 0.9722222222222222, "fit_seconds": 0.24728035926818848}
+{"dataset": "digits", "noise": 0.0, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 0, "method": "filter", "test_acc": 0.9703703703703703, "fit_seconds": 0.04187607765197754, "n_dropped": 48, "n_dropped_noisy": 0}
+{"dataset": "digits", "noise": 0.2, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 252, "method": "logreg", "test_acc": 0.8907407407407407, "fit_seconds": 0.01370549201965332}
+{"dataset": "digits", "noise": 0.2, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 252, "method": "mlp", "test_acc": 0.8203703703703704, "fit_seconds": 0.7108263969421387}
+{"dataset": "digits", "noise": 0.2, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 252, "method": "filter", "test_acc": 0.95, "fit_seconds": 0.06323814392089844, "n_dropped": 374, "n_dropped_noisy": 249}
+{"dataset": "digits", "noise": 0.2, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 229, "method": "logreg", "test_acc": 0.8870370370370371, "fit_seconds": 0.012707710266113281}
+{"dataset": "digits", "noise": 0.2, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 229, "method": "mlp", "test_acc": 0.8296296296296296, "fit_seconds": 0.71720290184021}
+{"dataset": "digits", "noise": 0.2, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 229, "method": "filter", "test_acc": 0.9481481481481482, "fit_seconds": 0.05878782272338867, "n_dropped": 354, "n_dropped_noisy": 225}
+{"dataset": "digits", "noise": 0.2, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 254, "method": "logreg", "test_acc": 0.8777777777777778, "fit_seconds": 0.014842510223388672}
+{"dataset": "digits", "noise": 0.2, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 254, "method": "mlp", "test_acc": 0.8037037037037037, "fit_seconds": 0.7146172523498535}
+{"dataset": "digits", "noise": 0.2, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 254, "method": "filter", "test_acc": 0.9518518518518518, "fit_seconds": 0.06557559967041016, "n_dropped": 386, "n_dropped_noisy": 252}
+{"dataset": "digits", "noise": 0.2, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 259, "method": "logreg", "test_acc": 0.9037037037037037, "fit_seconds": 0.012865543365478516}
+{"dataset": "digits", "noise": 0.2, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 259, "method": "mlp", "test_acc": 0.8481481481481481, "fit_seconds": 0.7105152606964111}
+{"dataset": "digits", "noise": 0.2, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 259, "method": "filter", "test_acc": 0.9407407407407408, "fit_seconds": 0.06053590774536133, "n_dropped": 380, "n_dropped_noisy": 253}
+{"dataset": "digits", "noise": 0.2, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 244, "method": "logreg", "test_acc": 0.8962962962962963, "fit_seconds": 0.013097047805786133}
+{"dataset": "digits", "noise": 0.2, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 244, "method": "mlp", "test_acc": 0.8185185185185185, "fit_seconds": 0.7090885639190674}
+{"dataset": "digits", "noise": 0.2, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 244, "method": "filter", "test_acc": 0.9648148148148148, "fit_seconds": 0.05932283401489258, "n_dropped": 393, "n_dropped_noisy": 240}
+{"dataset": "digits", "noise": 0.4, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 489, "method": "logreg", "test_acc": 0.8388888888888889, "fit_seconds": 0.014182567596435547}
+{"dataset": "digits", "noise": 0.4, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 489, "method": "mlp", "test_acc": 0.674074074074074, "fit_seconds": 0.7141799926757812}
+{"dataset": "digits", "noise": 0.4, "seed": 0, "n_train": 1257, "n_test": 540, "n_noisy": 489, "method": "filter", "test_acc": 0.9277777777777778, "fit_seconds": 0.06098651885986328, "n_dropped": 619, "n_dropped_noisy": 479}
+{"dataset": "digits", "noise": 0.4, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 501, "method": "logreg", "test_acc": 0.8185185185185185, "fit_seconds": 0.013681173324584961}
+{"dataset": "digits", "noise": 0.4, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 501, "method": "mlp", "test_acc": 0.6259259259259259, "fit_seconds": 0.7108261585235596}
+{"dataset": "digits", "noise": 0.4, "seed": 1, "n_train": 1257, "n_test": 540, "n_noisy": 501, "method": "filter", "test_acc": 0.9148148148148149, "fit_seconds": 0.06306290626525879, "n_dropped": 634, "n_dropped_noisy": 484}
+{"dataset": "digits", "noise": 0.4, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 495, "method": "logreg", "test_acc": 0.8296296296296296, "fit_seconds": 0.014436006546020508}
+{"dataset": "digits", "noise": 0.4, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 495, "method": "mlp", "test_acc": 0.6055555555555555, "fit_seconds": 0.7105138301849365}
+{"dataset": "digits", "noise": 0.4, "seed": 2, "n_train": 1257, "n_test": 540, "n_noisy": 495, "method": "filter", "test_acc": 0.9481481481481482, "fit_seconds": 0.06709933280944824, "n_dropped": 643, "n_dropped_noisy": 487}
+{"dataset": "digits", "noise": 0.4, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 502, "method": "logreg", "test_acc": 0.8518518518518519, "fit_seconds": 0.013933420181274414}
+{"dataset": "digits", "noise": 0.4, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 502, "method": "mlp", "test_acc": 0.6703703703703704, "fit_seconds": 0.7180204391479492}
+{"dataset": "digits", "noise": 0.4, "seed": 3, "n_train": 1257, "n_test": 540, "n_noisy": 502, "method": "filter", "test_acc": 0.9074074074074074, "fit_seconds": 0.0652472972869873, "n_dropped": 644, "n_dropped_noisy": 485}
+{"dataset": "digits", "noise": 0.4, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 487, "method": "logreg", "test_acc": 0.8407407407407408, "fit_seconds": 0.013308048248291016}
+{"dataset": "digits", "noise": 0.4, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 487, "method": "mlp", "test_acc": 0.6685185185185185, "fit_seconds": 0.7220766544342041}
+{"dataset": "digits", "noise": 0.4, "seed": 4, "n_train": 1257, "n_test": 540, "n_noisy": 487, "method": "filter", "test_acc": 0.9333333333333333, "fit_seconds": 0.06034541130065918, "n_dropped": 631, "n_dropped_noisy": 478}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "logreg", "test_acc": 0.9590643274853801, "fit_seconds": 0.0023605823516845703}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "mlp", "test_acc": 0.9532163742690059, "fit_seconds": 0.12826824188232422}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "filter", "test_acc": 0.9590643274853801, "fit_seconds": 0.014751672744750977, "n_dropped": 5, "n_dropped_noisy": 0}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "logreg", "test_acc": 0.9590643274853801, "fit_seconds": 0.0024051666259765625}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "mlp", "test_acc": 0.9590643274853801, "fit_seconds": 0.13795828819274902}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "filter", "test_acc": 0.9590643274853801, "fit_seconds": 0.014571189880371094, "n_dropped": 8, "n_dropped_noisy": 0}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "logreg", "test_acc": 0.9649122807017544, "fit_seconds": 0.002439260482788086}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "mlp", "test_acc": 0.9766081871345029, "fit_seconds": 0.1379537582397461}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "filter", "test_acc": 0.9649122807017544, "fit_seconds": 0.014569759368896484, "n_dropped": 9, "n_dropped_noisy": 0}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "logreg", "test_acc": 0.9883040935672515, "fit_seconds": 0.0026051998138427734}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "mlp", "test_acc": 0.9824561403508771, "fit_seconds": 0.15904521942138672}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "filter", "test_acc": 0.9824561403508771, "fit_seconds": 0.014869928359985352, "n_dropped": 8, "n_dropped_noisy": 0}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "logreg", "test_acc": 0.9649122807017544, "fit_seconds": 0.0023348331451416016}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "mlp", "test_acc": 0.9649122807017544, "fit_seconds": 0.10501694679260254}
+{"dataset": "breast_cancer", "noise": 0.0, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 0, "method": "filter", "test_acc": 0.9649122807017544, "fit_seconds": 0.01420736312866211, "n_dropped": 7, "n_dropped_noisy": 0}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 81, "method": "logreg", "test_acc": 0.9298245614035088, "fit_seconds": 0.0042934417724609375}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 81, "method": "mlp", "test_acc": 0.8011695906432749, "fit_seconds": 0.25280070304870605}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 81, "method": "filter", "test_acc": 0.9590643274853801, "fit_seconds": 0.023377656936645508, "n_dropped": 96, "n_dropped_noisy": 78}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 83, "method": "logreg", "test_acc": 0.8947368421052632, "fit_seconds": 0.004057168960571289}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 83, "method": "mlp", "test_acc": 0.8362573099415205, "fit_seconds": 0.23326897621154785}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 83, "method": "filter", "test_acc": 0.9532163742690059, "fit_seconds": 0.02393817901611328, "n_dropped": 102, "n_dropped_noisy": 78}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 80, "method": "logreg", "test_acc": 0.8771929824561403, "fit_seconds": 0.004858732223510742}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 80, "method": "mlp", "test_acc": 0.8070175438596491, "fit_seconds": 0.2561039924621582}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 80, "method": "filter", "test_acc": 0.9415204678362573, "fit_seconds": 0.024183988571166992, "n_dropped": 102, "n_dropped_noisy": 74}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 73, "method": "logreg", "test_acc": 0.9707602339181286, "fit_seconds": 0.0045812129974365234}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 73, "method": "mlp", "test_acc": 0.8888888888888888, "fit_seconds": 0.25658750534057617}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 73, "method": "filter", "test_acc": 0.9590643274853801, "fit_seconds": 0.022753238677978516, "n_dropped": 88, "n_dropped_noisy": 65}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 65, "method": "logreg", "test_acc": 0.9415204678362573, "fit_seconds": 0.004385709762573242}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 65, "method": "mlp", "test_acc": 0.8771929824561403, "fit_seconds": 0.24752092361450195}
+{"dataset": "breast_cancer", "noise": 0.2, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 65, "method": "filter", "test_acc": 0.9473684210526315, "fit_seconds": 0.02384185791015625, "n_dropped": 76, "n_dropped_noisy": 59}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 142, "method": "logreg", "test_acc": 0.8654970760233918, "fit_seconds": 0.004927635192871094}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 142, "method": "mlp", "test_acc": 0.672514619883041, "fit_seconds": 0.2624974250793457}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 0, "n_train": 398, "n_test": 171, "n_noisy": 142, "method": "filter", "test_acc": 0.8947368421052632, "fit_seconds": 0.027649879455566406, "n_dropped": 159, "n_dropped_noisy": 114}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 168, "method": "logreg", "test_acc": 0.6900584795321637, "fit_seconds": 0.0053768157958984375}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 168, "method": "mlp", "test_acc": 0.5847953216374269, "fit_seconds": 0.2543511390686035}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 1, "n_train": 398, "n_test": 171, "n_noisy": 168, "method": "filter", "test_acc": 0.7485380116959064, "fit_seconds": 0.026716947555541992, "n_dropped": 187, "n_dropped_noisy": 118}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 166, "method": "logreg", "test_acc": 0.7134502923976608, "fit_seconds": 0.005208015441894531}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 166, "method": "mlp", "test_acc": 0.6081871345029239, "fit_seconds": 0.2544691562652588}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 2, "n_train": 398, "n_test": 171, "n_noisy": 166, "method": "filter", "test_acc": 0.7368421052631579, "fit_seconds": 0.02317357063293457, "n_dropped": 186, "n_dropped_noisy": 127}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 151, "method": "logreg", "test_acc": 0.8888888888888888, "fit_seconds": 0.0048236846923828125}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 151, "method": "mlp", "test_acc": 0.7017543859649122, "fit_seconds": 0.24959397315979004}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 3, "n_train": 398, "n_test": 171, "n_noisy": 151, "method": "filter", "test_acc": 0.9239766081871345, "fit_seconds": 0.026645183563232422, "n_dropped": 183, "n_dropped_noisy": 133}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 141, "method": "logreg", "test_acc": 0.8596491228070176, "fit_seconds": 0.005108833312988281}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 141, "method": "mlp", "test_acc": 0.7017543859649122, "fit_seconds": 0.26047515869140625}
+{"dataset": "breast_cancer", "noise": 0.4, "seed": 4, "n_train": 398, "n_test": 171, "n_noisy": 141, "method": "filter", "test_acc": 0.8947368421052632, "fit_seconds": 0.027059316635131836, "n_dropped": 171, "n_dropped_noisy": 112}

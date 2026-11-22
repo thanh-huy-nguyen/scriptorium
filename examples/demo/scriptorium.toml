@@ -1,0 +1,27 @@
+# Demo configuration: a 4-page workshop paper with two reviewers and one revision round.
+
+[paper]
+title = "Drop what the model disagrees with: out-of-fold filtering for label noise"
+authors = ["Demo Author"]
+affiliation = "Scriptorium example"
+venue = "a machine learning workshop (4-page short paper)"
+page_limit = 4
+template = "default"
+
+[models]
+default = "sonnet"
+outliner = "opus"
+reviewer = "sonnet"
+
+[run]
+review_rounds = 1
+reviewers = ["soundness", "clarity"]
+parallel = 4
+session_timeout_min = 45
+check_mode = "feedback"
+unset_api_key = false
+latex = ""
+python = ""
+
+[lock]
+ignore = []

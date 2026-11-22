@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scriptorium"
+version = "0.1.0"
+description = "A team of agents that writes a research paper from your repository; every number recomputes from the data and every citation is fetched."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Thanh-Huy Nguyen" }, { name = "Ulas Bagci" }]
+requires-python = ">=3.11"
+dependencies = ["paperanchor @ git+https://github.com/thanh-huy-nguyen/paperanchor"]
+keywords = ["latex", "papers", "research", "agents", "multi-agent", "claude-code", "reproducibility", "citations"]
+
+[project.optional-dependencies]
+figures = ["matplotlib", "numpy"]
+
+[project.scripts]
+scriptorium = "scriptorium.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/thanh-huy-nguyen/scriptorium"
+
+[tool.setuptools]
+packages = ["scriptorium"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+scriptorium = ["templates/*.md", "templates/default/*", "plugin/.claude-plugin/*.json", "plugin/agents/*.md",
+               "plugin/hooks/*.json", "plugin/scripts/*.py", "plugin/skills/*/*.md"]

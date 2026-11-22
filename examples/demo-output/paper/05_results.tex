@@ -1,0 +1,49 @@
+\section{Results}\label{sec:results}
+
+\begin{table}[t]
+  \centering
+  \small
+  \caption{Clean test accuracy (\%) of logistic regression and an untuned MLP trained on noisy labels and of out-of-fold filtering, mean $\pm$ sd over 5\src{n_seeds} seeds, for each dataset and nominal noise rate. The last column is the per-seed paired range of filter minus logistic regression. Best mean per row in bold; many differences are within one sd.}
+  \label{tab:main}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{llcccc}
+    \toprule
+    Data & Noise & LogReg & MLP & Filter & Filter $-$ LogReg \\
+    \midrule
+    Digits & Clean & 96.8\src{acc_dg_00_logreg_mean} $\pm$ 0.8\src{acc_dg_00_logreg_sd} & \textbf{97.3}\src{acc_dg_00_mlp_mean} $\pm$ 0.5\src{acc_dg_00_mlp_sd} & 96.6\src{acc_dg_00_filter_mean} $\pm$ 0.4\src{acc_dg_00_filter_sd} & $-1.3$\src{pdmin_dg_00} to 0.6\src{pdmax_dg_00} \\
+    Digits & 20\%\src{cfg_noise_low_pct} & 89.1\src{acc_dg_20_logreg_mean} $\pm$ 1.0\src{acc_dg_20_logreg_sd} & 82.4\src{acc_dg_20_mlp_mean} $\pm$ 1.6\src{acc_dg_20_mlp_sd} & \textbf{95.1}\src{acc_dg_20_filter_mean} $\pm$ 0.9\src{acc_dg_20_filter_sd} & 3.7\src{pdmin_dg_20} to 7.4\src{pdmax_dg_20} \\
+    Digits & 40\%\src{cfg_noise_high_pct} & 83.6\src{acc_dg_40_logreg_mean} $\pm$ 1.3\src{acc_dg_40_logreg_sd} & 64.9\src{acc_dg_40_mlp_mean} $\pm$ 3.1\src{acc_dg_40_mlp_sd} & \textbf{92.6}\src{acc_dg_40_filter_mean} $\pm$ 1.6\src{acc_dg_40_filter_sd} & 5.6\src{pdmin_dg_40} to 11.9\src{pdmax_dg_40} \\
+    \midrule
+    Breast c. & Clean & \textbf{96.7}\src{acc_bc_00_logreg_mean} $\pm$ 1.2\src{acc_bc_00_logreg_sd} & \textbf{96.7}\src{acc_bc_00_mlp_mean} $\pm$ 1.2\src{acc_bc_00_mlp_sd} & 96.6\src{acc_bc_00_filter_mean} $\pm$ 1.0\src{acc_bc_00_filter_sd} & $-0.6$\src{pdmin_bc_00} to 0.0\src{pdmax_bc_00} \\
+    Breast c. & 20\%\src{cfg_noise_low_pct} & 92.3\src{acc_bc_20_logreg_mean} $\pm$ 3.7\src{acc_bc_20_logreg_sd} & 84.2\src{acc_bc_20_mlp_mean} $\pm$ 4.0\src{acc_bc_20_mlp_sd} & \textbf{95.2}\src{acc_bc_20_filter_mean} $\pm$ 0.8\src{acc_bc_20_filter_sd} & $-1.2$\src{pdmin_bc_20} to 6.4\src{pdmax_bc_20} \\
+    Breast c. & 40\%\src{cfg_noise_high_pct} & 80.4\src{acc_bc_40_logreg_mean} $\pm$ 9.4\src{acc_bc_40_logreg_sd} & 65.4\src{acc_bc_40_mlp_mean} $\pm$ 5.4\src{acc_bc_40_mlp_sd} & \textbf{84.0}\src{acc_bc_40_filter_mean} $\pm$ 9.0\src{acc_bc_40_filter_sd} & 2.3\src{pdmin_bc_40} to 5.8\src{pdmax_bc_40} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Filtering regains accuracy on digits, less so on breast cancer}
+
+The filter's mean is above that of logistic regression on the same noisy labels in every noisy setting (Table~\ref{tab:main}). At 20\%\src{cfg_noise_low_pct} noise it wins back 78\%\src{recovery_dg_20} of the lost accuracy on digits and 66\%\src{recovery_bc_20} on breast cancer, and on digits at 40\%\src{cfg_noise_high_pct} noise it wins back 68\%\src{recovery_dg_40}.
+Paired per seed, the gain on digits ranges from 3.7\src{pdmin_dg_20} to 7.4\src{pdmax_dg_20} points at 20\%\src{cfg_noise_low_pct} noise and from 5.6\src{pdmin_dg_40} to 11.9\src{pdmax_dg_40} points at 40\%\src{cfg_noise_high_pct}, positive in all 5\src{n_seeds} seeds.
+On breast cancer at 20\%\src{cfg_noise_low_pct} noise it ranges from $-1.2$\src{pdmin_bc_20} to 6.4\src{pdmax_bc_20} points, positive in 4\src{wins_bc_20_filter_over_logreg} of 5\src{n_seeds} seeds, and the recovery of 66\%\src{recovery_bc_20} rests on a loss of only 4.4\src{loss_bc_20_logreg} points.
+
+Breast cancer at 40\%\src{cfg_noise_high_pct} noise is where the claim stops. The paired gain is 2.3\src{pdmin_bc_40} to 5.8\src{pdmax_bc_40} points, positive in all 5\src{n_seeds} seeds, but the mean recovery is only 22\%\src{recovery_bc_40}, the filter ends 12.7\src{gap_bc_40_filter_to_clean} points below clean accuracy, and its seed sd (9.0\src{acc_bc_40_filter_sd} points) exceeds its mean gain (3.6\src{diff_bc_40_filter_minus_logreg} points). With 5\src{n_seeds} seeds we cannot tell this gain from a modest one. This is consistent with the binary case of Sec.~\ref{sec:method}, where the true class is barely the majority label and the out-of-fold model is itself weak (80.4\%\src{acc_bc_40_logreg_mean} test accuracy). The small test and training sets are an alternative explanation that we did not test.
+
+\subsection{Most dropped samples are truly mislabeled}
+
+Precision of the drops is 65\%\src{precision_dg_20_mean} on digits at 20\%\src{cfg_noise_low_pct} noise, 76\%\src{precision_dg_40_mean} on digits at 40\%\src{cfg_noise_high_pct}, 76\%\src{precision_bc_20_mean} on breast cancer at 20\%\src{cfg_noise_low_pct} and 68\%\src{precision_bc_40_mean} at 40\%\src{cfg_noise_high_pct}, and at least 61\%\src{precision_dg_20_min} in every seed. Recall is 98\%\src{recall_dg_20_mean} on digits at both noise rates, but falls to 79\%\src{recall_bc_40_mean} on breast cancer at 40\%\src{cfg_noise_high_pct} (Fig.~\ref{fig:drops}). So roughly a quarter to a third of drops are clean samples, and the filter removes a share of the training set well above the flip rate: 30\%\src{droppedshare_dg_20} at 20\%\src{cfg_noise_low_pct} noise and 50\%\src{droppedshare_dg_40} at 40\%\src{cfg_noise_high_pct} on digits, against realized flip rates of 19.7\%\src{noisy_frac_dg_20_mean} and 39.4\%\src{noisy_frac_dg_40_mean}. The refit therefore sees fewer clean samples, which could hurt small or hard classes; we did not measure per-class drop rates. The lower recall on breast cancer at 40\%\src{cfg_noise_high_pct} is consistent with the weaker recovery there, but we did not test why.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/drops.pdf}
+  \caption{Share of the training set dropped by the out-of-fold filter, split by whether the dropped label was truly flipped. Each bar stacks dropped flipped samples (purple) under dropped clean samples (gray) for clean labels and for the low and high nominal noise rates of Table~\ref{tab:main}, on digits and breast cancer; the black tick marks the actual share of flipped labels, so any gap between the top of the purple segment and the tick is flipped labels the filter missed. Numbers above bars give the precision of the drops (flipped / dropped). Bars are means over 5\src{n_seeds} seeds; error bars are standard deviations of the total dropped share only, not of the flipped and clean parts. Precision is undefined with clean labels, where every drop is a clean sample.}
+  \label{fig:drops}
+\end{figure}
+
+\subsection{An untuned MLP fits the noise instead of removing it}
+
+With clean labels the MLP matches or slightly beats logistic regression, but under noise it collapses, consistent with networks memorizing wrong labels \citep{zhang2017understanding}. The filter beats the MLP in every seed of every noisy setting (5\src{wins_dg_20_filter_over_mlp} of 5\src{n_seeds} seeds in each), by 11.0\src{diff_bc_20_filter_minus_mlp} to 27.7\src{diff_dg_40_filter_minus_mlp} points in mean (Table~\ref{tab:main}, Fig.~\ref{fig:teaser}). This is the weaker comparison: the MLP uses default settings without early stopping or extra regularization, and we did not test logistic regression with a tuned $C$ or the MLP trained on filtered data. So the data do not show that filtering beats a tuned model or that it beats regularization. With clean labels the filter is $-0.74$\src{diff_dg_00_filter_minus_mlp} points relative to the MLP on digits.
+
+\subsection{On clean labels we observe a small cost}
+
+On clean labels the mean accuracy changes by $-0.22$\src{clean_cost_dg} points on digits and $-0.12$\src{clean_cost_bc} points on breast cancer, within the seed sd (Table~\ref{tab:main}). Paired per seed, the change ranges from $-1.3$\src{pdmin_dg_00} to 0.6\src{pdmax_dg_00} points on digits and from $-0.6$\src{pdmin_bc_00} to 0.0\src{pdmax_bc_00} points on breast cancer. The filter is below logistic regression in 2\src{clean_worse_seeds_dg} and 1\src{clean_worse_seeds_bc} of 5\src{n_seeds} seeds. It still discards 3.5\%\src{dropped_frac_dg_00_mean} and 1.9\%\src{dropped_frac_bc_00_mean} of the clean training set. Five seeds cannot distinguish a small cost from none; the worst-seed change is $-1.3$\src{pdmin_dg_00} points on digits.

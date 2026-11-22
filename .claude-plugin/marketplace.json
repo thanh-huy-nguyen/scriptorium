@@ -1,0 +1,15 @@
+{
+  "name": "scriptorium",
+  "owner": {"name": "Thanh-Huy Nguyen"},
+  "metadata": {"description": "Scriptorium: a team of agents that writes a research paper from your repository, with every number and citation checked."},
+  "plugins": [
+    {
+      "name": "scriptorium",
+      "source": "./scriptorium/plugin",
+      "description": "A team of agents that writes a research paper from your repository. Every number recomputes from the data (PaperAnchor) and every citation is fetched from DBLP, arXiv or Crossref.",
+      "version": "0.1.0",
+      "license": "MIT",
+      "keywords": ["latex", "papers", "research", "multi-agent", "writing"]
+    }
+  ]
+}

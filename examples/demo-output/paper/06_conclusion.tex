@@ -1,0 +1,11 @@
+\section{Discussion and Limitations}\label{sec:conclusion}
+
+In our setting, a linear model on small data with symmetric label noise, removing the samples the model disagrees with out of fold gives a clear gain over noisy logistic regression on digits and at 20\%\src{cfg_noise_low_pct} noise on breast cancer, and a small, uncertain gain on breast cancer at 40\%\src{cfg_noise_high_pct}. The filter's explicit setting is the number of folds $K$, its implicit one is $C$, and it costs about $K+1$ base fits.
+
+The study has limits.
+We use two small scikit-learn datasets, synthetic symmetric noise and 5\src{n_seeds} seeds that vary the split and the noise together; class-dependent and real noise are untested, and the symmetric case is the one that favors the filter's majority argument.
+The baselines are weak, and the comparison with the MLP is secondary. We do not compare with logistic regression at a tuned $C$, with a regularized MLP, with an MLP trained on filtered data, with confident learning \citep{northcutt2021confident}, with Wilson editing or with deep sample-selection methods such as co-teaching \citep{han2018coteaching}. Whether stronger L2 regularization closes much of the gap on digits is open.
+We did not vary $K$ or $C$, and we did not measure per-class drop rates.
+Roughly a quarter to a third of drops are clean samples, so thresholds or iterated filtering are worth testing.
+Variance is high on breast cancer at 40\%\src{cfg_noise_high_pct} noise, where the filter's sd is about 9\src{acc_bc_40_filter_sd} points.
+We make no claim that the filter scales to deep networks or large data.

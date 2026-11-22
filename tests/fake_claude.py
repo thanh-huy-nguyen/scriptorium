@@ -1,0 +1,103 @@
+#!/usr/bin/env python3
+"""Stands in for `claude -p` in tests: each agent does a fixed, minimal version of its job, with no model calls."""
+import json
+import os
+import re
+import statistics
+import sys
+from pathlib import Path
+
+from scriptorium import cite
+
+args = sys.argv[1:]
+agent = args[args.index("--agent") + 1].split(":", 1)[1]
+prompt = sys.stdin.read()
+root = Path.cwd()
+work, paper = root / ".scriptorium", root / "paper"
+
+
+def acc(method):
+    rows = [json.loads(l) for l in (root / "results" / "runs.jsonl").read_text().splitlines() if l.strip()]
+    return 100 * statistics.mean(r["acc"] for r in rows if r["method"] == method)
+
+
+if agent == "scout":
+    (work / "inventory.md").write_text("# Inventory\n" + "results/runs.jsonl holds one run per line. " * 30)
+    if os.environ.get("FAKE_TAMPER"):
+        (root / "results" / "runs.jsonl").write_text((root / "results" / "runs.jsonl").read_text() + "\n")
+elif agent == "evidence":
+    (paper / "sources.py").write_text('''import statistics
+
+@source("acc_ours", means="accuracy (%) of ours, mean over runs")
+def acc_ours():
+    return 100 * statistics.mean(r["acc"] for r in load("results/runs.jsonl") if r["method"] == "ours")
+
+@source("acc_base", means="accuracy (%) of the baseline, mean over runs")
+def acc_base():
+    return 100 * statistics.mean(r["acc"] for r in load("results/runs.jsonl") if r["method"] == "base")
+
+@source("n_runs", means="number of runs per method")
+def n_runs():
+    return len([r for r in load("results/runs.jsonl") if r["method"] == "ours"])
+''')
+    (work / "evidence_notes.md").write_text("Supported: ours beats base.\n")
+elif agent == "outliner":
+    sec = lambda i, f, t, w, nums: {"id": i, "file": f, "title": t, "wave": w, "words": 200, "goal": "g",
+                                    "points": ["p"], "numbers": nums, "figures": [], "tables": [], "cites": ["t"]}
+    o = {"title": "A Test Paper", "storyline": "Problem, idea, why it works, what it changes, in enough words here.",
+         "sections": [sec("abstract", "abstract", "Abstract", 2, []), sec("intro", "01_intro", "Introduction", 2, []),
+                      sec("method", "02_method", "Method", 1, []),
+                      sec("results", "03_results", "Results", 1, ["acc_ours", "acc_base"])],
+         "figures": [{"id": "fig_acc", "kind": "plot", "section": "results", "message": "m", "data": [], "spec": "s",
+                      "caption": "c"}],
+         "related": [{"id": "t", "topic": "t", "why": "w", "queries": ["q"]}]}
+    o["sections"][3]["figures"] = ["fig_acc"]
+    (work / "outline.json").write_text(json.dumps(o))
+elif agent == "librarian":
+    prov = {}
+    bib = []
+    for i in range(6):
+        e = f"@article{{ref{i}a,\n  title = {{Paper {i}}},\n  author = {{Doe, Jane}},\n  year = {{2020}}\n}}"
+        bib.append(e)
+        prov[f"ref{i}a"] = {"id": f"doi:10.0/{i}", "title": f"Paper {i}", "year": "2020", "hash": cite._norm(e)}
+    (paper / "refs.bib").write_text("\n\n".join(bib) + "\n")
+    (work / "citations.json").write_text(json.dumps(prov))
+    (work / "related.md").write_text("ref0a ... ref5a\n")
+elif agent == "illustrator":
+    fid = re.search(r"make figure `([a-z0-9_]+)`", prompt).group(1)
+    (paper / "figures" / f"{fid}.py").write_text(
+        "from pathlib import Path\n"
+        f"Path('paper/figures/{fid}.pdf').write_bytes(b'%PDF-1.4 fake')\n"
+        f"Path('paper/figures/{fid}.png').write_bytes(b'png')\n")
+    os.system(f"{sys.executable} paper/figures/{fid}.py")
+    (work / "figures" / f"{fid}.md").write_text("caption\n")
+elif agent == "writer":
+    f = re.search(r"Task: write paper/([a-z0-9_]+)\.tex", prompt).group(1)
+    words = " ".join(["Text"] * 50)
+    if f == "abstract":
+        body = f"We study a method. {words}\n"
+    else:
+        body = f"\\section{{{f}}}\\label{{sec:{f}}}\n{words} \\citep{{ref0a,ref1a,ref2a,ref3a,ref4a,ref5a}}.\n"
+        if f == "03_results":
+            body += (f"Ours reaches {acc('ours'):.1f}\\%\\src{{acc_ours}} against {acc('base'):.1f}\\%\\src{{acc_base}}"
+                     ".\n\\begin{figure}[t]\\includegraphics{figures/fig_acc.pdf}\\caption{c}\\label{fig:fig_acc}"
+                     "\\end{figure}\n")
+            if os.environ.get("FAKE_BAD_NUMBER"):
+                body = body.replace(f"{acc('ours'):.1f}", "99.9")
+    (paper / f"{f}.tex").write_text(body)
+elif agent == "reviewer":
+    out = re.search(r"\.scriptorium/reviews/(\S+\.json)", prompt).group(1)
+    revised = "We revised this." in (paper / "03_results.tex").read_text()
+    score = 6 + (1 if revised else 0) * (-2 if os.environ.get("FAKE_REVISE_WORSE") else 1)
+    (work / "reviews" / out).write_text(json.dumps({"summary": "s", "strengths": [], "questions": [],
+                                                    "weaknesses": [{"issue": "i", "where": "w", "severity": "major",
+                                                                    "suggestion": "x"}], "overall": score}))
+elif agent == "reviser":
+    p = paper / "03_results.tex"
+    p.write_text(p.read_text() + "We revised this.\n")
+    n = re.search(r"response(\d+)\.md", prompt).group(1)
+    (work / "reviews" / f"response{n}.md").write_text("- changed\n")
+
+print(json.dumps({"type": "result", "is_error": False, "num_turns": 2, "result": f"{agent} done", "session_id": "t",
+                  "usage": {"input_tokens": 10, "output_tokens": 5, "cache_read_input_tokens": 100,
+                            "cache_creation_input_tokens": 0}}))

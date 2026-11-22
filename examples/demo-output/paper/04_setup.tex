@@ -1,0 +1,17 @@
+\section{Experimental Setup}\label{sec:setup}
+
+\paragraph{Data and noise.}
+We use two scikit-learn datasets: digits (1,797\src{n_total_digits} samples, multi-class handwritten digits) and breast cancer (569\src{n_total_bc} samples, binary diagnosis). A stratified split holds out 30\%\src{cfg_test_fraction_pct} for testing, which gives 1,257\src{n_train_digits}/540\src{n_test_digits} train/test samples on digits and 398\src{n_train_bc}/171\src{n_test_bc} on breast cancer. Noise is symmetric and applied to training labels only: each label is flipped independently, with probability equal to the nominal rate, to a uniformly random other class. Test labels stay clean. We use \src{cfg_n_noise_rates}\,nominal rates: 0, 20\%\src{cfg_noise_low_pct} and 40\%\src{cfg_noise_high_pct}. The realized rates are close to nominal: 19.7\%\src{noisy_frac_dg_20_mean} and 39.4\%\src{noisy_frac_dg_40_mean} on digits, 19.2\%\src{noisy_frac_bc_20_mean} and 38.6\%\src{noisy_frac_bc_40_mean} on breast cancer.
+
+\paragraph{Baselines.}
+Logistic regression is trained on the noisy labels with L2 regularization (C\,=\,1\src{cfg_logreg_C}, scikit-learn defaults otherwise); it is also the filter's base model, so the out-of-fold models and the refit use the same $C$. The second baseline is an MLP with one hidden layer of 64\src{cfg_mlp_hidden} units and at most 500\src{cfg_mlp_max_iter} iterations, otherwise with scikit-learn defaults and no early stopping. All models standardize features. The filter uses K\,=\,5\src{cfg_folds} folds.
+
+\paragraph{Protocol.}
+Each setting runs with 5\src{n_seeds} seeds; a seed changes the split, the noise draw and the initialization together. This gives 90\src{n_runs} runs in total. We report no confidence intervals or significance tests.
+
+\paragraph{Metrics.}
+We report the mean and sample standard deviation over seeds of clean test accuracy, and per-seed paired differences (filter minus logistic regression on the same split and noisy labels) as ranges. Recovery is the share of the accuracy that noise costs logistic regression that the filter wins back, computed from 5-seed means with clean-label logistic regression as the reference for each dataset:
+\begin{equation}
+  \text{recovery} = \frac{\text{filter} - \text{noisy}}{\text{clean} - \text{noisy}}.
+\end{equation}
+It is unstable when the loss is small, as on breast cancer at 20\%\src{cfg_noise_low_pct} noise (4.4\src{loss_bc_20_logreg} points), so we read it together with the paired ranges.
