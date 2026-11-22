@@ -260,7 +260,12 @@ def cmd_cite(a) -> None:
 
 def cmd_figure(a) -> None:
     cfg = need_root()
-    r = subprocess.run([cfg.py(), a.script], cwd=cfg.root, capture_output=True, text=True)
+    from .sealing import jail_env
+    script = (cfg.root / a.script).resolve()
+    if not (script.is_relative_to(cfg.paper) and script.suffix == ".py"):
+        sys.exit(f"scriptorium figure: {a.script} is not a .py file under paper/")
+    r = subprocess.run([cfg.py(), str(script)], cwd=cfg.root, capture_output=True, text=True, env=jail_env(cfg),
+                       timeout=900)
     sys.stdout.write(r.stdout[-3000:])
     sys.stderr.write(r.stderr[-3000:])
     stem = Path(a.script).with_suffix("")

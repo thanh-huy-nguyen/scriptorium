@@ -39,11 +39,13 @@ class Build:
 
 
 def run_figures(cfg: Config) -> list[str]:
+    from .sealing import jail_env
     errors = []
     for script in sorted((cfg.paper / "figures").glob("*.py")):
         if script.name.startswith("_"):
             continue
-        r = subprocess.run([cfg.py(), str(script)], cwd=cfg.root, capture_output=True, text=True, timeout=900)
+        r = subprocess.run([cfg.py(), str(script)], cwd=cfg.root, capture_output=True, text=True, timeout=900,
+                           env=jail_env(cfg))
         if r.returncode != 0:
             tail = (r.stderr or r.stdout).strip().splitlines()[-1:] or ["no output"]
             errors.append(f"{script.name}: {tail[0]}")

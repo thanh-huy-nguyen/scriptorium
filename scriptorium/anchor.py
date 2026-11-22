@@ -35,9 +35,11 @@ def package_path() -> str:
 
 
 def env(cfg: Config) -> dict[str, str]:
+    """Recipes are agent-written code, so they run inside the jail (see sealing.py)."""
+    from .sealing import jail_env
     e = os.environ.copy()
     e["PYTHONPATH"] = os.pathsep.join(p for p in [package_path(), e.get("PYTHONPATH", "")] if p)
-    return e
+    return jail_env(cfg, e)
 
 
 def cli(cfg: Config, *args: str, capture: bool = True) -> subprocess.CompletedProcess:

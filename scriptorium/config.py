@@ -65,6 +65,9 @@ class Config:
     latex: str = ""
     python: str = ""
     lock_ignore: list[str] = field(default_factory=list)
+    limit_max_wait_min: float = 360       # longest single wait for a usage-limit reset
+    limit_max_retries: int = 12           # usage-limit retries per session before it counts as failed
+    judge_parallel: int = 6               # judge sessions at the same time
 
     def model(self, role: str) -> str:
         return self.models.get(role) or self.models.get("default") or "sonnet"
@@ -120,4 +123,7 @@ def load(root: Path) -> Config:
     cfg.session_timeout_min = float(r.get("session_timeout_min", cfg.session_timeout_min))
     cfg.unset_api_key = bool(r.get("unset_api_key", False)) or os.environ.get("SCRIPTORIUM_UNSET_API_KEY") == "1"
     cfg.lock_ignore = list(lk.get("ignore", []))
+    cfg.limit_max_wait_min = float(r.get("limit_max_wait_min", cfg.limit_max_wait_min))
+    cfg.limit_max_retries = int(r.get("limit_max_retries", cfg.limit_max_retries))
+    cfg.judge_parallel = int(r.get("judge_parallel", cfg.judge_parallel))
     return cfg

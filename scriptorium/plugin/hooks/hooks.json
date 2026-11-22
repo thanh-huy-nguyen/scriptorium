@@ -1,14 +1,66 @@
 {
   "description": "Scriptorium: PaperAnchor's number check on every edit to paper/*.tex, and a guard that keeps pipeline agents' edits inside paper/ and .scriptorium/",
   "hooks": {
-    "SessionStart": [{"hooks": [
-      {"type": "command", "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor start", "timeout": 300}]}],
-    "PreToolUse": [{"matcher": "Edit|MultiEdit|Write|NotebookEdit|Bash", "hooks": [
-      {"type": "command", "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" guard pre", "timeout": 30},
-      {"type": "command", "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor pre", "timeout": 900}]}],
-    "PostToolUse": [{"matcher": "Edit|MultiEdit|Write|Bash", "hooks": [
-      {"type": "command", "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor post", "timeout": 900}]}],
-    "Stop": [{"hooks": [
-      {"type": "command", "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor stop", "timeout": 900}]}]
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor start",
+            "timeout": 300
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" guard pre",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor pre",
+            "timeout": 900
+          }
+        ]
+      },
+      {
+        "matcher": "Read|Grep|Glob|NotebookRead|LS",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" guard pre",
+            "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor post",
+            "timeout": 900
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor stop",
+            "timeout": 900
+          }
+        ]
+      }
+    ]
   }
 }
