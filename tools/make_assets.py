@@ -81,7 +81,7 @@ def paper_card(ax, x, y, w, h, fs=1.0):
             va="center")
     ax.text(x + w - 0.24, y + h - 1.30, "✓ recomputes", fontfamily="DejaVu Sans", fontsize=9 * fs, color=TEAL, zorder=6,
             va="center", ha="right", fontweight="semibold")
-    t(y + h - 1.62, "against 89.1% for the MLP [12].", fontsize=10.5 * fs)
+    t(y + h - 1.62, "vs. 83.6% for logistic regression [5].", fontsize=10.5 * fs)
     ax.text(x + w - 0.24, y + h - 1.62, "✓ cited", fontfamily="DejaVu Sans", fontsize=9 * fs, color=TEAL, zorder=6,
             va="center", ha="right", fontweight="semibold")
     for i, ww in enumerate([0.86]):
@@ -104,8 +104,8 @@ def banner(w=10.0, h=3.2, dpi=200, name="banner.png", tagline=True):
         ax.add_patch(Circle((0.66, yy), 0.05, fc=BRASS, ec="none", zorder=4))
         ax.text(0.82, yy, s, fontfamily=SERIF, fontsize=11.5, color=LILAC, va="center")
     # the team, as a row of numbered seals feeding the paper card
-    names = ["scout", "evidence", "outline", "library", "figures", "writers", "editor", "review"]
-    x0, y0, dx = 6.55, h - 0.38, 0.36
+    names = ["scout", "evidence", "outline", "library", "figures", "writers", "editor", "review", "revise"]
+    x0, y0, dx = 6.37, h - 0.38, 0.34
     for i, nm in enumerate(names):
         cx = x0 + i * dx
         ax.add_patch(Circle((cx, y0), 0.1, fc=PURPLE if i < 7 else OXBLOOD, ec=BRASS, lw=0.9, zorder=5))
