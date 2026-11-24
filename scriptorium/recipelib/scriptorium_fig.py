@@ -217,7 +217,7 @@ def _layout(fig) -> dict:
     def box(bb):
         return [round(bb.x0 / dpi, 4), round(bb.y0 / dpi, 4), round(bb.x1 / dpi, 4), round(bb.y1 / dpi, 4)]
 
-    texts, marks, series, legends, axes = [], [], [], [], []
+    texts, marks, series, legends, axes, rects = [], [], [], [], [], []
     hidden = set()                 # tick labels matplotlib does not draw (ticks outside the view limits)
     for ax in fig.axes:
         for axis in (ax.xaxis, ax.yaxis):
@@ -278,6 +278,7 @@ def _layout(fig) -> dict:
                 bb = patch.get_window_extent(r)
                 if bb.width > 0 and bb.height > 0:
                     marks.append([round((bb.x0 + bb.x1) / 2 / dpi, 4), round(bb.y1 / dpi, 4)])
+                    rects.append(box(bb))           # the whole bar, so a legend over its body is caught
                     series.append({"label": patch.get_label(), "color": _hex(patch.get_facecolor())})
             except Exception:  # noqa: BLE001
                 continue
@@ -288,7 +289,7 @@ def _layout(fig) -> dict:
     return {"size": [float(W), float(H)], "width": getattr(fig, "_scriptorium_width", "custom"),
             "kind": getattr(fig, "_scriptorium_kind", "plot"), "issues": getattr(fig, "_scriptorium_issues", []),
             "texts": texts,
-            "axes": axes, "legends": legends, "marks": marks, "series": series, "theme": _state["theme"],
+            "axes": axes, "legends": legends, "marks": marks, "rects": rects, "series": series, "theme": _state["theme"],
             "palette": palette(), "recipes": sorted(set(_state.get("recipes", [])))}
 
 

@@ -101,15 +101,19 @@ def lint_layout(fid: str, lay: dict, placed: str | None, ours_labels: list[str])
             out.append(f"{fid}: text '{t['text'][:30]}' in {t.get('color')} has contrast below 4.5:1 on {bg}")
     for i in range(len(texts)):
         for j in range(i + 1, len(texts)):
-            if _overlap(texts[i]["box"], texts[j]["box"]) > 0.15:
+            a, b = texts[i]["box"], texts[j]["box"]
+            same_line = abs(a[1] - b[1]) < 0.03 and abs(a[3] - b[3]) < 0.03
+            wide = min(a[2], b[2]) - max(a[0], b[0])
+            if (same_line and wide > 0.005) or _overlap(a, b) > 0.15:   # side by side: any overlap shows
                 out.append(f"{fid}: text '{texts[i]['text'][:25]}' overlaps '{texts[j]['text'][:25]}'")
     out += [f"{fid}: {i}" for i in lay.get("issues") or []]
     if lay.get("kind") == "diagram":
         return sorted(set(out))
     for lg in lay.get("legends", []):
         inside = sum(lg[0] <= x <= lg[2] and lg[1] <= y <= lg[3] for x, y in lay.get("marks", []))
-        if inside:
-            out.append(f"{fid}: the legend covers {inside} data mark(s); move it off the data")
+        bars = sum(_overlap(lg, r) > 0.02 for r in lay.get("rects", []))
+        if inside or bars:
+            out.append(f"{fid}: the legend covers {inside + bars} data mark(s) or bar(s); move it off the data")
     pal = lay.get("palette") or {}
     cols = {}
     for s in lay.get("series", []):

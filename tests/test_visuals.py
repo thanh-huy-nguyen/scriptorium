@@ -95,6 +95,18 @@ class VisualsTest(unittest.TestCase):
         self.assertIn("reserved for our method", wrong)
         self.assertIn("does not exist", res["missing"][0])
 
+    def test_side_by_side_labels_that_touch_are_flagged_but_stacked_rows_are_not(self):
+        (self.work / "numbers.json").write_text(json.dumps({"a": {"value": 1.0}}))
+        self.draw("ticks", "import scriptorium_fig as sf\nsf.use()\nfig, ax = sf.figure(1.6)\n"
+                           "ax.bar([0, 0.25], [sf.recipe('a'), 1], color=sf.color('B'))\n"
+                           "ax.set_xticks([0, 0.25], ['Citation auditor', 'Claim auditor'])\nsf.save(fig, 'ticks')\n")
+        self.draw("rows", "import scriptorium_fig as sf\nsf.use()\nfig, ax = sf.figure(3.0, aspect=0.9)\n"
+                          "ax.barh(range(20), [sf.recipe('a')] * 20, color=sf.color('B'))\n"
+                          "ax.set_yticks(range(20), [f'stage number {i}' for i in range(20)])\nsf.save(fig, 'rows')\n")
+        res = figlint.lint(self.cfg, [{"id": "ticks", "kind": "plot"}, {"id": "rows", "kind": "plot"}])
+        self.assertTrue(any("overlaps" in x for x in res["ticks"]), res["ticks"])
+        self.assertFalse(any("overlaps" in x for x in res["rows"]), res["rows"])
+
     def test_clean_diagram_passes_lint(self):
         self.draw("d", "import scriptorium_diagram as sd\nd = sd.canvas('full', height=1.6)\n"
                        "p = d.panel(0.1, 0.1, 3.0, 1.4, 'Annotate a case', step=1)\n"
