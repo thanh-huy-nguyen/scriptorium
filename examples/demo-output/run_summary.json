@@ -1,12 +1,43 @@
 {
- "tagged": 182,
- "citations": 9,
- "sessions": 22,
- "output_tokens": 141825,
- "pages": 4,
- "score_first": 4.5,
- "score_last": 4.5,
+ "tagged": 221,
+ "recipes": 154,
+ "citations": 17,
+ "sessions": 76,
+ "output_tokens": 485759,
+ "pages": 5,
+ "main_pages": 4,
+ "scores": {
+  "review0": 4.5,
+  "review1": 5.0
+ },
  "decisions": {
-  "revise1": "kept: mean score 4.50 -> 4.50"
- }
+  "revise1": "kept: mean score 4.50 -> 5.00"
+ },
+ "agents": [
+  "architect",
+  "auditor",
+  "cartographer",
+  "chair",
+  "cite_auditor",
+  "diagrammer",
+  "editor",
+  "evidence",
+  "experimentalist",
+  "figure_critic",
+  "figure_planner",
+  "librarian",
+  "line_editor",
+  "outliner",
+  "plotter",
+  "reader",
+  "reviewer",
+  "reviser",
+  "scout",
+  "searcher",
+  "statistician",
+  "tablesetter",
+  "terminologist",
+  "typesetter",
+  "writer"
+ ]
 }

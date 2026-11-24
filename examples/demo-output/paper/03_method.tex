@@ -1,31 +1,16 @@
-\section{Out-of-Fold Filtering}\label{sec:method}
+\section{Out-of-fold filtering for label noise}\label{sec:method}
 
-\paragraph{Setting.}
-We observe a training set $\{(x_i,\tilde y_i)\}_{i=1}^n$, where some labels $\tilde y_i$ are flipped relative to the true class.
-The base learner $f$ is feature standardization followed by L2-regularized logistic regression.
-We split the data into $K$ stratified, shuffled folds.
-The out-of-fold prediction $\hat y_i$ is the prediction for $x_i$ of a copy of $f$ trained on the $K-1$ folds that exclude $i$.
+We are given $n$ training samples with standardized features $x_i$ and observed labels $\tilde{y}_i$, a share of which are flipped. The classifier $f$ is logistic regression with inverse L2 strength $C$ set to 1\src{logreg_c}. The out-of-fold filter maps this noisy training set to a refit copy of $f$ (Fig.~\ref{fig:method}).
 
-\paragraph{The filter.}
-We keep the samples whose given label agrees with the out-of-fold prediction,
-\begin{equation}
-  S = \{\, i : \hat y_i = \tilde y_i \,\},
-\end{equation}
-refit $f$ on $S$ alone, with the same standardization and the same regularization strength $C$, and predict with the refitted model.
-The filter runs once.
-It uses no confidence threshold, no clean validation set and no noise-rate estimate.
-The number of folds is its explicit setting, and we use $K=$ 5\src{cfg_folds} throughout.
-The strength $C$ is a second, implicit setting, because it controls how strongly the out-of-fold models fit noise; the out-of-fold models and the refit both use $C=1$\src{cfg_logreg_C}. We did not vary $K$ or $C$, so the filter is not setting-free and its sensitivity to both is untested.
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/method.pdf}
+  \caption{Out-of-fold filtering in four steps. Colors are classes, the bar on a tile is the given label $\tilde{y}_i$, the dot is the out-of-fold predicted label $\hat{y}_i$, a corner flag marks a flipped label, and a cross marks a dropped sample. (1) Labels contain flips. (2) Fit with $K$-fold cross-validation ($K=5$\src{filter_folds}): train on four folds, predict the fifth. (3) Drop samples whose dot differs from the bar; one flip goes unnoticed and one clean sample is dropped. (4) Refit on the kept set $S$. The tile grid is illustrative.}
+  \label{fig:method}
+\end{figure}
 
-\paragraph{Why disagreement singles out flipped labels (intuition, not a derivation).}
-The model that produces $\hat y_i$ never saw $(x_i,\tilde y_i)$, so it cannot memorize a flipped label.
-The heuristic needs the true class to remain the most common label among samples like $x_i$, and a regularized linear model fit to many such samples approximates that majority rather than individual labels.
-With $k$ classes and flip rate $\epsilon$, a sample keeps its true label with probability $1-\epsilon$ and each other label has probability $\epsilon/(k-1)$, so the true class stays ahead only while $\epsilon<(k-1)/k$.
-That bound is far above our noise rates for digits but equals one half for any binary problem, so at 40\%\src{cfg_noise_high_pct} noise on a binary problem the margin is thin.
-The out-of-fold model is also trained on noisy labels, so it is only as good as noisy logistic regression (83.6\%\src{acc_dg_40_logreg_mean} on digits and 80.4\%\src{acc_bc_40_logreg_mean} on breast cancer test accuracy at 40\%\src{cfg_noise_high_pct} noise).
-Where the margin is wide, a low-capacity regularized linear model follows the majority, so a flipped sample tends to disagree with its out-of-fold prediction and is dropped.
-Clean samples are also dropped when they lie near the decision boundary or are atypical.
-This is the cost of the filter, and Sec.~\ref{sec:results} measures it.
+The rule has four steps. We split the training set into 5\src{filter_folds} stratified folds ($K$). For each sample $i$, we compute the out-of-fold prediction $\hat{y}_i$ with a model fit on the other $K-1$ folds. We keep the set $S = \{\, i : \hat{y}_i = \tilde{y}_i \,\}$ and drop the rest. We then refit $f$ on $S$ and use it at test time.
 
-\paragraph{Compute.}
-The filter needs $K$ fits for the out-of-fold predictions and one refit, so about $K+1$ fits of the base model.
+Out-of-fold prediction is what makes the disagreement informative. Most labels are correct, so the other folds define a decision boundary that follows the true classes. A flipped label lies on the wrong side of that boundary, and a model that never saw the sample tends to predict its true class. A model fit on the sample itself could bend toward the flipped label and agree with it, which hides the flip.
+
+The out-of-fold filter uses no clean validation set, no estimate of the noise rate, and no confidence threshold. Besides the classifier's own $C$, the only setting is $K$. The cost is $K+1$ fits of a linear model.

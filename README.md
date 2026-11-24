@@ -176,29 +176,34 @@ regression with out-of-fold label filtering, under 0%, 20% and 40% label noise o
   <a href="examples/demo-output/paper.pdf"><img src="assets/example_pages.png" width="100%" alt="The first three pages of the paper Scriptorium wrote from the demo study"></a>
 </p>
 
-Scriptorium 0.1 wrote [this 4-page paper](examples/demo-output/paper.pdf) with no human edits to the text: one full pass
-of 22 agent sessions and about 142k output tokens (Sonnet writers, an Opus outliner). We reran the stages from the
-editor on once more after adding the American-spelling check, and the report in the folder counts both passes. Everything the team produced is in
-[`examples/demo-output`](examples/demo-output): the LaTeX, the 127 recipes in `paper/sources.py`, the figure scripts,
-the outline, the evidence notes, both rounds of reviews and the reviser's response.
+Scriptorium wrote [this 4-page paper](examples/demo-output/paper.pdf) with no human edits to the text, using the
+`standard` preset (Sonnet agents, an Opus outliner). All 25 agents took part. Everything they produced is in
+[`examples/demo-output`](examples/demo-output): the LaTeX, the recipes, the figure scripts and table specs, the setup
+facts, the statistical tests, the claim ledger, the literature cards, both audits, the figure critiques, the reviews,
+and the [HTML report](examples/demo-output/notes/report.html).
 
 | What the final checks found | |
 |:--|:--|
-| Numbers in the text | 182 tagged, all recompute from `results/runs.jsonl` |
-| Citations | 9, all fetched (DOI, arXiv, OpenAlex); none typed |
-| Build | 4 pages, no undefined references |
-| Prose lint | no flags |
+| Numbers in the text | 221 tagged, from 154 recipes, all recompute from `results/runs.jsonl` |
+| Citations | 17, all fetched; every citing sentence checked against the cited abstract |
+| Build | 4 pages of main text, no undefined references, no overfull lines |
+| Reviews | 4.5 before the revision, 5.0 after; the revision was kept |
+| Cost | 76 agent sessions, about 486k output tokens |
 
-Three things in this run show what the checks are for:
+What the run shows about the checks:
 
-- **The evidence agent narrowed the brief.** The brief claimed the filter "recovers most of the accuracy" lost to noise.
-  The evidence notes found that it does on three of four noisy settings but not on the small binary dataset at 40%
-  noise, and the paper says exactly that.
-- **A blank number was caught in code.** The abstract's first draft used a macro that prints nothing in the PDF; the
-  build check flagged both numbers and the reviser wrote them out.
-- **The reviewers were not satisfied, and nothing was invented to satisfy them.** Both rounds scored 4.5 out of 10.
-  The remaining points ask for stronger baselines and more datasets, which the repository does not have, so the
-  reviser narrowed the claims and listed the missing comparisons as limitations instead.
+- **The paper reports what did not work.** The statistician found 5 of 24 comparisons not significant (and 2 untestable),
+  and the paper says so where it matters (for example the gain on breast cancer at 20% noise) instead of rounding it into a win.
+- **The paper is honest about novelty.** The literature team found that the filter is the classical noise filter of
+  Brodley and Friedl, and the paper credits it and presents the work as a measurement of a known idea, not a new
+  method.
+- **Figures were sent back.** The critics returned both figures with specific complaints (a gap marker too faint to
+  read, a step that did not show the disagreement), and the lint caught a data series that was not the method drawn in the method's colour.
+- **Layout problems went to the agent that owns them.** Three tables were too wide for a column; the build traced
+  each overflow to its table, and the table setter rebuilt them at full width.
+- **The audit works on papers Scriptorium did not write this way.** Run on the 0.1 example paper,
+  `scriptorium audit` found a reference with the wrong year, two citations that misdescribe the cited work, and 13
+  claims stronger than the evidence.
 
 ## Venues, presets and configuration
 

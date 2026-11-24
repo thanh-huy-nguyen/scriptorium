@@ -1,0 +1,17 @@
+\begin{table*}[t]
+\centering
+\small
+\caption{Out-of-fold filtering beats an MLP trained on the same noisy labels in every noisy setting. Each row gives the paired difference in test accuracy (filter minus MLP, in points), the low and high ends of its confidence interval, the number of seeds in which the filter wins, and the paired $t$-test $p$-value, with $n = 5$ paired seeds. The MLP has one hidden layer of 64\src{mlp_hidden} units, 500\src{mlp_max_iter} iterations and scikit-learn defaults, and is untuned. The filter wins in every seed of every row, and the gain grows with the noise rate.}
+\label{tab:mlp}
+\begin{tabular}{lcccccc}
+\toprule
+Dataset & Noise (\%) & Difference & CI low & CI high & Seeds won & $p$ \\
+\midrule
+Digits & 20\src{noise_mid_pct} & 12.7\src{gain_digits_n20_vs_mlp} & 10.9\src{dg20_mlp_diff_ci_low} & 14.4\src{dg20_mlp_diff_ci_high} & 5\src{n_seeds_filter_wins_mlp_digits_n20} & 0.0002\src{p_dg20_filter_vs_mlp} \\
+Digits & 40\src{noise_max_pct} & 27.7\src{gain_digits_n40_vs_mlp} & 24.9\src{dg40_mlp_diff_ci_low} & 31.1\src{dg40_mlp_diff_ci_high} & 5\src{n_seeds_filter_wins_mlp_digits_n40} & 0.0001\src{p_dg40_filter_vs_mlp} \\
+\midrule
+Breast cancer & 20\src{noise_mid_pct} & 11.0\src{gain_bc_n20_vs_mlp} & 8.0\src{bc20_mlp_diff_ci_low} & 14.0\src{bc20_mlp_diff_ci_high} & 5\src{n_seeds_filter_wins_mlp_bc_n20} & 0.0033\src{p_bc20_filter_vs_mlp} \\
+Breast cancer & 40\src{noise_max_pct} & 18.6\src{gain_bc_n40_vs_mlp} & 15.4\src{bc40_mlp_diff_ci_low} & 21.6\src{bc40_mlp_diff_ci_high} & 5\src{n_seeds_filter_wins_mlp_bc_n40} & 0.0005\src{p_bc40_filter_vs_mlp} \\
+\bottomrule
+\end{tabular}
+\end{table*}

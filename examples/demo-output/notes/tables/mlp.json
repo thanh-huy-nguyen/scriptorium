@@ -1,0 +1,14 @@
+{"caption": "Out-of-fold filtering beats an MLP trained on the same noisy labels in every noisy setting. Each row gives the paired difference in test accuracy (filter minus MLP, in points), the low and high ends of its confidence interval, the number of seeds in which the filter wins, and the paired $t$-test $p$-value, with $n = 5$ paired seeds. The MLP has one hidden layer of 64\\src{mlp_hidden} units, 500\\src{mlp_max_iter} iterations and scikit-learn defaults, and is untuned. The filter wins in every seed of every row, and the gain grows with the noise rate.",
+ "label": "tab:mlp",
+ "columns": ["Dataset", "Noise (\\%)", "Difference", "CI low", "CI high", "Seeds won", "$p$"],
+ "rows": [
+  {"cells": [{"text": "Digits"}, {"key": "noise_mid_pct", "decimals": 0}, {"key": "gain_digits_n20_vs_mlp"}, {"key": "dg20_mlp_diff_ci_low"}, {"key": "dg20_mlp_diff_ci_high"}, {"key": "n_seeds_filter_wins_mlp_digits_n20", "decimals": 0}, {"key": "p_dg20_filter_vs_mlp", "decimals": 4}]},
+  {"cells": [{"text": "Digits"}, {"key": "noise_max_pct", "decimals": 0}, {"key": "gain_digits_n40_vs_mlp"}, {"key": "dg40_mlp_diff_ci_low"}, {"key": "dg40_mlp_diff_ci_high"}, {"key": "n_seeds_filter_wins_mlp_digits_n40", "decimals": 0}, {"key": "p_dg40_filter_vs_mlp", "decimals": 4}]},
+  {"cells": [{"text": "Breast cancer"}, {"key": "noise_mid_pct", "decimals": 0}, {"key": "gain_bc_n20_vs_mlp"}, {"key": "bc20_mlp_diff_ci_low"}, {"key": "bc20_mlp_diff_ci_high"}, {"key": "n_seeds_filter_wins_mlp_bc_n20", "decimals": 0}, {"key": "p_bc20_filter_vs_mlp", "decimals": 4}]},
+  {"cells": [{"text": "Breast cancer"}, {"key": "noise_max_pct", "decimals": 0}, {"key": "gain_bc_n40_vs_mlp"}, {"key": "bc40_mlp_diff_ci_low"}, {"key": "bc40_mlp_diff_ci_high"}, {"key": "n_seeds_filter_wins_mlp_bc_n40", "decimals": 0}, {"key": "p_bc40_filter_vs_mlp", "decimals": 4}]}
+ ],
+ "best": {},
+ "width": "full",
+ "decimals": 1,
+ "rule_after": [1]
+}

@@ -1,20 +1,20 @@
-"""Recipes for the numbers in this paper. One function per key; values are unrounded.
+"""Recipes for the numbers in this paper. Each returns the unrounded value printed next to \\src{key}.
 
-Datasets: dg = digits, bc = breast_cancer. Noise: 00, 20, 40 = nominal label-flip rate 0.0, 0.2, 0.4.
-Accuracies are in percent on the clean test split; mean/sd are over the 5 seeds (sd = sample sd).
+`source` and `load(path)` are provided by the checker; do not import or define them. Paths are relative to the
+repository root. Read raw results, configs or scripts, never Markdown notes.
 """
 
-_DS = {"dg": "digits", "bc": "breast_cancer"}
+
+def _runs(dataset, noise, method):
+    """Run records for one cell, in seed order (seeds 0-4)."""
+    rs = [r for r in load("results/runs.jsonl")
+          if r["dataset"] == dataset and abs(r["noise"] - noise) < 1e-9 and r["method"] == method]
+    return sorted(rs, key=lambda r: r["seed"])
 
 
-def _rows(ds, nz, method):
-    return sorted([r for r in load("results/runs.jsonl")
-                   if r["dataset"] == _DS[ds] and abs(r["noise"] - nz / 100) < 1e-9 and r["method"] == method],
-                  key=lambda r: r["seed"])
-
-
-def _accs(ds, nz, m):
-    return [100 * r["test_acc"] for r in _rows(ds, nz, m)]
+def _accs(dataset, noise, method):
+    """Test accuracy (%) per seed, in seed order."""
+    return [100 * r["acc"] if "acc" in r else 100 * r["test_acc"] for r in _runs(dataset, noise, method)]
 
 
 def _mean(xs):
@@ -26,329 +26,834 @@ def _sd(xs):
     return statistics.stdev(xs)
 
 
-def _wins(ds, nz, a, b):
-    return sum(x > y for x, y in zip(_accs(ds, nz, a), _accs(ds, nz, b)))
+def _diff(dataset, noise, a, b):
+    """Per-seed accuracy difference (%) a minus b, paired by seed."""
+    return [x - y for x, y in zip(_accs(dataset, noise, a), _accs(dataset, noise, b))]
 
 
-def _prec(ds, nz):
-    return [100 * r["n_dropped_noisy"] / r["n_dropped"] for r in _rows(ds, nz, "filter")]
+def _precisions(dataset, noise):
+    """Per-seed filter precision (%): dropped samples that were truly flipped."""
+    return [100 * r["n_dropped_noisy"] / r["n_dropped"] for r in _runs(dataset, noise, "filter")]
 
 
-def _rec(ds, nz):
-    return [100 * r["n_dropped_noisy"] / r["n_noisy"] for r in _rows(ds, nz, "filter")]
+def _recalls(dataset, noise):
+    """Per-seed filter recall (%): flipped samples that were dropped."""
+    return [100 * r["n_dropped_noisy"] / r["n_noisy"] for r in _runs(dataset, noise, "filter")]
 
 
-def _rcv(ds, nz):
-    am = lambda n, m: _mean(_accs(ds, n, m))
-    return (am(nz, "filter") - am(nz, "logreg")) / (am(0, "logreg") - am(nz, "logreg"))
+def _dropped_frac(dataset, noise):
+    """Per-seed fraction (%) of training samples dropped."""
+    return [100 * r["n_dropped"] / r["n_train"] for r in _runs(dataset, noise, "filter")]
 
 
-# ---------------- main results: mean and sd of test accuracy (%) ----------------
-# digits
-@source("acc_dg_00_logreg_mean", means="test accuracy (%) on clean test split, digits, noise 0.0, logreg, mean over 5 seeds")
-def acc_dg_00_logreg_mean(): return _mean(_accs("dg", 0, "logreg"))
-@source("acc_dg_00_logreg_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.0, logreg")
-def acc_dg_00_logreg_sd(): return _sd(_accs("dg", 0, "logreg"))
-@source("acc_dg_00_mlp_mean", means="test accuracy (%) on clean test split, digits, noise 0.0, MLP, mean over 5 seeds")
-def acc_dg_00_mlp_mean(): return _mean(_accs("dg", 0, "mlp"))
-@source("acc_dg_00_mlp_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.0, MLP")
-def acc_dg_00_mlp_sd(): return _sd(_accs("dg", 0, "mlp"))
-@source("acc_dg_00_filter_mean", means="test accuracy (%) on clean test split, digits, noise 0.0, filter, mean over 5 seeds")
-def acc_dg_00_filter_mean(): return _mean(_accs("dg", 0, "filter"))
-@source("acc_dg_00_filter_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.0, filter")
-def acc_dg_00_filter_sd(): return _sd(_accs("dg", 0, "filter"))
-
-@source("acc_dg_20_logreg_mean", means="test accuracy (%) on clean test split, digits, noise 0.2, logreg on noisy labels, mean over 5 seeds")
-def acc_dg_20_logreg_mean(): return _mean(_accs("dg", 20, "logreg"))
-@source("acc_dg_20_logreg_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.2, logreg")
-def acc_dg_20_logreg_sd(): return _sd(_accs("dg", 20, "logreg"))
-@source("acc_dg_20_mlp_mean", means="test accuracy (%) on clean test split, digits, noise 0.2, MLP on noisy labels, mean over 5 seeds")
-def acc_dg_20_mlp_mean(): return _mean(_accs("dg", 20, "mlp"))
-@source("acc_dg_20_mlp_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.2, MLP")
-def acc_dg_20_mlp_sd(): return _sd(_accs("dg", 20, "mlp"))
-@source("acc_dg_20_filter_mean", means="test accuracy (%) on clean test split, digits, noise 0.2, filter, mean over 5 seeds")
-def acc_dg_20_filter_mean(): return _mean(_accs("dg", 20, "filter"))
-@source("acc_dg_20_filter_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.2, filter")
-def acc_dg_20_filter_sd(): return _sd(_accs("dg", 20, "filter"))
-
-@source("acc_dg_40_logreg_mean", means="test accuracy (%) on clean test split, digits, noise 0.4, logreg on noisy labels, mean over 5 seeds")
-def acc_dg_40_logreg_mean(): return _mean(_accs("dg", 40, "logreg"))
-@source("acc_dg_40_logreg_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.4, logreg")
-def acc_dg_40_logreg_sd(): return _sd(_accs("dg", 40, "logreg"))
-@source("acc_dg_40_mlp_mean", means="test accuracy (%) on clean test split, digits, noise 0.4, MLP on noisy labels, mean over 5 seeds")
-def acc_dg_40_mlp_mean(): return _mean(_accs("dg", 40, "mlp"))
-@source("acc_dg_40_mlp_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.4, MLP")
-def acc_dg_40_mlp_sd(): return _sd(_accs("dg", 40, "mlp"))
-@source("acc_dg_40_filter_mean", means="test accuracy (%) on clean test split, digits, noise 0.4, filter, mean over 5 seeds")
-def acc_dg_40_filter_mean(): return _mean(_accs("dg", 40, "filter"))
-@source("acc_dg_40_filter_sd", means="sample sd over 5 seeds of test accuracy (points of %), digits, noise 0.4, filter")
-def acc_dg_40_filter_sd(): return _sd(_accs("dg", 40, "filter"))
-
-# breast_cancer
-@source("acc_bc_00_logreg_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.0, logreg, mean over 5 seeds")
-def acc_bc_00_logreg_mean(): return _mean(_accs("bc", 0, "logreg"))
-@source("acc_bc_00_logreg_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.0, logreg")
-def acc_bc_00_logreg_sd(): return _sd(_accs("bc", 0, "logreg"))
-@source("acc_bc_00_mlp_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.0, MLP, mean over 5 seeds")
-def acc_bc_00_mlp_mean(): return _mean(_accs("bc", 0, "mlp"))
-@source("acc_bc_00_mlp_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.0, MLP")
-def acc_bc_00_mlp_sd(): return _sd(_accs("bc", 0, "mlp"))
-@source("acc_bc_00_filter_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.0, filter, mean over 5 seeds")
-def acc_bc_00_filter_mean(): return _mean(_accs("bc", 0, "filter"))
-@source("acc_bc_00_filter_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.0, filter")
-def acc_bc_00_filter_sd(): return _sd(_accs("bc", 0, "filter"))
-
-@source("acc_bc_20_logreg_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.2, logreg on noisy labels, mean over 5 seeds")
-def acc_bc_20_logreg_mean(): return _mean(_accs("bc", 20, "logreg"))
-@source("acc_bc_20_logreg_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.2, logreg")
-def acc_bc_20_logreg_sd(): return _sd(_accs("bc", 20, "logreg"))
-@source("acc_bc_20_mlp_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.2, MLP on noisy labels, mean over 5 seeds")
-def acc_bc_20_mlp_mean(): return _mean(_accs("bc", 20, "mlp"))
-@source("acc_bc_20_mlp_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.2, MLP")
-def acc_bc_20_mlp_sd(): return _sd(_accs("bc", 20, "mlp"))
-@source("acc_bc_20_filter_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.2, filter, mean over 5 seeds")
-def acc_bc_20_filter_mean(): return _mean(_accs("bc", 20, "filter"))
-@source("acc_bc_20_filter_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.2, filter")
-def acc_bc_20_filter_sd(): return _sd(_accs("bc", 20, "filter"))
-
-@source("acc_bc_40_logreg_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.4, logreg on noisy labels, mean over 5 seeds")
-def acc_bc_40_logreg_mean(): return _mean(_accs("bc", 40, "logreg"))
-@source("acc_bc_40_logreg_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.4, logreg")
-def acc_bc_40_logreg_sd(): return _sd(_accs("bc", 40, "logreg"))
-@source("acc_bc_40_mlp_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.4, MLP on noisy labels, mean over 5 seeds")
-def acc_bc_40_mlp_mean(): return _mean(_accs("bc", 40, "mlp"))
-@source("acc_bc_40_mlp_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.4, MLP")
-def acc_bc_40_mlp_sd(): return _sd(_accs("bc", 40, "mlp"))
-@source("acc_bc_40_filter_mean", means="test accuracy (%) on clean test split, breast_cancer, noise 0.4, filter, mean over 5 seeds")
-def acc_bc_40_filter_mean(): return _mean(_accs("bc", 40, "filter"))
-@source("acc_bc_40_filter_sd", means="sample sd over 5 seeds of test accuracy (points of %), breast_cancer, noise 0.4, filter")
-def acc_bc_40_filter_sd(): return _sd(_accs("bc", 40, "filter"))
+def _recovery(dataset, noise):
+    """Per-seed share (%) of the accuracy lost to noise that the filter wins back.
+    (filter - noisy logreg) / (clean logreg - noisy logreg), clean logreg from the same seed at noise 0."""
+    clean = _accs(dataset, 0.0, "logreg")
+    noisy = _accs(dataset, noise, "logreg")
+    filt = _accs(dataset, noise, "filter")
+    return [100 * (f - n) / (c - n) for f, n, c in zip(filt, noisy, clean)]
 
 
-# ---------------- differences the story rests on (points of %, difference of 5-seed means) ----------------
-@source("diff_dg_20_filter_minus_logreg", means="accuracy difference (points of %), filter minus logreg on same noisy labels, digits, noise 0.2, difference of 5-seed means")
-def diff_dg_20_filter_minus_logreg(): return _mean(_accs("dg", 20, "filter")) - _mean(_accs("dg", 20, "logreg"))
-@source("diff_dg_40_filter_minus_logreg", means="accuracy difference (points of %), filter minus logreg on same noisy labels, digits, noise 0.4, difference of 5-seed means")
-def diff_dg_40_filter_minus_logreg(): return _mean(_accs("dg", 40, "filter")) - _mean(_accs("dg", 40, "logreg"))
-@source("diff_bc_20_filter_minus_logreg", means="accuracy difference (points of %), filter minus logreg on same noisy labels, breast_cancer, noise 0.2, difference of 5-seed means")
-def diff_bc_20_filter_minus_logreg(): return _mean(_accs("bc", 20, "filter")) - _mean(_accs("bc", 20, "logreg"))
-@source("diff_bc_40_filter_minus_logreg", means="accuracy difference (points of %), filter minus logreg on same noisy labels, breast_cancer, noise 0.4, difference of 5-seed means")
-def diff_bc_40_filter_minus_logreg(): return _mean(_accs("bc", 40, "filter")) - _mean(_accs("bc", 40, "logreg"))
-
-@source("diff_dg_00_filter_minus_mlp", means="accuracy difference (points of %), filter minus MLP, digits, noise 0.0, difference of 5-seed means")
-def diff_dg_00_filter_minus_mlp(): return _mean(_accs("dg", 0, "filter")) - _mean(_accs("dg", 0, "mlp"))
-@source("diff_dg_20_filter_minus_mlp", means="accuracy difference (points of %), filter minus MLP, digits, noise 0.2, difference of 5-seed means")
-def diff_dg_20_filter_minus_mlp(): return _mean(_accs("dg", 20, "filter")) - _mean(_accs("dg", 20, "mlp"))
-@source("diff_dg_40_filter_minus_mlp", means="accuracy difference (points of %), filter minus MLP, digits, noise 0.4, difference of 5-seed means")
-def diff_dg_40_filter_minus_mlp(): return _mean(_accs("dg", 40, "filter")) - _mean(_accs("dg", 40, "mlp"))
-@source("diff_bc_00_filter_minus_mlp", means="accuracy difference (points of %), filter minus MLP, breast_cancer, noise 0.0, difference of 5-seed means")
-def diff_bc_00_filter_minus_mlp(): return _mean(_accs("bc", 0, "filter")) - _mean(_accs("bc", 0, "mlp"))
-@source("diff_bc_20_filter_minus_mlp", means="accuracy difference (points of %), filter minus MLP, breast_cancer, noise 0.2, difference of 5-seed means")
-def diff_bc_20_filter_minus_mlp(): return _mean(_accs("bc", 20, "filter")) - _mean(_accs("bc", 20, "mlp"))
-@source("diff_bc_40_filter_minus_mlp", means="accuracy difference (points of %), filter minus MLP, breast_cancer, noise 0.4, difference of 5-seed means")
-def diff_bc_40_filter_minus_mlp(): return _mean(_accs("bc", 40, "filter")) - _mean(_accs("bc", 40, "mlp"))
-
-@source("wins_dg_20_filter_over_mlp", means="number of seeds (of 5) where filter accuracy is strictly above MLP, digits, noise 0.2")
-def wins_dg_20_filter_over_mlp(): return _wins("dg", 20, "filter", "mlp")
-@source("wins_dg_40_filter_over_mlp", means="number of seeds (of 5) where filter accuracy is strictly above MLP, digits, noise 0.4")
-def wins_dg_40_filter_over_mlp(): return _wins("dg", 40, "filter", "mlp")
-@source("wins_bc_20_filter_over_mlp", means="number of seeds (of 5) where filter accuracy is strictly above MLP, breast_cancer, noise 0.2")
-def wins_bc_20_filter_over_mlp(): return _wins("bc", 20, "filter", "mlp")
-@source("wins_bc_40_filter_over_mlp", means="number of seeds (of 5) where filter accuracy is strictly above MLP, breast_cancer, noise 0.4")
-def wins_bc_40_filter_over_mlp(): return _wins("bc", 40, "filter", "mlp")
-@source("wins_dg_20_filter_over_logreg", means="number of seeds (of 5) where filter accuracy is strictly above logreg, digits, noise 0.2")
-def wins_dg_20_filter_over_logreg(): return _wins("dg", 20, "filter", "logreg")
-@source("wins_dg_40_filter_over_logreg", means="number of seeds (of 5) where filter accuracy is strictly above logreg, digits, noise 0.4")
-def wins_dg_40_filter_over_logreg(): return _wins("dg", 40, "filter", "logreg")
-@source("wins_bc_20_filter_over_logreg", means="number of seeds (of 5) where filter accuracy is strictly above logreg, breast_cancer, noise 0.2")
-def wins_bc_20_filter_over_logreg(): return _wins("bc", 20, "filter", "logreg")
-@source("wins_bc_40_filter_over_logreg", means="number of seeds (of 5) where filter accuracy is strictly above logreg, breast_cancer, noise 0.4")
-def wins_bc_40_filter_over_logreg(): return _wins("bc", 40, "filter", "logreg")
-
-# recovery: (filter - noisy logreg) / (clean logreg - noisy logreg), 5-seed means; 1 = full recovery
-@source("recovery_dg_20", means="fraction of accuracy lost to noise recovered by filter, (filter - noisy logreg)/(clean logreg - noisy logreg), digits, noise 0.2, 5-seed means")
-def recovery_dg_20(): return _rcv("dg", 20)
-@source("recovery_dg_40", means="fraction of accuracy lost to noise recovered by filter, (filter - noisy logreg)/(clean logreg - noisy logreg), digits, noise 0.4, 5-seed means")
-def recovery_dg_40(): return _rcv("dg", 40)
-@source("recovery_bc_20", means="fraction of accuracy lost to noise recovered by filter, (filter - noisy logreg)/(clean logreg - noisy logreg), breast_cancer, noise 0.2, 5-seed means")
-def recovery_bc_20(): return _rcv("bc", 20)
-@source("recovery_bc_40", means="fraction of accuracy lost to noise recovered by filter, (filter - noisy logreg)/(clean logreg - noisy logreg), breast_cancer, noise 0.4, 5-seed means")
-def recovery_bc_40(): return _rcv("bc", 40)
-
-@source("loss_dg_20_logreg", means="accuracy lost by logreg to noise (points of %), clean logreg minus noisy logreg, digits, noise 0.2, 5-seed means")
-def loss_dg_20_logreg(): return _mean(_accs("dg", 0, "logreg")) - _mean(_accs("dg", 20, "logreg"))
-@source("loss_dg_40_logreg", means="accuracy lost by logreg to noise (points of %), clean logreg minus noisy logreg, digits, noise 0.4, 5-seed means")
-def loss_dg_40_logreg(): return _mean(_accs("dg", 0, "logreg")) - _mean(_accs("dg", 40, "logreg"))
-@source("loss_bc_20_logreg", means="accuracy lost by logreg to noise (points of %), clean logreg minus noisy logreg, breast_cancer, noise 0.2, 5-seed means")
-def loss_bc_20_logreg(): return _mean(_accs("bc", 0, "logreg")) - _mean(_accs("bc", 20, "logreg"))
-@source("loss_bc_40_logreg", means="accuracy lost by logreg to noise (points of %), clean logreg minus noisy logreg, breast_cancer, noise 0.4, 5-seed means")
-def loss_bc_40_logreg(): return _mean(_accs("bc", 0, "logreg")) - _mean(_accs("bc", 40, "logreg"))
-
-@source("gap_dg_20_filter_to_clean", means="accuracy (points of %) by which filter at noise 0.2 is below clean-label logreg, digits, 5-seed means")
-def gap_dg_20_filter_to_clean(): return _mean(_accs("dg", 0, "logreg")) - _mean(_accs("dg", 20, "filter"))
-@source("gap_dg_40_filter_to_clean", means="accuracy (points of %) by which filter at noise 0.4 is below clean-label logreg, digits, 5-seed means")
-def gap_dg_40_filter_to_clean(): return _mean(_accs("dg", 0, "logreg")) - _mean(_accs("dg", 40, "filter"))
-@source("gap_bc_20_filter_to_clean", means="accuracy (points of %) by which filter at noise 0.2 is below clean-label logreg, breast_cancer, 5-seed means")
-def gap_bc_20_filter_to_clean(): return _mean(_accs("bc", 0, "logreg")) - _mean(_accs("bc", 20, "filter"))
-@source("gap_bc_40_filter_to_clean", means="accuracy (points of %) by which filter at noise 0.4 is below clean-label logreg, breast_cancer, 5-seed means")
-def gap_bc_40_filter_to_clean(): return _mean(_accs("bc", 0, "logreg")) - _mean(_accs("bc", 40, "filter"))
-
-# ---------------- cost when labels are clean ----------------
-@source("clean_cost_dg", means="accuracy difference (points of %), filter minus logreg, clean labels, digits, difference of 5-seed means")
-def clean_cost_dg(): return _mean(_accs("dg", 0, "filter")) - _mean(_accs("dg", 0, "logreg"))
-@source("clean_cost_bc", means="accuracy difference (points of %), filter minus logreg, clean labels, breast_cancer, difference of 5-seed means")
-def clean_cost_bc(): return _mean(_accs("bc", 0, "filter")) - _mean(_accs("bc", 0, "logreg"))
-@source("clean_worse_seeds_dg", means="number of seeds (of 5) where filter is strictly below logreg, clean labels, digits")
-def clean_worse_seeds_dg(): return _wins("dg", 0, "logreg", "filter")
-@source("clean_worse_seeds_bc", means="number of seeds (of 5) where filter is strictly below logreg, clean labels, breast_cancer")
-def clean_worse_seeds_bc(): return _wins("bc", 0, "logreg", "filter")
-@source("dropped_dg_00_mean", means="training samples dropped by the filter with clean labels, digits, mean over 5 seeds")
-def dropped_dg_00_mean(): return _mean([r["n_dropped"] for r in _rows("dg", 0, "filter")])
-@source("dropped_bc_00_mean", means="training samples dropped by the filter with clean labels, breast_cancer, mean over 5 seeds")
-def dropped_bc_00_mean(): return _mean([r["n_dropped"] for r in _rows("bc", 0, "filter")])
-@source("dropped_frac_dg_00_mean", means="percentage of training samples dropped by the filter with clean labels, digits, mean over 5 seeds")
-def dropped_frac_dg_00_mean(): return _mean([100 * r["n_dropped"] / r["n_train"] for r in _rows("dg", 0, "filter")])
-@source("dropped_frac_bc_00_mean", means="percentage of training samples dropped by the filter with clean labels, breast_cancer, mean over 5 seeds")
-def dropped_frac_bc_00_mean(): return _mean([100 * r["n_dropped"] / r["n_train"] for r in _rows("bc", 0, "filter")])
-
-# ---------------- what the filter drops ----------------
-@source("dropped_dg_20_mean", means="training samples dropped by the filter, digits, noise 0.2, mean over 5 seeds")
-def dropped_dg_20_mean(): return _mean([r["n_dropped"] for r in _rows("dg", 20, "filter")])
-@source("dropped_dg_40_mean", means="training samples dropped by the filter, digits, noise 0.4, mean over 5 seeds")
-def dropped_dg_40_mean(): return _mean([r["n_dropped"] for r in _rows("dg", 40, "filter")])
-@source("dropped_bc_20_mean", means="training samples dropped by the filter, breast_cancer, noise 0.2, mean over 5 seeds")
-def dropped_bc_20_mean(): return _mean([r["n_dropped"] for r in _rows("bc", 20, "filter")])
-@source("dropped_bc_40_mean", means="training samples dropped by the filter, breast_cancer, noise 0.4, mean over 5 seeds")
-def dropped_bc_40_mean(): return _mean([r["n_dropped"] for r in _rows("bc", 40, "filter")])
-
-@source("noisy_frac_dg_20_mean", means="realised percentage of flipped training labels, digits, nominal noise 0.2, mean over 5 seeds")
-def noisy_frac_dg_20_mean(): return _mean([100 * r["n_noisy"] / r["n_train"] for r in _rows("dg", 20, "filter")])
-@source("noisy_frac_dg_40_mean", means="realised percentage of flipped training labels, digits, nominal noise 0.4, mean over 5 seeds")
-def noisy_frac_dg_40_mean(): return _mean([100 * r["n_noisy"] / r["n_train"] for r in _rows("dg", 40, "filter")])
-@source("noisy_frac_bc_20_mean", means="realised percentage of flipped training labels, breast_cancer, nominal noise 0.2, mean over 5 seeds")
-def noisy_frac_bc_20_mean(): return _mean([100 * r["n_noisy"] / r["n_train"] for r in _rows("bc", 20, "filter")])
-@source("noisy_frac_bc_40_mean", means="realised percentage of flipped training labels, breast_cancer, nominal noise 0.4, mean over 5 seeds")
-def noisy_frac_bc_40_mean(): return _mean([100 * r["n_noisy"] / r["n_train"] for r in _rows("bc", 40, "filter")])
-
-@source("precision_dg_20_mean", means="precision (%) of the filter (dropped samples that were truly flipped), digits, noise 0.2, mean over 5 seeds of per-seed ratios")
-def precision_dg_20_mean(): return _mean(_prec("dg", 20))
-@source("precision_dg_40_mean", means="precision (%) of the filter (dropped samples that were truly flipped), digits, noise 0.4, mean over 5 seeds of per-seed ratios")
-def precision_dg_40_mean(): return _mean(_prec("dg", 40))
-@source("precision_bc_20_mean", means="precision (%) of the filter (dropped samples that were truly flipped), breast_cancer, noise 0.2, mean over 5 seeds of per-seed ratios")
-def precision_bc_20_mean(): return _mean(_prec("bc", 20))
-@source("precision_bc_40_mean", means="precision (%) of the filter (dropped samples that were truly flipped), breast_cancer, noise 0.4, mean over 5 seeds of per-seed ratios")
-def precision_bc_40_mean(): return _mean(_prec("bc", 40))
-@source("precision_dg_20_min", means="lowest per-seed precision (%) of the filter over 5 seeds, digits, noise 0.2")
-def precision_dg_20_min(): return min(_prec("dg", 20))
-@source("precision_dg_40_min", means="lowest per-seed precision (%) of the filter over 5 seeds, digits, noise 0.4")
-def precision_dg_40_min(): return min(_prec("dg", 40))
-@source("precision_bc_20_min", means="lowest per-seed precision (%) of the filter over 5 seeds, breast_cancer, noise 0.2")
-def precision_bc_20_min(): return min(_prec("bc", 20))
-@source("precision_bc_40_min", means="lowest per-seed precision (%) of the filter over 5 seeds, breast_cancer, noise 0.4")
-def precision_bc_40_min(): return min(_prec("bc", 40))
-
-@source("recall_dg_20_mean", means="recall (%) of the filter (flipped training samples that were dropped), digits, noise 0.2, mean over 5 seeds of per-seed ratios")
-def recall_dg_20_mean(): return _mean(_rec("dg", 20))
-@source("recall_dg_40_mean", means="recall (%) of the filter (flipped training samples that were dropped), digits, noise 0.4, mean over 5 seeds of per-seed ratios")
-def recall_dg_40_mean(): return _mean(_rec("dg", 40))
-@source("recall_bc_20_mean", means="recall (%) of the filter (flipped training samples that were dropped), breast_cancer, noise 0.2, mean over 5 seeds of per-seed ratios")
-def recall_bc_20_mean(): return _mean(_rec("bc", 20))
-@source("recall_bc_40_mean", means="recall (%) of the filter (flipped training samples that were dropped), breast_cancer, noise 0.4, mean over 5 seeds of per-seed ratios")
-def recall_bc_40_mean(): return _mean(_rec("bc", 40))
+def _cfg(k):
+    return load("experiments/config.json")[k]
 
 
-# ---------------- dataset sizes, settings ----------------
-@source("n_total_digits", means="number of samples in digits (n_train + n_test of seed 0)")
+# ---------- accuracy: mean and sd per dataset x noise x method ----------
+@source("acc_digits_n0_logreg", means="test accuracy (%) of logistic regression on digits, 0% label noise, mean over 5 seeds")
+def acc_digits_n0_logreg():
+    return _mean(_accs("digits", 0.0, "logreg"))
+
+
+@source("sd_digits_n0_logreg", means="sd over 5 seeds of test accuracy (%) of logistic regression on digits, 0% noise")
+def sd_digits_n0_logreg():
+    return _sd(_accs("digits", 0.0, "logreg"))
+
+
+@source("acc_digits_n0_mlp", means="test accuracy (%) of the MLP on digits, 0% label noise, mean over 5 seeds")
+def acc_digits_n0_mlp():
+    return _mean(_accs("digits", 0.0, "mlp"))
+
+
+@source("sd_digits_n0_mlp", means="sd over 5 seeds of test accuracy (%) of the MLP on digits, 0% noise")
+def sd_digits_n0_mlp():
+    return _sd(_accs("digits", 0.0, "mlp"))
+
+
+@source("acc_digits_n0_filter", means="test accuracy (%) of the out-of-fold filter on digits, 0% label noise, mean over 5 seeds")
+def acc_digits_n0_filter():
+    return _mean(_accs("digits", 0.0, "filter"))
+
+
+@source("sd_digits_n0_filter", means="sd over 5 seeds of test accuracy (%) of the filter on digits, 0% noise")
+def sd_digits_n0_filter():
+    return _sd(_accs("digits", 0.0, "filter"))
+
+
+@source("acc_digits_n20_logreg", means="test accuracy (%) of logistic regression on digits, 20% label noise, mean over 5 seeds")
+def acc_digits_n20_logreg():
+    return _mean(_accs("digits", 0.2, "logreg"))
+
+
+@source("sd_digits_n20_logreg", means="sd over 5 seeds of test accuracy (%) of logistic regression on digits, 20% noise")
+def sd_digits_n20_logreg():
+    return _sd(_accs("digits", 0.2, "logreg"))
+
+
+@source("acc_digits_n20_mlp", means="test accuracy (%) of the MLP on digits, 20% label noise, mean over 5 seeds")
+def acc_digits_n20_mlp():
+    return _mean(_accs("digits", 0.2, "mlp"))
+
+
+@source("sd_digits_n20_mlp", means="sd over 5 seeds of test accuracy (%) of the MLP on digits, 20% noise")
+def sd_digits_n20_mlp():
+    return _sd(_accs("digits", 0.2, "mlp"))
+
+
+@source("acc_digits_n20_filter", means="test accuracy (%) of the filter on digits, 20% label noise, mean over 5 seeds")
+def acc_digits_n20_filter():
+    return _mean(_accs("digits", 0.2, "filter"))
+
+
+@source("sd_digits_n20_filter", means="sd over 5 seeds of test accuracy (%) of the filter on digits, 20% noise")
+def sd_digits_n20_filter():
+    return _sd(_accs("digits", 0.2, "filter"))
+
+
+@source("acc_digits_n40_logreg", means="test accuracy (%) of logistic regression on digits, 40% label noise, mean over 5 seeds")
+def acc_digits_n40_logreg():
+    return _mean(_accs("digits", 0.4, "logreg"))
+
+
+@source("sd_digits_n40_logreg", means="sd over 5 seeds of test accuracy (%) of logistic regression on digits, 40% noise")
+def sd_digits_n40_logreg():
+    return _sd(_accs("digits", 0.4, "logreg"))
+
+
+@source("acc_digits_n40_mlp", means="test accuracy (%) of the MLP on digits, 40% label noise, mean over 5 seeds")
+def acc_digits_n40_mlp():
+    return _mean(_accs("digits", 0.4, "mlp"))
+
+
+@source("sd_digits_n40_mlp", means="sd over 5 seeds of test accuracy (%) of the MLP on digits, 40% noise")
+def sd_digits_n40_mlp():
+    return _sd(_accs("digits", 0.4, "mlp"))
+
+
+@source("acc_digits_n40_filter", means="test accuracy (%) of the filter on digits, 40% label noise, mean over 5 seeds")
+def acc_digits_n40_filter():
+    return _mean(_accs("digits", 0.4, "filter"))
+
+
+@source("sd_digits_n40_filter", means="sd over 5 seeds of test accuracy (%) of the filter on digits, 40% noise")
+def sd_digits_n40_filter():
+    return _sd(_accs("digits", 0.4, "filter"))
+
+
+@source("acc_bc_n0_logreg", means="test accuracy (%) of logistic regression on breast_cancer, 0% label noise, mean over 5 seeds")
+def acc_bc_n0_logreg():
+    return _mean(_accs("breast_cancer", 0.0, "logreg"))
+
+
+@source("sd_bc_n0_logreg", means="sd over 5 seeds of test accuracy (%) of logistic regression on breast_cancer, 0% noise")
+def sd_bc_n0_logreg():
+    return _sd(_accs("breast_cancer", 0.0, "logreg"))
+
+
+@source("acc_bc_n0_mlp", means="test accuracy (%) of the MLP on breast_cancer, 0% label noise, mean over 5 seeds")
+def acc_bc_n0_mlp():
+    return _mean(_accs("breast_cancer", 0.0, "mlp"))
+
+
+@source("sd_bc_n0_mlp", means="sd over 5 seeds of test accuracy (%) of the MLP on breast_cancer, 0% noise")
+def sd_bc_n0_mlp():
+    return _sd(_accs("breast_cancer", 0.0, "mlp"))
+
+
+@source("acc_bc_n0_filter", means="test accuracy (%) of the filter on breast_cancer, 0% label noise, mean over 5 seeds")
+def acc_bc_n0_filter():
+    return _mean(_accs("breast_cancer", 0.0, "filter"))
+
+
+@source("sd_bc_n0_filter", means="sd over 5 seeds of test accuracy (%) of the filter on breast_cancer, 0% noise")
+def sd_bc_n0_filter():
+    return _sd(_accs("breast_cancer", 0.0, "filter"))
+
+
+@source("acc_bc_n20_logreg", means="test accuracy (%) of logistic regression on breast_cancer, 20% label noise, mean over 5 seeds")
+def acc_bc_n20_logreg():
+    return _mean(_accs("breast_cancer", 0.2, "logreg"))
+
+
+@source("sd_bc_n20_logreg", means="sd over 5 seeds of test accuracy (%) of logistic regression on breast_cancer, 20% noise")
+def sd_bc_n20_logreg():
+    return _sd(_accs("breast_cancer", 0.2, "logreg"))
+
+
+@source("acc_bc_n20_mlp", means="test accuracy (%) of the MLP on breast_cancer, 20% label noise, mean over 5 seeds")
+def acc_bc_n20_mlp():
+    return _mean(_accs("breast_cancer", 0.2, "mlp"))
+
+
+@source("sd_bc_n20_mlp", means="sd over 5 seeds of test accuracy (%) of the MLP on breast_cancer, 20% noise")
+def sd_bc_n20_mlp():
+    return _sd(_accs("breast_cancer", 0.2, "mlp"))
+
+
+@source("acc_bc_n20_filter", means="test accuracy (%) of the filter on breast_cancer, 20% label noise, mean over 5 seeds")
+def acc_bc_n20_filter():
+    return _mean(_accs("breast_cancer", 0.2, "filter"))
+
+
+@source("sd_bc_n20_filter", means="sd over 5 seeds of test accuracy (%) of the filter on breast_cancer, 20% noise")
+def sd_bc_n20_filter():
+    return _sd(_accs("breast_cancer", 0.2, "filter"))
+
+
+@source("acc_bc_n40_logreg", means="test accuracy (%) of logistic regression on breast_cancer, 40% label noise, mean over 5 seeds")
+def acc_bc_n40_logreg():
+    return _mean(_accs("breast_cancer", 0.4, "logreg"))
+
+
+@source("sd_bc_n40_logreg", means="sd over 5 seeds of test accuracy (%) of logistic regression on breast_cancer, 40% noise")
+def sd_bc_n40_logreg():
+    return _sd(_accs("breast_cancer", 0.4, "logreg"))
+
+
+@source("acc_bc_n40_mlp", means="test accuracy (%) of the MLP on breast_cancer, 40% label noise, mean over 5 seeds")
+def acc_bc_n40_mlp():
+    return _mean(_accs("breast_cancer", 0.4, "mlp"))
+
+
+@source("sd_bc_n40_mlp", means="sd over 5 seeds of test accuracy (%) of the MLP on breast_cancer, 40% noise")
+def sd_bc_n40_mlp():
+    return _sd(_accs("breast_cancer", 0.4, "mlp"))
+
+
+@source("acc_bc_n40_filter", means="test accuracy (%) of the filter on breast_cancer, 40% label noise, mean over 5 seeds")
+def acc_bc_n40_filter():
+    return _mean(_accs("breast_cancer", 0.4, "filter"))
+
+
+@source("sd_bc_n40_filter", means="sd over 5 seeds of test accuracy (%) of the filter on breast_cancer, 40% noise")
+def sd_bc_n40_filter():
+    return _sd(_accs("breast_cancer", 0.4, "filter"))
+
+
+# ---------- differences (percentage points, mean over 5 paired seeds) ----------
+@source("gain_digits_n20_vs_logreg", means="filter minus no-filter logistic regression, test accuracy (points), digits, 20% noise, mean of 5 paired seeds")
+def gain_digits_n20_vs_logreg():
+    return _mean(_diff("digits", 0.2, "filter", "logreg"))
+
+
+@source("gain_digits_n40_vs_logreg", means="filter minus no-filter logistic regression, test accuracy (points), digits, 40% noise, mean of 5 paired seeds")
+def gain_digits_n40_vs_logreg():
+    return _mean(_diff("digits", 0.4, "filter", "logreg"))
+
+
+@source("gain_bc_n20_vs_logreg", means="filter minus no-filter logistic regression, test accuracy (points), breast_cancer, 20% noise, mean of 5 paired seeds")
+def gain_bc_n20_vs_logreg():
+    return _mean(_diff("breast_cancer", 0.2, "filter", "logreg"))
+
+
+@source("gain_bc_n40_vs_logreg", means="filter minus no-filter logistic regression, test accuracy (points), breast_cancer, 40% noise, mean of 5 paired seeds")
+def gain_bc_n40_vs_logreg():
+    return _mean(_diff("breast_cancer", 0.4, "filter", "logreg"))
+
+
+@source("gain_digits_n0_vs_logreg", means="filter minus logistic regression, test accuracy (points), digits, 0% noise (cost on clean labels, negative = cost), mean of 5 paired seeds")
+def gain_digits_n0_vs_logreg():
+    return _mean(_diff("digits", 0.0, "filter", "logreg"))
+
+
+@source("gain_bc_n0_vs_logreg", means="filter minus logistic regression, test accuracy (points), breast_cancer, 0% noise (cost on clean labels, negative = cost), mean of 5 paired seeds")
+def gain_bc_n0_vs_logreg():
+    return _mean(_diff("breast_cancer", 0.0, "filter", "logreg"))
+
+
+@source("gain_digits_n0_vs_mlp", means="filter minus MLP, test accuracy (points), digits, 0% noise, mean of 5 paired seeds")
+def gain_digits_n0_vs_mlp():
+    return _mean(_diff("digits", 0.0, "filter", "mlp"))
+
+
+@source("gain_digits_n20_vs_mlp", means="filter minus MLP, test accuracy (points), digits, 20% noise, mean of 5 paired seeds")
+def gain_digits_n20_vs_mlp():
+    return _mean(_diff("digits", 0.2, "filter", "mlp"))
+
+
+@source("gain_digits_n40_vs_mlp", means="filter minus MLP, test accuracy (points), digits, 40% noise, mean of 5 paired seeds")
+def gain_digits_n40_vs_mlp():
+    return _mean(_diff("digits", 0.4, "filter", "mlp"))
+
+
+@source("gain_bc_n0_vs_mlp", means="filter minus MLP, test accuracy (points), breast_cancer, 0% noise, mean of 5 paired seeds")
+def gain_bc_n0_vs_mlp():
+    return _mean(_diff("breast_cancer", 0.0, "filter", "mlp"))
+
+
+@source("gain_bc_n20_vs_mlp", means="filter minus MLP, test accuracy (points), breast_cancer, 20% noise, mean of 5 paired seeds")
+def gain_bc_n20_vs_mlp():
+    return _mean(_diff("breast_cancer", 0.2, "filter", "mlp"))
+
+
+@source("gain_bc_n40_vs_mlp", means="filter minus MLP, test accuracy (points), breast_cancer, 40% noise, mean of 5 paired seeds")
+def gain_bc_n40_vs_mlp():
+    return _mean(_diff("breast_cancer", 0.4, "filter", "mlp"))
+
+
+@source("n_seeds_filter_wins_mlp_digits_n40", means="number of 5 seeds in which the filter beats the MLP on digits at 40% noise")
+def n_seeds_filter_wins_mlp_digits_n40():
+    return sum(d > 0 for d in _diff("digits", 0.4, "filter", "mlp"))
+
+
+@source("n_seeds_filter_wins_mlp_digits_n20", means="number of 5 seeds in which the filter beats the MLP on digits at 20% noise")
+def n_seeds_filter_wins_mlp_digits_n20():
+    return sum(d > 0 for d in _diff("digits", 0.2, "filter", "mlp"))
+
+
+@source("n_seeds_filter_wins_mlp_bc_n20", means="number of 5 seeds in which the filter beats the MLP on breast_cancer at 20% noise")
+def n_seeds_filter_wins_mlp_bc_n20():
+    return sum(d > 0 for d in _diff("breast_cancer", 0.2, "filter", "mlp"))
+
+
+@source("n_seeds_filter_wins_mlp_bc_n40", means="number of 5 seeds in which the filter beats the MLP on breast_cancer at 40% noise")
+def n_seeds_filter_wins_mlp_bc_n40():
+    return sum(d > 0 for d in _diff("breast_cancer", 0.4, "filter", "mlp"))
+
+
+# ---------- accuracy lost to noise and recovered ----------
+@source("loss_digits_n20", means="accuracy (points) lost by logistic regression on digits from 0% to 20% noise, mean over 5 seeds")
+def loss_digits_n20():
+    return _mean(_accs("digits", 0.0, "logreg")) - _mean(_accs("digits", 0.2, "logreg"))
+
+
+@source("loss_digits_n40", means="accuracy (points) lost by logistic regression on digits from 0% to 40% noise, mean over 5 seeds")
+def loss_digits_n40():
+    return _mean(_accs("digits", 0.0, "logreg")) - _mean(_accs("digits", 0.4, "logreg"))
+
+
+@source("loss_bc_n20", means="accuracy (points) lost by logistic regression on breast_cancer from 0% to 20% noise, mean over 5 seeds")
+def loss_bc_n20():
+    return _mean(_accs("breast_cancer", 0.0, "logreg")) - _mean(_accs("breast_cancer", 0.2, "logreg"))
+
+
+@source("loss_bc_n40", means="accuracy (points) lost by logistic regression on breast_cancer from 0% to 40% noise, mean over 5 seeds")
+def loss_bc_n40():
+    return _mean(_accs("breast_cancer", 0.0, "logreg")) - _mean(_accs("breast_cancer", 0.4, "logreg"))
+
+
+@source("recovery_digits_n20", means="share (%) of logistic-regression accuracy lost to 20% noise on digits that the filter wins back: (filter-noisy)/(clean-noisy) using group means over 5 seeds")
+def recovery_digits_n20():
+    return 100 * (_mean(_accs("digits", 0.2, "filter")) - _mean(_accs("digits", 0.2, "logreg"))) / (_mean(_accs("digits", 0.0, "logreg")) - _mean(_accs("digits", 0.2, "logreg")))
+
+
+@source("recovery_digits_n40", means="share (%) of logistic-regression accuracy lost to 40% noise on digits that the filter wins back, using group means over 5 seeds")
+def recovery_digits_n40():
+    return 100 * (_mean(_accs("digits", 0.4, "filter")) - _mean(_accs("digits", 0.4, "logreg"))) / (_mean(_accs("digits", 0.0, "logreg")) - _mean(_accs("digits", 0.4, "logreg")))
+
+
+@source("recovery_bc_n20", means="share (%) of logistic-regression accuracy lost to 20% noise on breast_cancer that the filter wins back, using group means over 5 seeds")
+def recovery_bc_n20():
+    return 100 * (_mean(_accs("breast_cancer", 0.2, "filter")) - _mean(_accs("breast_cancer", 0.2, "logreg"))) / (_mean(_accs("breast_cancer", 0.0, "logreg")) - _mean(_accs("breast_cancer", 0.2, "logreg")))
+
+
+@source("recovery_bc_n40", means="share (%) of logistic-regression accuracy lost to 40% noise on breast_cancer that the filter wins back, using group means over 5 seeds")
+def recovery_bc_n40():
+    return 100 * (_mean(_accs("breast_cancer", 0.4, "filter")) - _mean(_accs("breast_cancer", 0.4, "logreg"))) / (_mean(_accs("breast_cancer", 0.0, "logreg")) - _mean(_accs("breast_cancer", 0.4, "logreg")))
+
+
+@source("recovery_seed_mean_digits_n40", means="mean over 5 seeds of the per-seed share (%) of accuracy lost to 40% noise recovered by the filter, digits")
+def recovery_seed_mean_digits_n40():
+    return _mean(_recovery("digits", 0.4))
+
+
+@source("recovery_seed_min_bc_n20", means="minimum over 5 seeds of the per-seed recovered share (%) at 20% noise, breast_cancer (denominator can be near zero)")
+def recovery_seed_min_bc_n20():
+    return min(_recovery("breast_cancer", 0.2))
+
+
+# ---------- what the filter drops ----------
+@source("prec_digits_n20", means="precision (%) of the filter on digits, 20% noise: dropped samples that were truly flipped, mean over 5 seeds")
+def prec_digits_n20():
+    return _mean(_precisions("digits", 0.2))
+
+
+@source("prec_digits_n40", means="precision (%) of the filter on digits, 40% noise, mean over 5 seeds")
+def prec_digits_n40():
+    return _mean(_precisions("digits", 0.4))
+
+
+@source("prec_bc_n20", means="precision (%) of the filter on breast_cancer, 20% noise, mean over 5 seeds")
+def prec_bc_n20():
+    return _mean(_precisions("breast_cancer", 0.2))
+
+
+@source("prec_bc_n40", means="precision (%) of the filter on breast_cancer, 40% noise, mean over 5 seeds")
+def prec_bc_n40():
+    return _mean(_precisions("breast_cancer", 0.4))
+
+
+@source("prec_min_any", means="lowest per-run precision (%) of the filter over all noisy cells (2 datasets x 20%/40% noise x 5 seeds)")
+def prec_min_any():
+    return min(p for d in ("digits", "breast_cancer") for n in (0.2, 0.4) for p in _precisions(d, n))
+
+
+@source("sd_prec_digits_n20", means="sd over 5 seeds of filter precision (%), digits, 20% noise")
+def sd_prec_digits_n20():
+    return _sd(_precisions("digits", 0.2))
+
+
+@source("sd_prec_digits_n40", means="sd over 5 seeds of filter precision (%), digits, 40% noise")
+def sd_prec_digits_n40():
+    return _sd(_precisions("digits", 0.4))
+
+
+@source("sd_prec_bc_n20", means="sd over 5 seeds of filter precision (%), breast_cancer, 20% noise")
+def sd_prec_bc_n20():
+    return _sd(_precisions("breast_cancer", 0.2))
+
+
+@source("sd_prec_bc_n40", means="sd over 5 seeds of filter precision (%), breast_cancer, 40% noise")
+def sd_prec_bc_n40():
+    return _sd(_precisions("breast_cancer", 0.4))
+
+
+@source("rec_digits_n20", means="recall (%) of the filter on digits, 20% noise: flipped samples that were dropped, mean over 5 seeds")
+def rec_digits_n20():
+    return _mean(_recalls("digits", 0.2))
+
+
+@source("rec_digits_n40", means="recall (%) of the filter on digits, 40% noise, mean over 5 seeds")
+def rec_digits_n40():
+    return _mean(_recalls("digits", 0.4))
+
+
+@source("rec_bc_n20", means="recall (%) of the filter on breast_cancer, 20% noise, mean over 5 seeds")
+def rec_bc_n20():
+    return _mean(_recalls("breast_cancer", 0.2))
+
+
+@source("rec_bc_n40", means="recall (%) of the filter on breast_cancer, 40% noise, mean over 5 seeds")
+def rec_bc_n40():
+    return _mean(_recalls("breast_cancer", 0.4))
+
+
+@source("dropped_frac_digits_n0", means="share (%) of training samples the filter drops on digits at 0% noise (all clean), mean over 5 seeds")
+def dropped_frac_digits_n0():
+    return _mean(_dropped_frac("digits", 0.0))
+
+
+@source("dropped_frac_bc_n0", means="share (%) of training samples the filter drops on breast_cancer at 0% noise (all clean), mean over 5 seeds")
+def dropped_frac_bc_n0():
+    return _mean(_dropped_frac("breast_cancer", 0.0))
+
+
+@source("dropped_frac_digits_n20", means="share (%) of training samples dropped by the filter, digits, 20% noise, mean over 5 seeds")
+def dropped_frac_digits_n20():
+    return _mean(_dropped_frac("digits", 0.2))
+
+
+@source("dropped_frac_digits_n40", means="share (%) of training samples dropped by the filter, digits, 40% noise, mean over 5 seeds")
+def dropped_frac_digits_n40():
+    return _mean(_dropped_frac("digits", 0.4))
+
+
+@source("dropped_frac_bc_n20", means="share (%) of training samples dropped by the filter, breast_cancer, 20% noise, mean over 5 seeds")
+def dropped_frac_bc_n20():
+    return _mean(_dropped_frac("breast_cancer", 0.2))
+
+
+@source("dropped_frac_bc_n40", means="share (%) of training samples dropped by the filter, breast_cancer, 40% noise, mean over 5 seeds")
+def dropped_frac_bc_n40():
+    return _mean(_dropped_frac("breast_cancer", 0.4))
+
+
+@source("actual_noise_digits_n40", means="actual share (%) of training labels flipped on digits at nominal 40% noise, mean over 5 seeds")
+def actual_noise_digits_n40():
+    return _mean([100 * r["n_noisy"] / r["n_train"] for r in _runs("digits", 0.4, "logreg")])
+
+
+@source("actual_noise_bc_n40", means="actual share (%) of training labels flipped on breast_cancer at nominal 40% noise, mean over 5 seeds")
+def actual_noise_bc_n40():
+    return _mean([100 * r["n_noisy"] / r["n_train"] for r in _runs("breast_cancer", 0.4, "logreg")])
+
+
+# ---------- cost ----------
+@source("fit_sec_digits_logreg", means="wall-clock fit time (s) of logistic regression on digits, mean over all 15 runs (3 noise rates x 5 seeds)")
+def fit_sec_digits_logreg():
+    return _mean([r["fit_seconds"] for n in (0.0, 0.2, 0.4) for r in _runs("digits", n, "logreg")])
+
+
+@source("fit_sec_digits_filter", means="wall-clock fit time (s) of the filter (5-fold CV plus refit) on digits, mean over all 15 runs")
+def fit_sec_digits_filter():
+    return _mean([r["fit_seconds"] for n in (0.0, 0.2, 0.4) for r in _runs("digits", n, "filter")])
+
+
+@source("fit_sec_digits_mlp", means="wall-clock fit time (s) of the MLP on digits, mean over all 15 runs")
+def fit_sec_digits_mlp():
+    return _mean([r["fit_seconds"] for n in (0.0, 0.2, 0.4) for r in _runs("digits", n, "mlp")])
+
+
+# ---------- sizes and settings ----------
+@source("n_runs_total", means="number of records in results/runs.jsonl (2 datasets x 3 noise rates x 5 seeds x 3 methods)")
+def n_runs_total():
+    return len(load("results/runs.jsonl"))
+
+
+@source("n_seeds", means="number of seeds per cell, from experiments/config.json")
+def n_seeds():
+    return len(_cfg("seeds"))
+
+
+@source("n_noise_rates", means="number of label-noise rates, from experiments/config.json")
+def n_noise_rates():
+    return len(_cfg("noise_rates"))
+
+
+@source("n_datasets", means="number of datasets, from experiments/config.json")
+def n_datasets():
+    return len(_cfg("datasets"))
+
+
+@source("noise_max_pct", means="highest symmetric label-noise rate (%), from experiments/config.json")
+def noise_max_pct():
+    return 100 * max(_cfg("noise_rates"))
+
+
+@source("noise_mid_pct", means="middle label-noise rate (%), from experiments/config.json")
+def noise_mid_pct():
+    return 100 * sorted(_cfg("noise_rates"))[1]
+
+
+@source("test_fraction_pct", means="share (%) of each dataset held out as the clean test set, from config")
+def test_fraction_pct():
+    return 100 * _cfg("test_fraction")
+
+
+@source("filter_folds", means="number of cross-validation folds used by the filter, from config")
+def filter_folds():
+    return _cfg("filter_folds")
+
+
+@source("logreg_c", means="inverse regularization strength C of logistic regression, from config")
+def logreg_c():
+    return _cfg("logreg_C")
+
+
+@source("mlp_hidden", means="hidden units of the MLP's single hidden layer, from config")
+def mlp_hidden():
+    return _cfg("mlp_hidden")
+
+
+@source("mlp_max_iter", means="maximum training iterations of the MLP, from config")
+def mlp_max_iter():
+    return _cfg("mlp_max_iter")
+
+
+@source("n_train_digits", means="training samples on digits (70% split), from runs.jsonl; asserted equal in all digits runs")
+def n_train_digits():
+    v = {r["n_train"] for r in load("results/runs.jsonl") if r["dataset"] == "digits"}
+    assert len(v) == 1
+    return v.pop()
+
+
+@source("n_test_digits", means="test samples on digits (30% split), from runs.jsonl; asserted equal in all digits runs")
+def n_test_digits():
+    v = {r["n_test"] for r in load("results/runs.jsonl") if r["dataset"] == "digits"}
+    assert len(v) == 1
+    return v.pop()
+
+
+@source("n_train_bc", means="training samples on breast_cancer, from runs.jsonl; asserted equal in all runs")
+def n_train_bc():
+    v = {r["n_train"] for r in load("results/runs.jsonl") if r["dataset"] == "breast_cancer"}
+    assert len(v) == 1
+    return v.pop()
+
+
+@source("n_test_bc", means="test samples on breast_cancer, from runs.jsonl; asserted equal in all runs")
+def n_test_bc():
+    v = {r["n_test"] for r in load("results/runs.jsonl") if r["dataset"] == "breast_cancer"}
+    assert len(v) == 1
+    return v.pop()
+
+
+@source("n_total_digits", means="total samples on digits (train plus test)")
 def n_total_digits():
-    r = _rows("dg", 0, "logreg")[0]
+    r = _runs("digits", 0.0, "logreg")[0]
     return r["n_train"] + r["n_test"]
 
 
-@source("n_total_bc", means="number of samples in breast_cancer (n_train + n_test of seed 0)")
+@source("n_total_bc", means="total samples on breast_cancer (train plus test)")
 def n_total_bc():
-    r = _rows("bc", 0, "logreg")[0]
+    r = _runs("breast_cancer", 0.0, "logreg")[0]
     return r["n_train"] + r["n_test"]
 
 
-@source("n_train_digits", means="training set size, digits")
-def n_train_digits(): return _rows("dg", 0, "logreg")[0]["n_train"]
-@source("n_test_digits", means="test set size, digits")
-def n_test_digits(): return _rows("dg", 0, "logreg")[0]["n_test"]
-@source("n_train_bc", means="training set size, breast_cancer")
-def n_train_bc(): return _rows("bc", 0, "logreg")[0]["n_train"]
-@source("n_test_bc", means="test set size, breast_cancer")
-def n_test_bc(): return _rows("bc", 0, "logreg")[0]["n_test"]
-@source("n_seeds", means="number of seeds in the config")
-def n_seeds(): return len(load("experiments/config.json")["seeds"])
-@source("n_runs", means="total number of run records in results/runs.jsonl")
-def n_runs(): return len(load("results/runs.jsonl"))
-@source("cfg_test_fraction_pct", means="test fraction (%) of the train/test split, from the config")
-def cfg_test_fraction_pct(): return 100 * load("experiments/config.json")["test_fraction"]
-@source("cfg_folds", means="number of cross-validation folds K of the filter, from the config")
-def cfg_folds(): return load("experiments/config.json")["filter_folds"]
-@source("cfg_logreg_C", means="inverse L2 regularisation strength C of logistic regression, from the config")
-def cfg_logreg_C(): return load("experiments/config.json")["logreg_C"]
-@source("cfg_mlp_hidden", means="hidden units of the single-hidden-layer MLP, from the config")
-def cfg_mlp_hidden(): return load("experiments/config.json")["mlp_hidden"]
-@source("cfg_mlp_max_iter", means="max_iter of the MLP, from the config")
-def cfg_mlp_max_iter(): return load("experiments/config.json")["mlp_max_iter"]
-@source("cfg_n_noise_rates", means="number of nominal noise rates in the config (0.0, 0.2, 0.4)")
-def cfg_n_noise_rates(): return len(load("experiments/config.json")["noise_rates"])
+# ---------- statistical tests (paired by seed: same split, noise draw and folds) ----------
+from scriptorium_stats import paired_t_p, diff_ci95_low, diff_ci95_high, cohens_dz
 
 
-@source("time_ratio_filter_logreg_digits", means="ratio of mean fit_seconds, filter over logreg, digits, all noise rates and seeds (machine-dependent)")
-def time_ratio_filter_logreg_digits():
-    rs = [r for r in load("results/runs.jsonl") if r["dataset"] == "digits"]
-    f = [r["fit_seconds"] for r in rs if r["method"] == "filter"]
-    g = [r["fit_seconds"] for r in rs if r["method"] == "logreg"]
-    return (sum(f) / len(f)) / (sum(g) / len(g))
+def _half(v):
+    return [50.0] * len(v)
 
 
-@source("cfg_noise_low_pct", means="lower nonzero nominal noise rate (%) in the config")
-def cfg_noise_low_pct(): return 100 * sorted(load("experiments/config.json")["noise_rates"])[1]
-@source("cfg_noise_high_pct", means="highest nominal noise rate (%) in the config")
-def cfg_noise_high_pct(): return 100 * max(load("experiments/config.json")["noise_rates"])
+# filter vs no-filter logistic regression
+@source("p_dg0_filter_vs_logreg", means="p-value, paired t-test over 5 seeds, filter vs no-filter logistic regression test accuracy, digits, noise 0.0 (cost on clean labels)")
+def p_dg0_filter_vs_logreg():
+    return paired_t_p(_accs("digits", 0.0, "filter"), _accs("digits", 0.0, "logreg"))
 
 
-# ---------------- paired per-seed differences and drop shares (review round 1) ----------------
-def _pd(ds, nz):
-    return [a - b for a, b in zip(_accs(ds, nz, "filter"), _accs(ds, nz, "logreg"))]
+@source("dg0_logreg_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, digits, noise 0.0, 5 seeds")
+def dg0_logreg_diff_ci_low():
+    return diff_ci95_low(_accs("digits", 0.0, "filter"), _accs("digits", 0.0, "logreg"))
 
 
-def _dfrac(ds, nz):
-    return _mean([100 * r["n_dropped"] / r["n_train"] for r in _rows(ds, nz, "filter")])
+@source("dg0_logreg_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, digits, noise 0.0, 5 seeds")
+def dg0_logreg_diff_ci_high():
+    return diff_ci95_high(_accs("digits", 0.0, "filter"), _accs("digits", 0.0, "logreg"))
 
 
-@source("pdmin_dg_00", means="smallest per-seed paired difference (points of %), filter minus logreg, digits, noise 0")
-def pdmin_dg_00(): return min(_pd("dg", 0))
-@source("pdmax_dg_00", means="largest per-seed paired difference (points of %), filter minus logreg, digits, noise 0")
-def pdmax_dg_00(): return max(_pd("dg", 0))
-@source("pdmin_bc_00", means="smallest per-seed paired difference (points of %), filter minus logreg, breast_cancer, noise 0")
-def pdmin_bc_00(): return min(_pd("bc", 0))
-@source("pdmax_bc_00", means="largest per-seed paired difference (points of %), filter minus logreg, breast_cancer, noise 0")
-def pdmax_bc_00(): return max(_pd("bc", 0))
-@source("pdmin_dg_20", means="smallest per-seed paired difference (points of %), filter minus logreg, digits, noise 0.2")
-def pdmin_dg_20(): return min(_pd("dg", 20))
-@source("pdmax_dg_20", means="largest per-seed paired difference (points of %), filter minus logreg, digits, noise 0.2")
-def pdmax_dg_20(): return max(_pd("dg", 20))
-@source("pdmin_dg_40", means="smallest per-seed paired difference (points of %), filter minus logreg, digits, noise 0.4")
-def pdmin_dg_40(): return min(_pd("dg", 40))
-@source("pdmax_dg_40", means="largest per-seed paired difference (points of %), filter minus logreg, digits, noise 0.4")
-def pdmax_dg_40(): return max(_pd("dg", 40))
-@source("pdmin_bc_20", means="smallest per-seed paired difference (points of %), filter minus logreg, breast_cancer, noise 0.2")
-def pdmin_bc_20(): return min(_pd("bc", 20))
-@source("pdmax_bc_20", means="largest per-seed paired difference (points of %), filter minus logreg, breast_cancer, noise 0.2")
-def pdmax_bc_20(): return max(_pd("bc", 20))
-@source("pdmin_bc_40", means="smallest per-seed paired difference (points of %), filter minus logreg, breast_cancer, noise 0.4")
-def pdmin_bc_40(): return min(_pd("bc", 40))
-@source("pdmax_bc_40", means="largest per-seed paired difference (points of %), filter minus logreg, breast_cancer, noise 0.4")
-def pdmax_bc_40(): return max(_pd("bc", 40))
+@source("p_bc0_filter_vs_logreg", means="p-value, paired t-test over 5 seeds, filter vs no-filter logistic regression test accuracy, breast_cancer, noise 0.0 (cost on clean labels)")
+def p_bc0_filter_vs_logreg():
+    return paired_t_p(_accs("breast_cancer", 0.0, "filter"), _accs("breast_cancer", 0.0, "logreg"))
 
-@source("droppedshare_dg_20", means="mean share (%) of training set dropped by the filter, digits, noise 0.2")
-def droppedshare_dg_20(): return _dfrac("dg", 20)
-@source("droppedshare_dg_40", means="mean share (%) of training set dropped by the filter, digits, noise 0.4")
-def droppedshare_dg_40(): return _dfrac("dg", 40)
-@source("droppedshare_bc_20", means="mean share (%) of training set dropped by the filter, breast_cancer, noise 0.2")
-def droppedshare_bc_20(): return _dfrac("bc", 20)
-@source("droppedshare_bc_40", means="mean share (%) of training set dropped by the filter, breast_cancer, noise 0.4")
-def droppedshare_bc_40(): return _dfrac("bc", 40)
+
+@source("bc0_logreg_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, breast_cancer, noise 0.0, 5 seeds")
+def bc0_logreg_diff_ci_low():
+    return diff_ci95_low(_accs("breast_cancer", 0.0, "filter"), _accs("breast_cancer", 0.0, "logreg"))
+
+
+@source("bc0_logreg_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, breast_cancer, noise 0.0, 5 seeds")
+def bc0_logreg_diff_ci_high():
+    return diff_ci95_high(_accs("breast_cancer", 0.0, "filter"), _accs("breast_cancer", 0.0, "logreg"))
+
+
+@source("p_dg20_filter_vs_logreg", means="p-value, paired t-test over 5 seeds, filter vs no-filter logistic regression test accuracy, digits, noise 0.2")
+def p_dg20_filter_vs_logreg():
+    return paired_t_p(_accs("digits", 0.2, "filter"), _accs("digits", 0.2, "logreg"))
+
+
+@source("dg20_logreg_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, digits, noise 0.2, 5 seeds")
+def dg20_logreg_diff_ci_low():
+    return diff_ci95_low(_accs("digits", 0.2, "filter"), _accs("digits", 0.2, "logreg"))
+
+
+@source("dg20_logreg_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, digits, noise 0.2, 5 seeds")
+def dg20_logreg_diff_ci_high():
+    return diff_ci95_high(_accs("digits", 0.2, "filter"), _accs("digits", 0.2, "logreg"))
+
+
+@source("dz_dg20_filter_vs_logreg", means="Cohen's dz (paired effect size), filter vs no-filter logistic regression test accuracy, digits, noise 0.2, 5 seeds")
+def dz_dg20_filter_vs_logreg():
+    return cohens_dz(_accs("digits", 0.2, "filter"), _accs("digits", 0.2, "logreg"))
+
+
+@source("p_dg40_filter_vs_logreg", means="p-value, paired t-test over 5 seeds, filter vs no-filter logistic regression test accuracy, digits, noise 0.4")
+def p_dg40_filter_vs_logreg():
+    return paired_t_p(_accs("digits", 0.4, "filter"), _accs("digits", 0.4, "logreg"))
+
+
+@source("dg40_logreg_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, digits, noise 0.4, 5 seeds")
+def dg40_logreg_diff_ci_low():
+    return diff_ci95_low(_accs("digits", 0.4, "filter"), _accs("digits", 0.4, "logreg"))
+
+
+@source("dg40_logreg_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, digits, noise 0.4, 5 seeds")
+def dg40_logreg_diff_ci_high():
+    return diff_ci95_high(_accs("digits", 0.4, "filter"), _accs("digits", 0.4, "logreg"))
+
+
+@source("dz_dg40_filter_vs_logreg", means="Cohen's dz (paired effect size), filter vs no-filter logistic regression test accuracy, digits, noise 0.4, 5 seeds")
+def dz_dg40_filter_vs_logreg():
+    return cohens_dz(_accs("digits", 0.4, "filter"), _accs("digits", 0.4, "logreg"))
+
+
+@source("p_bc20_filter_vs_logreg", means="p-value, paired t-test over 5 seeds, filter vs no-filter logistic regression test accuracy, breast_cancer, noise 0.2")
+def p_bc20_filter_vs_logreg():
+    return paired_t_p(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.2, "logreg"))
+
+
+@source("bc20_logreg_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, breast_cancer, noise 0.2, 5 seeds")
+def bc20_logreg_diff_ci_low():
+    return diff_ci95_low(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.2, "logreg"))
+
+
+@source("bc20_logreg_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, breast_cancer, noise 0.2, 5 seeds")
+def bc20_logreg_diff_ci_high():
+    return diff_ci95_high(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.2, "logreg"))
+
+
+@source("dz_bc20_filter_vs_logreg", means="Cohen's dz (paired effect size), filter vs no-filter logistic regression test accuracy, breast_cancer, noise 0.2, 5 seeds")
+def dz_bc20_filter_vs_logreg():
+    return cohens_dz(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.2, "logreg"))
+
+
+@source("p_bc40_filter_vs_logreg", means="p-value, paired t-test over 5 seeds, filter vs no-filter logistic regression test accuracy, breast_cancer, noise 0.4")
+def p_bc40_filter_vs_logreg():
+    return paired_t_p(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.4, "logreg"))
+
+
+@source("bc40_logreg_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, breast_cancer, noise 0.4, 5 seeds")
+def bc40_logreg_diff_ci_low():
+    return diff_ci95_low(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.4, "logreg"))
+
+
+@source("bc40_logreg_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus logistic regression, test accuracy, breast_cancer, noise 0.4, 5 seeds")
+def bc40_logreg_diff_ci_high():
+    return diff_ci95_high(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.4, "logreg"))
+
+
+@source("dz_bc40_filter_vs_logreg", means="Cohen's dz (paired effect size), filter vs no-filter logistic regression test accuracy, breast_cancer, noise 0.4, 5 seeds")
+def dz_bc40_filter_vs_logreg():
+    return cohens_dz(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.4, "logreg"))
+
+
+# filter vs MLP
+@source("p_dg0_filter_vs_mlp", means="p-value, paired t-test over 5 seeds, filter vs the MLP test accuracy, digits, noise 0.0")
+def p_dg0_filter_vs_mlp():
+    return paired_t_p(_accs("digits", 0.0, "filter"), _accs("digits", 0.0, "mlp"))
+
+
+@source("p_bc0_filter_vs_mlp", means="p-value, paired t-test over 5 seeds, filter vs the MLP test accuracy, breast_cancer, noise 0.0")
+def p_bc0_filter_vs_mlp():
+    return paired_t_p(_accs("breast_cancer", 0.0, "filter"), _accs("breast_cancer", 0.0, "mlp"))
+
+
+@source("p_dg20_filter_vs_mlp", means="p-value, paired t-test over 5 seeds, filter vs the MLP test accuracy, digits, noise 0.2")
+def p_dg20_filter_vs_mlp():
+    return paired_t_p(_accs("digits", 0.2, "filter"), _accs("digits", 0.2, "mlp"))
+
+
+@source("dg20_mlp_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, digits, noise 0.2, 5 seeds")
+def dg20_mlp_diff_ci_low():
+    return diff_ci95_low(_accs("digits", 0.2, "filter"), _accs("digits", 0.2, "mlp"))
+
+
+@source("dg20_mlp_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, digits, noise 0.2, 5 seeds")
+def dg20_mlp_diff_ci_high():
+    return diff_ci95_high(_accs("digits", 0.2, "filter"), _accs("digits", 0.2, "mlp"))
+
+
+@source("p_dg40_filter_vs_mlp", means="p-value, paired t-test over 5 seeds, filter vs the MLP test accuracy, digits, noise 0.4")
+def p_dg40_filter_vs_mlp():
+    return paired_t_p(_accs("digits", 0.4, "filter"), _accs("digits", 0.4, "mlp"))
+
+
+@source("dg40_mlp_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, digits, noise 0.4, 5 seeds")
+def dg40_mlp_diff_ci_low():
+    return diff_ci95_low(_accs("digits", 0.4, "filter"), _accs("digits", 0.4, "mlp"))
+
+
+@source("dg40_mlp_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, digits, noise 0.4, 5 seeds")
+def dg40_mlp_diff_ci_high():
+    return diff_ci95_high(_accs("digits", 0.4, "filter"), _accs("digits", 0.4, "mlp"))
+
+
+@source("p_bc20_filter_vs_mlp", means="p-value, paired t-test over 5 seeds, filter vs the MLP test accuracy, breast_cancer, noise 0.2")
+def p_bc20_filter_vs_mlp():
+    return paired_t_p(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.2, "mlp"))
+
+
+@source("bc20_mlp_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, breast_cancer, noise 0.2, 5 seeds")
+def bc20_mlp_diff_ci_low():
+    return diff_ci95_low(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.2, "mlp"))
+
+
+@source("bc20_mlp_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, breast_cancer, noise 0.2, 5 seeds")
+def bc20_mlp_diff_ci_high():
+    return diff_ci95_high(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.2, "mlp"))
+
+
+@source("p_bc40_filter_vs_mlp", means="p-value, paired t-test over 5 seeds, filter vs the MLP test accuracy, breast_cancer, noise 0.4")
+def p_bc40_filter_vs_mlp():
+    return paired_t_p(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.4, "mlp"))
+
+
+@source("bc40_mlp_diff_ci_low", means="lower end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, breast_cancer, noise 0.4, 5 seeds")
+def bc40_mlp_diff_ci_low():
+    return diff_ci95_low(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.4, "mlp"))
+
+
+@source("bc40_mlp_diff_ci_high", means="upper end of the 95% interval (points) of the paired difference filter minus MLP, test accuracy, breast_cancer, noise 0.4, 5 seeds")
+def bc40_mlp_diff_ci_high():
+    return diff_ci95_high(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.4, "mlp"))
+
+
+# precision above one half
+@source("p_dg20_prec_vs_half", means="p-value, paired t-test over 5 seeds, filter precision (%) vs 50%, digits, noise 0.2 (are most dropped samples mislabeled)")
+def p_dg20_prec_vs_half():
+    return paired_t_p(_precisions("digits", 0.2), _half(_precisions("digits", 0.2)))
+
+
+@source("p_dg40_prec_vs_half", means="p-value, paired t-test over 5 seeds, filter precision (%) vs 50%, digits, noise 0.4")
+def p_dg40_prec_vs_half():
+    return paired_t_p(_precisions("digits", 0.4), _half(_precisions("digits", 0.4)))
+
+
+@source("p_bc20_prec_vs_half", means="p-value, paired t-test over 5 seeds, filter precision (%) vs 50%, breast_cancer, noise 0.2")
+def p_bc20_prec_vs_half():
+    return paired_t_p(_precisions("breast_cancer", 0.2), _half(_precisions("breast_cancer", 0.2)))
+
+
+@source("p_bc40_prec_vs_half", means="p-value, paired t-test over 5 seeds, filter precision (%) vs 50%, breast_cancer, noise 0.4")
+def p_bc40_prec_vs_half():
+    return paired_t_p(_precisions("breast_cancer", 0.4), _half(_precisions("breast_cancer", 0.4)))
+
+
+# does the filter fully close the gap to clean-label logistic regression
+@source("p_dg20_filter_vs_clean", means="p-value, paired t-test over 5 seeds, filter at noise 0.2 vs logistic regression at noise 0.0, test accuracy, digits")
+def p_dg20_filter_vs_clean():
+    return paired_t_p(_accs("digits", 0.2, "filter"), _accs("digits", 0.0, "logreg"))
+
+
+@source("p_dg40_filter_vs_clean", means="p-value, paired t-test over 5 seeds, filter at noise 0.4 vs logistic regression at noise 0.0, test accuracy, digits")
+def p_dg40_filter_vs_clean():
+    return paired_t_p(_accs("digits", 0.4, "filter"), _accs("digits", 0.0, "logreg"))
+
+
+@source("p_bc20_filter_vs_clean", means="p-value, paired t-test over 5 seeds, filter at noise 0.2 vs logistic regression at noise 0.0, test accuracy, breast_cancer")
+def p_bc20_filter_vs_clean():
+    return paired_t_p(_accs("breast_cancer", 0.2, "filter"), _accs("breast_cancer", 0.0, "logreg"))
+
+
+@source("p_bc40_filter_vs_clean", means="p-value, paired t-test over 5 seeds, filter at noise 0.4 vs logistic regression at noise 0.0, test accuracy, breast_cancer")
+def p_bc40_filter_vs_clean():
+    return paired_t_p(_accs("breast_cancer", 0.4, "filter"), _accs("breast_cancer", 0.0, "logreg"))
+
+
+# noise hurts logistic regression (trend: ends of the noise range)
+@source("p_dg_loss_n40", means="p-value, paired t-test over 5 seeds, logistic regression test accuracy at noise 0.0 vs 0.4, digits")
+def p_dg_loss_n40():
+    return paired_t_p(_accs("digits", 0.0, "logreg"), _accs("digits", 0.4, "logreg"))
+
+
+@source("p_bc_loss_n40", means="p-value, paired t-test over 5 seeds, logistic regression test accuracy at noise 0.0 vs 0.4, breast_cancer")
+def p_bc_loss_n40():
+    return paired_t_p(_accs("breast_cancer", 0.0, "logreg"), _accs("breast_cancer", 0.4, "logreg"))
+
+
+@source("actual_noise_digits_n20", means="actual share (%) of training labels flipped on digits at nominal 20% noise, mean over 5 seeds")
+def actual_noise_digits_n20():
+    return _mean([100 * r["n_noisy"] / r["n_train"] for r in _runs("digits", 0.2, "logreg")])
+
+
+@source("actual_noise_bc_n20", means="actual share (%) of training labels flipped on breast_cancer at nominal 20% noise, mean over 5 seeds")
+def actual_noise_bc_n20():
+    return _mean([100 * r["n_noisy"] / r["n_train"] for r in _runs("breast_cancer", 0.2, "logreg")])
+
+
+@source("kept_digits_n40", means="training samples kept by the filter on digits at 40% noise, mean over 5 seeds")
+def kept_digits_n40():
+    return _mean([r["n_train"] - r["n_dropped"] for r in _runs("digits", 0.4, "filter")])
+
+
+@source("kept_bc_n40", means="training samples kept by the filter on breast_cancer at 40% noise, mean over 5 seeds")
+def kept_bc_n40():
+    return _mean([r["n_train"] - r["n_dropped"] for r in _runs("breast_cancer", 0.4, "filter")])
+
+
+@source("p_prec_vs_half_max", means="largest of the four p-values (paired t-test over 5 seeds) of filter precision vs 50%, both datasets, noise 0.2 and 0.4")
+def p_prec_vs_half_max():
+    return max(paired_t_p(_precisions(d, n), _half(_precisions(d, n)))
+               for d in ("digits", "breast_cancer") for n in (0.2, 0.4))

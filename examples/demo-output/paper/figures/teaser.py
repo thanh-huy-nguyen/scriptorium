@@ -1,52 +1,107 @@
-import json
 import numpy as np
-import matplotlib
-matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+import scriptorium_fig as sf
 
-INK = "#1E1A17"
-plt.rcParams.update({"font.family": "sans-serif", "font.size": 8, "text.color": INK,
-                     "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK,
-                     "axes.edgecolor": INK, "font.weight": "regular"})
-rows = [json.loads(l) for l in open("results/runs.jsonl")]
+R = sf.recipe
+PURPLE, LIGHT, LAV = "#4E2A84", "#B6ACD1", "#F1EEF7"
+C_LR = "#2E8B8B"  # muted teal
+C_MLP = sf.color("multilayer perceptron")
+GRAY = "#8a8a8a"
+C_PREC, C_REC = "#4F6D8F", "#A9BCD0"  # muted slate blue: diagnostic bars, not a method
 
+sf.use()
+fig, _ = sf.figure("full", aspect=0.42)
+_.remove()
+gs = fig.add_gridspec(1, 3, width_ratios=[26, 38, 36], wspace=0.35,
+                      left=0.075, right=0.995, top=0.72, bottom=0.2)
+gl = gs[0, 1].subgridspec(1, 2, wspace=0.12)
+gr = gs[0, 2].subgridspec(1, 2, wspace=1.0)
 
-def acc(ds, nz, m):
-    return np.array([100 * r["test_acc"] for r in rows
-                     if r["dataset"] == ds and abs(r["noise"] - nz) < 1e-9 and r["method"] == m])
+# ---- (a) precision and recall
+ax = fig.add_subplot(gs[0, 0])
+cells = [("digits", "digits", "20"), ("digits", "digits", "40"),
+         ("bc", "breast cancer", "20"), ("bc", "breast cancer", "40")]
+x = np.arange(4)
+w = 0.38
+prec = [R(f"prec_{d}_n{n}") for d, _, n in cells]
+sd = [R(f"sd_prec_{d}_n{n}") for d, _, n in cells]
+rec = [R(f"rec_{d}_n{n}") for d, _, n in cells]
+ax.bar(x - w / 2, prec, w, yerr=sd, color=C_PREC, capsize=2, error_kw={"lw": 0.8}, label="precision: drops that are flips")
+ax.bar(x + w / 2, rec, w, color=C_REC, label="recall: flips that are dropped")
+ax.axhline(50, color=GRAY, ls="--", lw=0.8, zorder=0)
+ax.set_xlim(-0.6, 4.2)
+ax.text(3.45, 51, "50%", color="#555555", ha="left", va="bottom", fontsize=6.5)
+ax.set_xticks(x)
+ax.set_xticklabels([f"{n}%" for _, nm, n in cells])
+ax.set_ylim(0, 100)
+ax.set_ylabel("Share (%)")
+for xc, nm in [(0.5, "digits"), (2.5, "breast cancer")]:
+    ax.annotate(nm, (xc, 0), xycoords=("data", "axes fraction"), xytext=(0, -17),
+                textcoords="offset points", ha="center", va="top")
+ax.legend(loc="lower left", bbox_to_anchor=(-0.1, 1.02), ncol=1, frameon=False, borderaxespad=0,
+          handlelength=1.2, labelspacing=0.3)
+fig.text(0.0, 0.97, "(a)", va="top")
 
+# ---- (b) accuracy lines
+noise = [0, 20, 40]
+axs = []
+for j, (d, name) in enumerate([("digits", "digits"), ("bc", "breast cancer")]):
+    a = fig.add_subplot(gl[0, j])
+    axs.append(a)
 
-noises = [0.0, 0.2, 0.4]
-sty = {"filter": ("Filter (ours)", "#4E2A84", "o", 1.9),
-       "logreg": ("Logistic regression", "#2D4B73", "s", 1.1),
-       "mlp": ("MLP", "#9A6A1F", "^", 1.1)}
-fig, axs = plt.subplots(1, 2, figsize=(3.3, 2.3), sharey=True)
-for ax, ds, name in zip(axs, ["digits", "breast_cancer"], ["digits", "breast cancer"]):
-    clean = acc(ds, 0.0, "logreg").mean()
-    ax.axhline(clean, color="#6E6A64", lw=0.7, ls="--", zorder=1)
-    ax.text(40, clean + 0.5, "clean", color="#6E6A64", fontsize=7, ha="right", va="bottom")
-    for i, m in enumerate(["mlp", "logreg", "filter"]):
-        lab, c, mk, lw = sty[m]
-        xs = [n * 100 for n in noises]
-        a = [acc(ds, n, m) for n in noises]
-        off = (i - 1) * 0.8
-        ax.errorbar([x + off for x in xs], [v.mean() for v in a], yerr=[v.std(ddof=1) for v in a],
-                    color=c, marker=mk, ms=3.5, lw=lw, capsize=2, elinewidth=0.7,
-                    label=lab, zorder=3 if m == "filter" else 2)
-    ax.set_xticks([0, 20, 40])
-    ax.set_xlim(-5, 45)
-    ax.set_ylim(55, 100.5)
-    ax.text(0.04, 0.04, name, transform=ax.transAxes, fontsize=8, ha="left", va="bottom")
-    ax.set_xlabel("Label noise (%)")
-    for s in ("top", "right"):
-        ax.spines[s].set_visible(False)
-axs[0].set_ylabel("Clean test accuracy (%)")
+    def get(m, k):
+        return np.array([R(f"{k}_{d}_n{n}_{m}") for n in noise])
+    lr, mlp = get("logreg", "acc"), get("mlp", "acc")
+    for m, col, lw, lab in [("logreg", C_LR, 1.2, "logistic regression"), ("mlp", C_MLP, 1.2, "MLP"),
+                            ("filter", PURPLE, 2.0, "out-of-fold filter")]:
+        mu, s = get(m, "acc"), get(m, "sd")
+        a.plot(noise, mu, "-o", color=col, lw=lw, ms=3, label=lab, zorder=3)
+        a.fill_between(noise, mu - s, mu + s, color=col, alpha=0.10, lw=0, zorder=2)
+    clean = lr[0]
+    flt = get("filter", "acc")[2]
+    a.axhline(clean, color=GRAY, ls="--", lw=0.8, zorder=1)
+    a.add_patch(Rectangle((42, lr[2]), 3.2, clean - lr[2], fc=LAV, ec=LIGHT, lw=0.8, zorder=1))
+    a.plot([42, 45.2], [flt, flt], color=PURPLE, lw=2.0, zorder=4, solid_capstyle="butt")
+    rec_pct = R(f"recovery_{d}_n40")
+    a.text(43.6, lr[2] - 0.8, f"{rec_pct:.0f}% of\nmean gap", ha="center", va="top",
+           fontsize=6.5, color=PURPLE, linespacing=1.0)
+    a.set_xticks(noise)
+    a.set_xticklabels([f"{n}%" for n in noise])
+    a.set_xlim(-3, 52)
+    a.set_xlabel("Label noise rate")
+    a.set_title(name, pad=3)
+    a.set_ylim(min(mlp[2], lr[2]) - 9, 100)
+    if j == 0:
+        a.set_ylabel("Test accuracy (%)")
+    else:
+        a.set_yticklabels([])
 h, l = axs[0].get_legend_handles_labels()
-fig.legend(h[::-1], l[::-1], loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, frameon=False,
-           fontsize=7, handlelength=1.6, columnspacing=1.0, handletextpad=0.4)
-fig.tight_layout(w_pad=0.8)
-fig.savefig("paper/figures/teaser.pdf", bbox_inches="tight")
-fig.savefig("paper/figures/teaser.png", dpi=200, bbox_inches="tight")
-for ds in ["digits", "breast_cancer"]:
-    for m in sty:
-        print(ds, m, [(round(acc(ds, n, m).mean(), 1), round(acc(ds, n, m).std(ddof=1), 1)) for n in noises])
+cx = 0.5 * (axs[0].get_position().x0 + axs[1].get_position().x1)
+fig.legend(h, l, loc="lower left", bbox_to_anchor=(axs[0].get_position().x0 - 0.04, 0.775), ncol=1, frameon=False,
+           handlelength=1.4, labelspacing=0.3, borderaxespad=0)
+fig.text(axs[0].get_position().x0 - 0.05, 0.97, "(b)", va="top")
+
+# ---- (c) clean cost
+ac = fig.add_subplot(gr[0, 0])
+bd = fig.add_subplot(gr[0, 1])
+g = np.array([R("gain_digits_n0_vs_logreg"), R("gain_bc_n0_vs_logreg")])
+lo = np.array([R("dg0_logreg_diff_ci_low"), R("bc0_logreg_diff_ci_low")])
+hi = np.array([R("dg0_logreg_diff_ci_high"), R("bc0_logreg_diff_ci_high")])
+ac.bar([0, 1], g, 0.6, color=PURPLE, yerr=[g - lo, hi - g], capsize=2, error_kw={"lw": 0.8})
+ac.axhline(0, color=GRAY, lw=0.8)
+ac.set_xticks([0, 1])
+ac.set_xticklabels(["digits", "breast\ncancer"])
+ac.set_ylim(-1.2, 0.4)
+ac.set_ylabel("points")
+ac.set_title("accuracy\nchange", pad=3)
+drop = [R("dropped_frac_digits_n0"), R("dropped_frac_bc_n0")]
+bd.bar([0, 1], drop, 0.6, color=LIGHT)
+bd.set_xticks([0, 1])
+bd.set_xticklabels(["digits", "breast\ncancer"])
+bd.set_ylim(0, 8)
+bd.set_ylabel("% dropped")
+bd.set_title("samples\ndropped", pad=3)
+fig.text(ac.get_position().x0 - 0.06, 0.88, "(c)", va="top")
+
+sf.save(fig, "teaser")

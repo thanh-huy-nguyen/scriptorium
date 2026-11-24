@@ -1,63 +1,74 @@
 {
-  "summary": "The paper evaluates a one-pass out-of-fold filter. It runs 5-fold cross-validated logistic regression, drops every training sample whose out-of-fold prediction disagrees with its label, and refits. It is tested on digits and breast cancer with synthetic symmetric noise at 20% and 40%, over 5 seeds. It reports gains over noisy logistic regression on digits (recovery 78% and 68%), a smaller and less certain gain on breast cancer, large wins over a default MLP, a small cost on clean labels, and 65-76% precision of the dropped samples. The paper is candid about its limits, but the comparisons that could show the method is useful are mostly missing.",
+  "summary": "The paper measures the classical out-of-fold noise filter (Brodley and Friedl): 5-fold out-of-fold logistic regression, drop every sample whose prediction disagrees with its label, refit. It is tested on two small scikit-learn datasets (digits, breast cancer) with symmetric label noise of 0, 20 and 40% and 5 paired seeds. It reports precision and recall of the drop set, the accuracy gain over plain logistic regression (large on digits, smaller and noisier on breast cancer), a small cost on clean labels, and a comparison with an untuned MLP that is described as a sanity check. The authors are candid that this is a measurement for one setting, not a ranking.",
   "strengths": [
-    "Claims are scoped honestly. The paper states where the claim stops (breast cancer at 40%), calls the MLP comparison weak, and lists the missing baselines and untested hyperparameters.",
-    "Paired per-seed differences are reported alongside means and sds. The baseline is paired on the same split and noisy labels, which is a sound design for such a small study.",
-    "Because the noise is synthetic, the paper can measure what the filter drops (precision, recall, share of the training set removed, Fig. 2). It also shows the cost on clean labels and the over-dropping of clean samples, rather than only the headline gain.",
-    "The method is simple and fully specified (K=5, C=1, no tuning), and the settings are stated.",
-    "The realized noise rates and the recovery definition are reported, and the paper says recovery is unstable when the loss is small."
+    "The claims are scoped honestly. The limits are stated in the abstract, setup and discussion: untuned C and K, no other noise-robust baselines, an unfair MLP, and two easy datasets with symmetric noise.",
+    "The statistics are reported carefully. Paired differences come with intervals and t-tests, and the authors say openly that they are uncorrected and that 5 seeds can make an interval and a test disagree. The breast cancer 20% cell is correctly labeled suggestive. The recovered share is flagged as ill-conditioned on breast cancer.",
+    "The detector is evaluated against known flips (precision and recall), not only through downstream accuracy. The cost on clean labels is measured explicitly, including the share of clean samples dropped.",
+    "The method is simple and the description is complete enough to reproduce: K=5, C=1, stratified folds, drop on disagreement, refit.",
+    "The central comparison is a clean ablation: the same learner with and without the filter, paired by split and noise draw."
   ],
   "weaknesses": [
     {
-      "issue": "The decisive baseline is missing. The only reference is logistic regression at a single fixed C=1, and the only other model is an untuned MLP trained on noisy labels. Strong L2 regularization (small C) is the standard, nearly free defence of a linear model against symmetric noise. Without it the 6-9 point gains on digits may only show that C=1 is a poor setting under noise. The filter also uses C=1 for its out-of-fold models, so the filter's own sensitivity to C is untested. The text concedes this ('whether stronger L2 regularization closes much of the gap is open'), but the abstract, title and contribution list still present the gain as the main result.",
-      "where": "Sec. 4 (Baselines), Sec. 5.1, 5.3, Sec. 6, abstract",
+      "issue": "The headline gain over logistic regression is confounded by regularization and training-set size, and the paper has no control for this. Logistic regression at a fixed C=1 trained on 20-40% flipped labels is a weak no-filter baseline. A smaller or cross-validated C is the obvious cheap fix for label noise, and refitting on about half the data may act partly as extra regularization. The paper admits this but runs nothing. As a result, the claim that disagreement-based dropping is what helps is not established, and the gain could be a regularization effect.",
+      "where": "Sec. 3.2 (Methods paragraph), Sec. 4.2, Table 1, Discussion",
       "severity": "major",
-      "suggestion": "Add logistic regression over a grid of C (for example 1e-3 to 1e2, selected on the noisy labels by cross-validation, which needs no clean data), and report the filter at a few C values. If that is impossible, state in the abstract and the first contribution that the gain is relative to an untuned C=1 model, and soften 'improves on logistic regression'. The wins over the MLP should not be a headline contribution (the third bullet in Sec. 1)."
+      "suggestion": "Add rows from the existing pipeline: logistic regression with C tuned on noisy cross-validation accuracy, and with a small fixed C. Add a random-drop control that removes the same number of samples per run as the filter. If compute allows, add the same filter with a different learner. If none of this can be run, state in the abstract and in the contribution bullets that the gain is relative to an untuned C=1 baseline, and weaken the causal wording in the intro ('what this buys')."
     },
     {
-      "issue": "The novelty and the closest baselines are not tested. The method is Wilson-style editing with a cross-validated linear classifier. Confident learning (the paper's closest relative) and Wilson editing are cited but not run, although both are a few lines with off-the-shelf tools. The paper therefore cannot say whether the simple hard-disagreement rule is a good choice. The rule drops 30% of digits at 20% noise and 50% at 40% noise, so roughly 13% of the clean digits samples are removed at 20% noise. Whether a thresholded variant drops fewer clean samples is the obvious question, and it is left open.",
-      "where": "Sec. 2 (Classification filtering, Confident learning), Sec. 6",
+      "issue": "The precision claim is judged against a reference that does not match the stated argument. The text compares precision with the flip rate (19-39%), which is the right chance level for random dropping. Fig. 1a draws the reference line at 50%, and the statistics test precision against 50%. At 40% noise on breast cancer, 68% against a 39% base rate is a much smaller lift than the 50% line suggests. Because breast cancer is binary and digits has ten classes, a flip rarely makes the true class look wrong in the ten-class case, so the class-count confound the paper names affects the interpretation of the whole detector claim. Precision also falls from 76% to 68% on breast cancer as noise rises, but rises on digits (65% to 76%), and the paper does not explain this.",
+      "where": "Sec. 4.1, Fig. 1a, Table 2",
       "severity": "major",
-      "suggestion": "Run confident-learning pruning and a kNN-based Wilson filter on the same 90-run grid. Add an oracle filter that drops exactly the flipped labels, which the authors can do since they know them. That gives an upper bound and shows how much of the remaining gap to clean accuracy comes from over-dropping."
+      "suggestion": "Replace the 50% line in Fig. 1a with the observed flip rate for each bar. Report lift over base rate (or the base rate beside precision in Table 2). Say in one sentence that the 50% test is a weak criterion. Either explain the opposite precision trends on the two datasets or mark them as unexplained."
     },
     {
-      "issue": "The statistical reading of breast cancer at 40% is inconsistent and partly wrong. The text says the filter's seed sd (9.0) exceeds its mean gain (3.6), so the gain cannot be told from 'a modest one'. But the seed sd of accuracy levels mostly reflects split and noise-draw variation shared by both methods. The relevant quantity is the sd of the paired differences, and the paired range is 2.3 to 5.8, positive in 5 of 5 seeds. Yet the same table counts 5/5 on digits as 'every seed' improvement and 4/5 on breast cancer at 20% as a result. There are no confidence intervals and no test, and with n=5 the strongest possible sign test has two-sided p=0.06. As a result, the paper's claims at 'clear' and 'unclear' levels are not backed by a common criterion.",
-      "where": "Sec. 4 (Protocol, Metrics), Sec. 5.1 (last paragraph), abstract, Table 1",
-      "suggestion": "Report the mean paired difference with its sd or a bootstrap/t interval for every row, and use that to define which results are 'clear'. Replace the level-sd comparison with the paired sd. Say plainly that 5 seeds are too few to separate small gains. Better, raise the seed count (repeated random splits are cheap on these datasets) so the claims are not decided by n=5."
+      "issue": "The claim that the filter 'recovers most of the gap' on digits and the 'recovered share' metric are fragile. The shares are ratios of 5-seed means with no interval. The clean-label reference is itself a seed mean with sd 0.4-0.8. The breast cancer figures swing from 66% to 22%, and one per-seed minimum is about -67%. The sd on breast cancer at 40% noise (9 points for both logistic regression and the filter) is larger than the mean gain (3.6 points). A paired t-test with n=5 is the only evidence of a gain there, and it is uncorrected across about 12 comparisons.",
+      "where": "Abstract, Sec. 1, Sec. 4.2, Table 1",
+      "severity": "major",
+      "suggestion": "Add a bootstrap or paired interval for the recovered share, or drop the metric from the abstract and intro and lead with the absolute paired difference and its interval. State the number of tests. Apply a Holm correction, or say plainly which cells survive it. Describe breast cancer at 40% noise as high-variance, not as a reliable gain."
     },
     {
-      "issue": "Recovery is the headline metric in the abstract and the intro, but it is a ratio of 5-seed means with the noisy-logreg gap in the denominator. It is unstable (the paper concedes this for breast cancer at 20%), and it has no uncertainty. It also uses clean-label logistic regression as the ceiling, which the filter does not have to reach, because the filter trains on fewer samples. Reporting '66%' and '22%' with no interval gives them more precision than 5 seeds allow.",
-      "where": "Sec. 4 (Metrics), abstract, Sec. 1 contributions, Sec. 5.1",
-      "suggestion": "Move recovery out of the abstract, or give per-seed recovery with its range or a bootstrap interval. Lead with the paired accuracy difference, which is more robust and easier to read."
+      "issue": "The MLP comparison is unfair, and the paper partly builds a narrative on it. The MLP is unregularized and has no early stopping, and it is evaluated at fixed epochs. It is placed in Fig. 1b and in the abstract, and a whole results subsection and Table 3 are given to it, although the paper itself calls it only a sanity check and says the fair comparison (early-stopped MLP, MLP trained on the filtered set) was not run. The 'degrades faster' finding says little about the filter. The MLP is also the only competing method, so the comparison table gives a false impression of a benchmark.",
+      "where": "Abstract, Sec. 4.4, Fig. 1b, Table 3",
+      "severity": "major",
+      "suggestion": "Either run an early-stopped or weight-decayed MLP and an MLP on the filtered set (the second is cheap and directly informative), or move the MLP to a short remark and remove it from the abstract and the teaser. At minimum, label the Fig. 1b curve as 'untuned MLP (no early stopping)'."
     },
     {
-      "issue": "The mechanistic account is not tested. The majority-vote argument with the bound eps<(k-1)/k is offered as explanation of the weaker breast-cancer result, and the paper says the 'small test and training sets are an alternative explanation that we did not test'. Breast cancer is also class-imbalanced and binary, so dropping samples may shift the class prior; the paper also says it did not measure per-class drop rates. Precision is quoted without the base rate: 76% precision at 40% noise on digits is a lift over a 39% flip rate, whereas 65% at 20% noise is a lift over 20%. 'Precision rises with noise' is partly a base-rate effect. The reading in Sec. 5.2 that the recall drop 'is consistent with' weaker recovery is not evidence for a cause.",
-      "where": "Sec. 3 (Why disagreement...), Sec. 5.1 (last paragraph), Sec. 5.2",
-      "suggestion": "Report precision relative to the flip rate (lift), and the clean-sample drop rate as a share of the clean samples. Add per-class drop rates (the data already has them for digits at least). Check whether breast-cancer accuracy loss at 40% tracks class balance in the filtered set. Either test the binary-margin explanation (for example with a 3-class or imbalanced-subsampled variant) or reduce the claim to a conjecture."
+      "issue": "The evaluation is very narrow for the generality of the title and discussion. It uses two small, nearly linearly separable datasets, symmetric noise only, one K, one C, and 5 seeds (with splits shared across the paired comparisons). The discussion then recommends that work on 'small, roughly linear problems' report against this filter. That recommendation rests on a comparison against an untuned logistic regression, not against any noise-robust method. Classical alternatives such as confident learning or cross-validated filtering with other learners are named but not run. Under class-dependent noise, which the paper does not test, a linear out-of-fold filter is likely to fail.",
+      "where": "Sec. 5 paragraph 1, Sec. 3.2, Title",
+      "severity": "major",
+      "suggestion": "Either add at least one baseline (confident learning is available as an off-the-shelf package and uses the same out-of-fold probabilities), a second noise type (asymmetric or class-dependent), or a K sweep (K in 3, 5, 10). Or remove the recommendation to the community, and use the word 'baseline' more carefully, since no comparison supports it. A title and abstract that name the symmetric-noise, two-dataset scope would also help."
     },
     {
-      "issue": "Only two small datasets, symmetric noise only, 5 seeds, and a 171-sample test set for breast cancer. The symmetric case is the one the majority argument favours, as the conclusion admits. No result involves class-dependent or instance-dependent noise, where out-of-fold disagreement can systematically remove hard but correctly labelled minority samples. The paper's 'logistic regression on small tabular data' framing therefore goes beyond what two sklearn toy datasets support.",
-      "where": "Sec. 4, Sec. 6 (limits), abstract",
-      "suggestion": "Add at least one asymmetric (pair-flip or class-dependent) noise setting and one or two more tabular datasets, if the compute allows. Otherwise restrict the claims, including the title, to 'symmetric noise on digits and breast cancer'."
+      "issue": "The explanation of why the method works is asserted, not tested. 'A model fit on the sample itself could bend toward the flipped label' is the stated motivation for out-of-fold prediction, but there is no ablation with in-sample predictions. The claim that dropped clean samples 'may be the hard ones' is likewise untested. The data to check it exist in the runs.",
+      "where": "Sec. 2 paragraph 4, Sec. 5 paragraph 2",
+      "severity": "minor",
+      "suggestion": "Add a one-line ablation that drops on in-sample disagreement (or K=1 equivalent) and report its precision and recall, or soften the sentence to a hypothesis. Report the per-class or margin distribution of the dropped clean samples."
     },
     {
-      "issue": "Hyperparameter claims conflict across sections. The abstract says 'no clean data, no noise rate and no confidence threshold; its settings ... were fixed and not tuned', which a reader may take as robust to settings. Sec. 3 says the filter is 'not setting-free' and the sensitivity to K and C is untested. The MLP baseline is also given no early stopping or regularization, and the MLP is never trained on filtered data, so the 'filter beats MLP by up to 27.7 points' is not a measurement of the filter's value but of a default MLP's memorization.",
-      "where": "Abstract, Sec. 3 (The filter), Sec. 5.3",
-      "suggestion": "Move the K/C caveat into the abstract. Show a small K and C sensitivity table (K in {3,5,10}, C in a few values). Train the MLP on the filtered data, or on an early-stopped MLP, so the MLP comparison says something about the filter."
+      "issue": "Tests and intervals are reported inconsistently. The text says the interval can exclude zero while the t-test does not, and it labels such gains 'suggestive', but the table reports CI and p without saying how the intervals were resampled (bootstrap of five differences gives very narrow, over-optimistic intervals at n=5). Numbers in the abstract and the clean-label section ('rules out a cost of about a point at most') depend on those intervals.",
+      "where": "Sec. 3.3, Table 1, Sec. 4.3",
+      "severity": "minor",
+      "suggestion": "Use a t-based interval for n=5, or state the bootstrap method and its number of resamples. Reword 'rules out a cost' to match what a 5-seed interval supports."
+    },
+    {
+      "issue": "Presentation of baselines and cells. Table 1 mixes the MLP into the main table although the 'Diff.' columns concern only logistic regression. The main table and the MLP table (Table 3) presumably repeat data. The 'Filter (ours)' label overstates ownership, given that the paper itself says the rule is not new.",
+      "where": "Table 1, Table 3",
+      "severity": "minor",
+      "suggestion": "Rename the column 'Out-of-fold filter'. Merge Table 3 into Table 1 or point to the supplement. Confirm the four-page main-text limit, since three tables and two figures are tight."
     }
   ],
   "questions": [
-    "On breast cancer with clean labels, the MLP's mean and sd (96.7251 and 1.21266) are identical to those of logistic regression. Are the per-seed accuracies identical too? If so, is the MLP effectively reaching the same predictions on every test sample, or can a bug or shared model path explain it?",
-    "Does the filter's gain on digits at 20% noise persist when logistic regression uses C selected by cross-validation on the noisy labels?",
-    "What fraction of the clean training samples is dropped at 20% and 40% noise, per class? Do small or hard classes lose most?",
-    "Would a second pass of filtering (iterated) or a margin threshold keep the recall of 98% while lowering the 24-35% clean share among drops?",
-    "Are the splits, noise draws, and cross-validation fold shuffles drawn from separate random streams? The paper says a seed changes all of them together, so their variance is confounded."
+    "How does the filter compare with logistic regression at a tuned or smaller C, and with random dropping of the same number of samples?",
+    "Why does precision fall as noise rises on breast cancer but rise on digits? Is it the class count, the training-set size, or the number of dropped samples?",
+    "How does the recovered share on breast cancer at 40% noise vary across seeds, given an sd of about 9 points for both methods? Is the gain consistent in sign across all 5 seeds?",
+    "Do the results hold with a different K or with another learner inside the filter?",
+    "Would the filter still work under class-dependent noise, where the flipped label is systematically the model's wrong class?"
   ],
   "scores": {
-    "soundness": 2,
+    "soundness": 3,
     "presentation": 3,
     "contribution": 2
   },
-  "overall": 4,
+  "overall": 5,
   "confidence": 4
 }

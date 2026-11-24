@@ -1,26 +1,33 @@
 # Evidence notes
 
-Source: `results/runs.jsonl` (90 runs: 2 datasets x noise {0, 0.2, 0.4} x 5 seeds x {logreg, mlp, filter}) and `experiments/config.json`. All values come from recipes in `paper/sources.py` (key names in backticks). Accuracies are percent on a clean test split; sd is over 5 seeds, and seeds change the split, the noise draw and the init together.
+`paper/sources.py` has 103 recipes and all return values (`scriptorium numbers`). Per-seed helpers: `_accs(dataset, noise, method)`, `_diff(dataset, noise, a, b)`, `_precisions`, `_recalls`, `_dropped_frac`, `_recovery`. All are in seed order and paired by seed. Accuracy is in percent. The dataset keys are `digits` and `breast_cancer` (`bc` in recipe keys).
 
 ## What the data supports
-- Filter vs. logreg on the same noisy labels: digits +6.0 pt at 20% noise, +9.0 pt at 40% (5/5 seeds each). breast_cancer +2.9 pt at 20% (4/5 seeds), +3.6 pt at 40% (5/5 seeds). (`diff_*_filter_minus_logreg`, `wins_*_filter_over_logreg`)
-- Filter vs. MLP on the same noisy labels: +11 to +28 pt, 5/5 seeds, in all four noisy cells. The MLP degrades badly (digits 97.3 -> 82.4 -> 64.9). (`diff_*_filter_minus_mlp`, `wins_*_filter_over_mlp`)
-- Filter drops mostly mislabeled samples. Precision is 64.6% (digits, 20%), 76.1% (digits, 40%), 76.4% (bc, 20%), 68.3% (bc, 40%). Per-seed minimum is 61%. Recall is 98% on digits, 93% on bc at 20%, 79% on bc at 40%. (`precision_*`, `recall_*`)
-- Realised noise is close to nominal (19-20% and 39%). (`noisy_frac_*`)
-- Clean labels: filter is within 0.2 pt of logreg on both datasets (`clean_cost_dg` -0.22, `clean_cost_bc` -0.12). It still discards 3.5% of digits and 1.9% of bc training samples (`dropped_frac_*_00_mean`).
-- Fit time of the filter is about 4.7x logreg on digits (`time_ratio_filter_logreg_digits`). This is machine-dependent, so state it with care.
+
+Out-of-fold filtering helps a linear model clearly at 20% and 40% symmetric noise. The gain over plain logistic regression is largest on digits (about 6 points at 20% noise and 9 points at 40%) and smaller on breast_cancer (about 3 and 4 points). It lowers variance at 20% noise, but not at 40% on breast_cancer, where the sd is about 9 for both filter and logreg.
+
+The MLP trained on the same noisy labels degrades much faster than the linear model. It falls to about 65% at 40% noise on both datasets. The filter beats the MLP in all 5 seeds in all four noisy cells, by 11 to 28 points. The MLP is the better model on clean digits.
+
+The filter drops mostly flipped labels. Mean precision is 65–76% across the four noisy cells, with a minimum of 61% in any single run. Recall is high (79–98%). The filter also drops many correct samples, since precision is far from 100%.
+
+The filter costs a little on clean labels: -0.2 points on digits and -0.1 on breast_cancer. It still drops 3.5% (digits) and 1.9% (breast_cancer) of clean training samples.
 
 ## Claims in brief.md
-1. **"Recovers most of the accuracy that label noise costs a linear model."** Supports a narrower version. Recovery fraction (filter - noisy)/(clean - noisy): digits 78% (20%) and 68% (40%); bc 66% (20%) but only 22% (40%). Most is recovered in 3 of 4 cells. On bc at 40% the filter ends 12.7 pt below clean (`gap_bc_40_filter_to_clean`) and the sd is about 9 pt, so the gain (+3.6 pt) is smaller than the seed spread. Say "most at 20% noise on both datasets and at 40% on digits"; do not generalise to bc at 40%.
-2. **"Most of the samples it drops are truly mislabeled."** Supported at 20% and 40% on both datasets (precision 61-77% in every seed). The margin is modest, with roughly a third of drops being clean samples. Not meaningful at 0% noise, where all drops are clean, though few. Say "about two thirds to three quarters".
-3. **"It beats a larger model (an MLP) trained on the same noisy labels."** Supported for noisy labels: all 20 (cell, seed) comparisons favour the filter, by 11-28 pt. At 0% noise the MLP is better or tied (digits MLP 97.3 vs filter 96.6, -0.7 pt; bc tied). Restrict to noisy labels. Caveats: the MLP is a default sklearn MLP with no early stopping or regularisation tuning, so this is a weak baseline. "Larger" means 64 hidden units, a single layer. No noise-robust baseline (confident learning, co-teaching) was run, so do not claim to beat the cited methods.
-4. **"It costs little when the labels are clean."** Supported: mean change -0.22 pt (digits) and -0.12 pt (bc), well inside the seed sd (0.4-1.2 pt). Filter is below logreg in 2/5 seeds on digits and 1/5 on bc. 5 seeds and tiny effects mean there is no significance claim.
-5. **"Avoid: do not claim it scales."** Fully respected. The data covers only two small sklearn datasets, a linear model and one MLP, and symmetric noise only.
 
-## Warnings for the outliner and writers
-- No ablations exist (K, C, MLP size, filter variants), and no oracle or noise-robust baseline. Do not write an ablation section.
-- Test sets are small (171 for bc, so 1 sample = 0.58 pt). The bc 40% result is high-variance (filter sd 8.95, logreg sd 9.39).
-- On breast_cancer with clean labels, `acc_bc_00_mlp_*` is identical to `acc_bc_00_logreg_*` (mean and sd). Probably a coincidence on the same test items, but verify before drawing any contrast; the text should not say "MLP matches logreg" with confidence.
-- Noise is symmetric and train-only, and the filter is applied once. Mean +/- sd is across seeds that also change the split. No confidence intervals or paired tests were computed.
-- The filter fit time includes 5-fold CV and one refit; timings are single measurements on an unknown machine.
-- Library versions and run date are not recorded in the repo.
+1. "Recovers most of the accuracy that label noise costs a linear model." This is supported only in a narrower form.
+   - Digits: about 78% recovered at 20% noise and 68% at 40%.
+   - Breast_cancer: about 66% at 20% noise, but only 22% at 40%.
+   - At 40% noise on breast_cancer the claim is contradicted. The gain is 3.6 points against a 16.4-point loss, and the seed variance is large (sd about 9).
+   - On breast_cancer at 20% noise the loss is only 4.4 points, so the recovery ratio is unstable across seeds (per-seed minimum -67%). Report the ratio of means, or use the absolute points.
+   - Say "most" for digits at both rates and for breast_cancer at 20% noise. Say "part" for breast_cancer at 40% noise.
+   - The recovered share depends on the clean logreg accuracy as the reference. No oracle run exists.
+2. "Most of the samples it drops are truly mislabeled." This is supported at 20% and 40% noise (precision 61–76% per run, mean 65–76%). The margin is moderate: roughly a quarter to a third of dropped samples are clean. At 0% noise the notion does not apply, because every dropped sample is clean.
+3. "Beats a larger model (an MLP) trained on the same noisy labels." This is supported at 20% and 40% noise on both datasets. It is not supported at 0% noise: the MLP is ahead by about 0.7 points on digits and is level with or ahead of the filter on breast_cancer. Scope the claim to one MLP (64 hidden units, sklearn defaults, 500 iterations, no tuning, no noise-robust training, convergence not logged). Say "an untuned MLP", not "larger models".
+4. "It costs little when the labels are clean." This is supported: -0.22 points on digits and -0.12 on breast_cancer, within the seed sd (0.4–1.2). It is a mean over 5 seeds only, and a test of paired differences is needed before saying "no cost".
+
+## Not supported, or to avoid
+
+- No comparison with co-teaching or confident learning was run. Cite them only. Do not write "outperforms prior noise-robust methods".
+- Only symmetric noise, noise rates up to 40%, two small datasets, 5 seeds, and no hyperparameter sensitivity (K, C). No scaling claim, no claim about deep networks or large data.
+- The fit-time numbers come from a single unrecorded machine. The filter is about 5 times slower than logreg here (0.056 s against 0.012 s on digits). Do not make speed claims beyond this.
+- The sampled noise rates are slightly below nominal (39.4% on digits and 38.6% on breast_cancer at nominal 40%).

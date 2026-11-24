@@ -31,23 +31,23 @@ def stats():
 
 
 TEAM = [
-    ("Scout", "Maps the repository: method, datasets, baselines, every result file and what its fields mean.",
-     "the inventory exists"),
-    ("Evidence", "Writes a recipe for every number the paper may print, and says which claims the data does not support.",
-     "every recipe runs on raw data"),
-    ("Outliner", "Plans the storyline, sections, figures and related-work topics.",
-     "the plan names only numbers with recipes"),
-    ("Librarian", "Searches bibliographic databases and adds papers with their official entries.",
-     "every entry fetched, none typed"),
-    ("Illustrator", "One script per figure: reads your data, renders, looks at the image, fixes it.",
-     "every figure script reruns"),
-    ("Writers", "One per section, in parallel: results first, then abstract, introduction, related work.",
-     "every number recomputes at each edit"),
-    ("Editor", "Makes the sections one paper and fits the page limit.", "the paper compiles within the limit"),
-    ("Reviewers", "Score the paper with different focuses: soundness, clarity, significance.",
-     "each review is a scored JSON file"),
-    ("Reviser", "Answers the reviews; a point that needs a new experiment narrows the claim instead.",
+    ("Discovery", "A scout maps the repository; an experimentalist records the setup from the code; a results analyst "
+     "writes a recipe per number; a statistician adds a paired test per comparison.",
+     "setup facts quote their source; verdicts match p-values"),
+    ("Literature", "A searcher maps the field right after the scout; readers card each paper from its abstract, in "
+     "parallel; a librarian adds the official entries.", "only papers a search returned; nothing typed"),
+    ("Story", "A cartographer builds the claim ledger; three architects pitch storylines and a panel picks one; an "
+     "outliner plans the paper; a terminologist fixes the names.", "every claim has evidence, scope and strength"),
+    ("Visuals", "A figure planner specs each figure; a plot maker and a diagram artist draw them from code; a critic "
+     "sends weak ones back; a table setter builds tables from recipes.", "figures pass lint at print size"),
+    ("Writing", "Writers draft sections in parallel, with contests for the abstract and introduction; an editor makes "
+     "one paper; line editors polish each section.", "every number recomputes at each edit"),
+    ("Checking", "A claim auditor checks every claim sentence; a citation auditor checks every citing sentence against "
+     "the cited paper; a typesetter fixes layout.", "flagged sentences must change"),
+    ("Review", "Reviewers for your venue score the paper; an area chair ranks the changes; a reviser makes them.",
      "kept only if the score holds, else rolled back"),
+    ("Release", "Packages the arXiv bundle and writes an HTML report that links every number, citation and figure to "
+     "its source.", "every accepted stage in git history"),
 ]
 
 
@@ -70,7 +70,7 @@ def build():
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Scriptorium: Agents That Write Your Paper</title>
-<meta name="description" content="A team of nine Claude Code agents writes a research paper from your repository. Every number recomputes from your data and every citation is fetched from a bibliographic database.">
+<meta name="description" content="25 Claude Code agents in eight teams write a research paper from your repository. Every number recomputes from your data, every citation is fetched and checked, every hand-off is checked in code.">
 <meta property="og:title" content="Scriptorium: a team of agents writes your paper from your repository">
 <meta property="og:description" content="Every number recomputes from your data. Every citation is fetched, never typed. Your data stays read-only.">
 <meta property="og:image" content="{URL}assets/social_preview.png">
@@ -96,9 +96,10 @@ def build():
     <div class="kicker">Claude Code plugin &middot; open source</div>
     <h1>Scriptorium</h1>
     <p class="tagline">A team of agents writes your paper from your research repository.</p>
-    <p class="lede">Nine agents split the work the way a lab would: survey the results, plan the story, find the
-    papers, draw the figures, write, edit and review. Code checks every hand-off. Each number recomputes from your
-    raw data, each citation is fetched from a bibliographic database, and your data stays read-only.</p>
+    <p class="lede">25 agents in eight teams split the work the way a lab would, and independent teams work at the
+    same time: survey the results and the literature, plan the story, draw the figures, write, audit and review. Code
+    checks every hand-off. Each number recomputes from your raw data, each citation is fetched and checked against the
+    paper it cites, and your data stays read-only.</p>
     <p class="authors"><b>Thanh-Huy Nguyen</b> and <b>Ulas Bagci</b> &middot; Northwestern University</p>
     <div class="btns">
       <a class="btn primary" href="#start">Get started</a>
@@ -106,7 +107,7 @@ def build():
       <a class="btn ghost" href="https://github.com/thanh-huy-nguyen/scriptorium">GitHub</a>
     </div>
   </div>
-  <div class="figure" style="margin:0"><img src="assets/pipeline.png" alt="Four phases: understand, plan, write, review, each checked in code"></div>
+  <div class="figure" style="margin:0"><img src="assets/pipeline.png" alt="Four phases and eight teams, each checked in code"></div>
 </div></div></header>
 
 <section class="dark"><div class="wrap">
@@ -118,13 +119,13 @@ def build():
     <div class="stat"><div class="num">{s['citations']}</div><div class="what">citations</div>
       <p>Every entry fetched from a bibliographic database; none typed by a model.</p></div>
     <div class="stat"><div class="num">{s['sessions']}</div><div class="what">agent sessions</div>
-      <p>{s['pages']} pages and about {round(s['output_tokens'] / 1000)}k output tokens. Every check passes on the final paper.</p></div>
+      <p>{s.get('main_pages') or s['pages']} pages of main text and about {round(s['output_tokens'] / 1000)}k output tokens. Every check passes on the final paper.</p></div>
   </div>
 </div></section>
 
 <section id="team"><div class="wrap">
   <h2>The team</h2>
-  <p class="sub">Each agent is a Claude Code subagent whose instructions you can read and edit. After each stage, plain Python checks the result before the next agent starts.</p>
+  <p class="sub">Each agent is a Claude Code subagent whose instructions you can read and edit. Stages start as soon as the stages they need are done; after each one, plain Python checks the result before the next agent starts.</p>
   <div class="team">
 {team}
   </div>
@@ -144,7 +145,9 @@ on digits at 40% label noise.</pre></div>
   </div>
   <div class="rules">
     <div class="rule"><b>Numbers recompute</b><span>PaperAnchor reruns the recipe at every edit; a number that does not follow goes back to the writer with the value the data gives.</span></div>
-    <div class="rule"><b>Citations resolve</b><span>Entries come only from <code>scriptorium cite add</code>; a typed or edited entry fails the build.</span></div>
+    <div class="rule"><b>Citations resolve and support</b><span>Entries come only from <code>scriptorium cite add</code>; every citing sentence is checked against the cited abstract.</span></div>
+    <div class="rule"><b>Claims stay in scope</b><span>Every claim sentence is audited against the claim ledger and the statistical tests; flagged sentences must change.</span></div>
+    <div class="rule"><b>Figures come from code</b><span>Drawn from recipe values at print size; a lint and a critic check them.</span></div>
     <div class="rule"><b>Data stays read-only</b><span>A hook refuses edits outside <code>paper/</code>; a lock quarantines new files and stops the run on any change.</span></div>
   </div>
 </div></section>
@@ -162,15 +165,17 @@ on digits at 40% label noise.</pre></div>
   <p class="sub">You need Claude Code and a LaTeX engine (<a href="https://tectonic-typesetting.github.io">tectonic</a> or latexmk).</p>
   <div class="code"><span class="label">terminal</span><pre id="q1">pip install git+https://github.com/thanh-huy-nguyen/scriptorium
 cd my-research-repo
-scriptorium init     <span class="c"># scriptorium.toml, brief.md, paper/; locks your data</span>
-scriptorium run      <span class="c"># the whole team, headless; writes paper/main.pdf</span></pre><button class="copy" data-t="q1">Copy</button></div>
+scriptorium init --venue neurips  <span class="c"># official style files; locks your data</span>
+scriptorium doctor                <span class="c"># checks Claude Code, LaTeX, the databases</span>
+scriptorium run                   <span class="c"># the whole team; writes paper/main.pdf</span>
+scriptorium watch                 <span class="c"># live view, in a second terminal</span></pre><button class="copy" data-t="q1">Copy</button></div>
   <div class="cols" style="margin-top:20px">
     <div class="code"><span class="label">inside Claude Code</span><pre id="q2">claude plugin marketplace add thanh-huy-nguyen/scriptorium
 claude plugin install scriptorium@scriptorium
 <span class="c"># then, in a session:</span> /scriptorium:write-paper</pre><button class="copy" data-t="q2">Copy</button></div>
-    <div class="code"><span class="label">redo part of it</span><pre id="q3">scriptorium status
-scriptorium run --from outline
-scriptorium build     <span class="c"># figures, LaTeX, every check</span></pre><button class="copy" data-t="q3">Copy</button></div>
+    <div class="code"><span class="label">steer, undo, audit</span><pre id="q3">scriptorium run --pause-at story
+scriptorium rollback outline
+scriptorium audit path/to/paper  <span class="c"># check any LaTeX paper</span></pre><button class="copy" data-t="q3">Copy</button></div>
   </div>
 </div></section>
 

@@ -1,13 +1,10 @@
-\section{Related Work}\label{sec:related}
+\section{Related work}\label{sec:related}
 
-\paragraph{Surveys and noise models.}
-\citet{song2023learning} and \citet{frenay2014classification} organize the field into robust losses, loss correction, and sample selection or cleaning. We use the symmetric (uniform) noise model described by \citet{frenay2014classification}. Our filter is a cleaning method, the simplest kind of sample selection.
+\paragraph{\textbf{Learning with noisy labels.}}
+Surveys sort the methods into a handful of families, among them robust losses, loss correction, reweighting and sample selection \citep{song2023learning}. \citet{frenay2014classification} instead distinguish robust, cleansing and tolerant algorithms. Robust losses change the objective \citep{zhang2018generalized}. Loss correction needs the noise transition matrix or an estimate of it \citep{patrini2017making}, and reweighting needs a small clean validation set \citep{ren2018learning}. Our filter needs neither.
 
-\paragraph{Classification filtering.}
-Editing methods remove training samples that a classifier gets wrong. \citet{wilson1972asymptotic} introduced the idea with a nearest-neighbor rule. Our filter applies it with a cross-validated linear model: one model, one pass. We revisit this basic version and, because we know which labels were flipped, measure what it removes. We do not run Wilson editing as a baseline.
+\paragraph{\textbf{Sample selection and confident learning.}}
+Co-teaching trains two networks that each select possibly clean samples in a mini-batch for the other \citep{han2018coteaching}. Related methods learn a curriculum or fit a mixture to per-sample loss \citep{jiang2018mentornet,li2020dividemix}. Confident learning prunes noisy samples using probabilistic thresholds and estimates the joint distribution of noisy and true labels \citep{northcutt2021confident}. We keep only the argmax-disagreement rule of a linear model, with no threshold and no noise rate. We did not run co-teaching or confident learning, so we make no claim against them.
 
-\paragraph{Confident learning.}
-\citet{northcutt2021confident} also start from out-of-fold predicted probabilities. They use per-class thresholds to estimate the joint distribution of noisy and true labels, then prune. Our filter uses only the hard out-of-fold prediction, with no thresholds and no noise-rate estimate. We do not run confident learning as a baseline, so we cannot say whether its thresholds would drop fewer clean samples.
-
-\paragraph{Deep sample selection and memorization.}
-Co-teaching \citep{han2018coteaching} and MentorNet \citep{jiang2018mentornet} train on small-loss samples, which works because networks fit clean labels before noisy ones \citep{arpit2017closer} and can eventually memorize noise \citep{zhang2017understanding}. This is also why our MLP degrades under noise (Section~\ref{sec:results}). We target small linear models and make no claim that our results carry over to deep networks.
+\paragraph{\textbf{Filtering mislabeled training data.}}
+Classical noise filters remove the samples that out-of-fold classifiers misclassify, then train on what remains \citep{brodley1996identifying,brodley1999identifying}. In the taxonomy of \citet{frenay2014classification} this is noise cleansing. The rule is theirs. What we add is a measurement for a single linear model: its precision and recall against known flipped labels, what refitting buys over the noisy logistic regression, and a comparison with a multilayer perceptron (MLP).

@@ -1,0 +1,14 @@
+{"width": "full",
+ "caption": "What the out-of-fold filter drops at low and high symmetric noise (the two noisy levels of the main experiment). Precision is the share of dropped samples whose label was truly flipped, recall is the share of flipped labels that were dropped, and dropped is the share of the training set removed. Precision is mean $\\pm$ sd and the other percentages are means over n = 5 seeds; $p$ is the t-test of precision against chance level (half of the dropped samples mislabeled). Most dropped samples are mislabeled in all four cells, and the filter catches most flipped labels, most completely on digits.",
+ "label": "tab:detection",
+ "columns": ["Dataset", "Noise level", "Precision (\\%)", "$p$ vs. chance", "Recall (\\%)", "Dropped (\\%)"],
+ "rows": [
+  {"cells": [{"text": "Digits"}, {"text": "Low"}, {"key": "prec_digits_n20", "sd": "sd_prec_digits_n20"}, {"key": "p_dg20_prec_vs_half", "decimals": 7}, {"key": "rec_digits_n20"}, {"key": "dropped_frac_digits_n20"}]},
+  {"cells": [{"text": "Digits"}, {"text": "High"}, {"key": "prec_digits_n40", "sd": "sd_prec_digits_n40"}, {"key": "p_dg40_prec_vs_half", "decimals": 7}, {"key": "rec_digits_n40"}, {"key": "dropped_frac_digits_n40"}]},
+  {"cells": [{"text": "Breast cancer"}, {"text": "Low"}, {"key": "prec_bc_n20", "sd": "sd_prec_bc_n20"}, {"key": "p_bc20_prec_vs_half", "decimals": 7}, {"key": "rec_bc_n20"}, {"key": "dropped_frac_bc_n20"}]},
+  {"cells": [{"text": "Breast cancer"}, {"text": "High"}, {"key": "prec_bc_n40", "sd": "sd_prec_bc_n40"}, {"key": "p_bc40_prec_vs_half", "decimals": 7}, {"key": "rec_bc_n40"}, {"key": "dropped_frac_bc_n40"}]}
+ ],
+ "best": {},
+ "decimals": 1,
+ "rule_after": [1]
+}

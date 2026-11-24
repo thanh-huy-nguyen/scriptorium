@@ -1,24 +1,28 @@
-# Response to review0
+# Response to the meta-review (round 1)
 
-No new experiments could be run, so points needing them are answered by narrowing claims or stating limits.
+Build: 5 pages, main text 4, no undefined refs, no overfull boxes. Lint: no flags. All tagged numbers recompute.
 
-## Soundness
-- [major] Weak baselines (no tuned C, MLP on filtered data): not runnable. Abstract and contributions now call the MLP comparison weak/secondary; Discussion says the MLP comparison is secondary and the tuned-C question is open; Sec 5.3 already states the data do not show filtering beats regularization.
-- [minor] Untuned C and K, "no hyperparameters": abstract now says K and C were fixed and not tuned; Sec 3 says the filter is not setting-free, states that the out-of-fold models and refit both use C=1, and that sensitivity is untested. "No threshold" is reworded to "no confidence threshold". Sweep not run. Questions on different C for the OOF models, iteration: untested.
-- [minor] Thin evidence: more seeds/datasets not possible. Headline 66% in abstract and contributions is now paired with the 4/5-seed result and the 4.4-point loss; Table 1 gains a paired-range column (existing recipes) so ranges sit next to means. Seed confounding is stated in the Protocol paragraph; no intervals added.
-- [minor] Mechanism ablations (oracle, confidence threshold, per-class, Wilson, cleanlab): not runnable; remain in limitations. Sec 5.2 states per-class drop rates were not measured.
-- [minor] Fig. 1 framing: caption narrowed to digits and 20% breast cancer. Per-panel clean reference line not redrawn (figure unchanged); the caption keeps both clean values.
-- [minor] Breast cancer explanation: reworded to "consistent with", small-sample explanation added as untested alternative (Sec 5.1, 5.2).
-- [minor] Symmetric noise only: title now says "symmetric label noise in logistic regression"; class-dependent noise not run.
-- [question] Recovery reference: Sec 4 Metrics now states clean-label logistic regression per dataset, with the formula. Per-seed recovery with spread not added.
-- Other questions (CV-chosen C, per-class drops, second pass, breast-cancer variance breakdown) need new runs; not answered.
+Notation fix: replaced "cross-validated filter/filtering/noise filter" with the paper's name "out-of-fold filter" in the abstract, Sec. 1 and Sec. 2.
 
-## Clarity
-- [major] Recovery defined in abstract (parenthetical, pointing to Sec 4) and intro contribution 2; the 66% is paired with the 4.4-point loss in the abstract. Table 1 now shows paired ranges.
-- [major] Sec 4 split into Baselines, Protocol, Metrics, with the recovery formula in display; states C is shared between OOF models and refit, no early stopping for the MLP, and that all models standardize features. Solver left at scikit-learn default (stated).
-- [minor] Contribution bullets reworded per setting (digits all seeds, bc 20% 4/5, bc 40% unclear).
-- [minor] Table bolding now simply best mean per row; caption notes many differences are within one sd; paired column added.
-- [minor] Fig 2 caption shortened, interpretation removed, "precision undefined with clean labels" added. Recall labels not added to the figure; recall is in the text.
-- [minor] Sec 3 labelled intuition, not a derivation, with one sentence on why a linear model approximates the local majority.
-- [minor] Sec 5.4 ending rephrased; 5.1 title shortened. Build reports 4 pages of main text.
-- [minor] Title says logistic regression and symmetric noise; "no threshold" now says "no confidence threshold" with K and C noted.
+## Required changes
+
+1. **Rescope title, abstract, intro, Fig. 1 caption.** Title is now "Out-of-fold disagreement finds flipped labels in logistic regression". The abstract and first intro paragraph say "on digits" next to the recovered-share claim and give the breast cancer caveat (22% at 40% noise, not significant at 20%) in the same sentence. "A linear model's" is replaced by "logistic regression's" in the title, discussion and Fig. 1 caption. Intro paragraph 4 and the Fig. 1 caption also say the share is of the mean gap.
+2. **Novelty framing.** "Propose" is now "We evaluate the classical cross-validated filter with one linear model and no side information". "(ours)" is removed from Table 1 and the Fig. 1b legend (now "out-of-fold filter"; the figure script was edited and rebuilt). "A method for training on noisy labels" is gone from the abstract, which now names Brodley and Friedl. The intro adds a sentence on what is new (precision and recall against known flips, recovered share, MLP comparison), and the related-work paragraph says "The rule is theirs". The discussion ties the call to report against it to small, roughly linear problems with symmetric noise.
+3. **Intervals and the 5.2 sentence.** Sec. 4 now says the intervals come from resampling the five paired differences, that tests are uncorrected, that seeds share splits, that p-values assume normal differences, and that with 5 seeds an interval can exclude zero while the t-test does not. Sec. 5.2 now covers all four cells: breast cancer at 20% has interval 0.4 to 5.5 points but p=0.12, so it is called suggestive. The Table 1 caption repeats this. I could not read the `scriptorium_stats` helper from this workspace. I inferred "resampling" from the fact that its interval excludes zero while the t-test gives p=0.12, so a t interval is ruled out. Please check this wording against the helper. The "95%" level is printed only in the Fig. 1 caption (as before), since no recipe computes the level.
+4. **MLP.** Sec. 5.3 is now "Sanity check: an untuned MLP degrades faster than the filter" and moved after the clean-label subsection. It states that the MLP is untuned, unregularized and has no early stopping, and that an early-stopped MLP or an MLP on the filtered set was not run. The clean-digits lead is reported with its paired test (p=0.03, uncorrected). The abstract gives the MLP one late clause. The memorization remark moved to the discussion as an untested hypothesis. The Table 3 caption and the limitations list the missing controls.
+5. **No tuning, no cheap baselines.** Sec. 4 and the discussion state that C and K were not tuned and that no smaller or CV-chosen C, confident learning, small-loss filtering, or other-learner filter was run. They say the gain at C=1 may partly reflect regularization and training-set size, and give the retained samples at 40% noise (623 of 1,257 on digits, 221 of 398 on breast cancer). The abstract ends by calling the study a measurement for one setting, not a ranking.
+6. **Precision null.** Table 2 now has a flip-rate column (new recipes `actual_noise_digits_n20`, `actual_noise_bc_n20`; the 40% ones existed) and drops the p column. The caption describes the test as "more than one half", reports the largest p (0.0005, new recipe `p_prec_vs_half_max`), and says it is uncorrected, so no seven-digit p-values are printed. "Low/High" is replaced by 20 and 40. Sec. 5.1 names dataset and rate for each quoted precision and recall.
+7. **Uncertainty of the recovered share.** I did not add a bootstrap interval; that would need a recipe I could not validate against the interval helper. I chose the labeling option. The share is defined at first use in the intro as a ratio of 5-seed means, called "of the mean gap" in the abstract, intro, Sec. 5.2 and the Fig. 1b annotation, and flagged in Sec. 4 as carrying no interval and using a non-oracle reference. Sec. 5.2 notes that breast cancer at 20% rests on a 4.4-point loss with a 3.7-point seed sd. The abstract and Sec. 5.3 give the clean-cost interval ends (−0.9 to 0.3 on digits, −0.4 to 0.0 on breast cancer) and say this excludes a cost of about a point at most, not a zero cost.
+8. **Generalization and limitations.** The intro now says two small, nearly linearly separable datasets with symmetric flips are the most favorable case for a linear filter. The discussion lists class-dependent noise, larger data, and clean hard samples being dropped (stated as unmeasured). Retained counts are in Sec. 4. The 5 seeds are described as a small fixed budget. The timing remark is dropped.
+9. **Term drift.** Table 2 uses 20 and 40. Sec. 5.1 names dataset and rate for each precision and recall. "A quarter to a third" now appears in Sec. 5.1 and the discussion pointing to Table 2 (the intro no longer repeats it). The intro's 76% is tied to digits at 40%, and the breast cancer 20% 76.4% is tied to its cell in Sec. 5.1.
+
+## Optional changes
+
+- **Fig. 1 legibility:** the 50% label moved off the bars (the x axis was widened), the "gap won" box now reads "of mean gap", and the (c) caption states that 0% noise means no label flipped. I did not add shared y ticks in (b) or relabel the two plots of (c). I did not inspect the rendered figure after the last edit, only that the build passes.
+- **Fig. 2 caption:** shortened to a reading key, with K=5 added.
+- **Merge Tables 1 and 3:** not done; the page limit is met.
+- **Class-count confound on digits:** added to Sec. 5.1.
+
+## Dismissed (as in the meta-review)
+
+No C or K sweep, extra baselines, filtered or early-stopped MLP, class-dependent noise, more seeds, or multiple-test correction was added, since none can be run. They are stated as limitations. The uncorrected tests are disclosed in Sec. 4 and the Table 2 and 1 captions.
