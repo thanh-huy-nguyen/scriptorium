@@ -87,6 +87,14 @@ class LitTest(unittest.TestCase):
         self.assertIn("stage polish failed", out, out)
         self.assertIn("unsupported citation of ref0a is unchanged", out)
 
+    def test_rerun_does_not_reread_carded_papers(self):
+        self.cli("run", "--pause-at", "read")
+        st = lit.Read("read")
+        self.assertEqual(st.tasks(self.cfg), [])
+        lit.card_path(self.cfg, "doi:10.0/7").unlink()
+        tasks = st.tasks(self.cfg)
+        self.assertEqual([t.label for t in tasks], ["read-2"])
+
     def test_unknown_citation_key_names_its_file(self):
         from scriptorium import cite
         (self.tmp / "paper" / "09_discussion.tex").write_text("As before~\\citep{confident_learning}.\n")

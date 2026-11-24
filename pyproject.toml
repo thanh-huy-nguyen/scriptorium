@@ -4,17 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scriptorium"
-version = "0.1.0"
+version = "1.0.0.dev0"
 description = "A team of agents that writes a research paper from your repository; every number recomputes from the data and every citation is fetched."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Thanh-Huy Nguyen" }, { name = "Ulas Bagci" }]
 requires-python = ">=3.11"
-dependencies = ["paperanchor @ git+https://github.com/thanh-huy-nguyen/paperanchor"]
+dependencies = ["paperanchor @ git+https://github.com/thanh-huy-nguyen/paperanchor", "matplotlib>=3.7", "numpy",
+                "pymupdf"]
 keywords = ["latex", "papers", "research", "agents", "multi-agent", "claude-code", "reproducibility", "citations"]
-
-[project.optional-dependencies]
-figures = ["matplotlib", "numpy"]
 
 [project.scripts]
 scriptorium = "scriptorium.cli:main"
@@ -27,5 +25,6 @@ packages = ["scriptorium"]
 include-package-data = true
 
 [tool.setuptools.package-data]
-scriptorium = ["templates/*.md", "templates/default/*", "plugin/.claude-plugin/*.json", "plugin/agents/*.md",
-               "plugin/hooks/*.json", "plugin/scripts/*.py", "plugin/skills/*/*.md", "judging/*.md", "jail/*.py", "recipelib/*.py"]
+scriptorium = ["templates/*.md", "templates/*/*", "plugin/.claude-plugin/*.json", "plugin/agents/*.md",
+               "plugin/hooks/*.json", "plugin/scripts/*.py", "plugin/skills/*/*.md", "judging/*.md", "jail/*.py", "recipelib/*.py",
+               "recipelib/fonts/*"]

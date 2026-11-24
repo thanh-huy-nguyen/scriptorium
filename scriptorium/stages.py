@@ -35,7 +35,8 @@ ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 # ---------------------------------------------------------------------------------------------------------------------
 
 def context(cfg: Config) -> str:
-    return (
+    from .venues import note
+    return note(cfg.template) + (
         f'Paper: "{cfg.title}" for {cfg.venue}, at most {cfg.page_limit} pages of main text (references excluded).\n'
         "The authors' brief is brief.md at the repository root. Shared notes live in .scriptorium/: inventory.md (what "
         "the repository holds), setup.md (the experimental setup, each fact quoted from its source file), numbers.md "
@@ -116,17 +117,29 @@ def checks(cfg: Config, files: list[str] | None = None, build: bool = True, page
 
 def render_main(cfg: Config) -> None:
     """Write paper/main.tex from the template and the outline's section order (deterministic, never by an agent)."""
-    tdir = TEMPLATES / "default" if cfg.template in ("", "default") else (cfg.root / cfg.template)
+    from . import venues
+    if cfg.template in ("", "default"):
+        tdir = TEMPLATES / "default"
+    elif venues.is_venue(cfg.template):
+        tdir = TEMPLATES / cfg.template
+        missing = [f for f in venues.VENUES[cfg.template]["files"] if not (cfg.paper / Path(f).name).exists()]
+        if missing:
+            venues.fetch(cfg.template, cfg.paper)
+    else:
+        tdir = cfg.root / cfg.template
     tpl = (tdir / "main.tex").read_text()
     for f in tdir.iterdir():
         if f.name != "main.tex" and f.is_file() and not (cfg.paper / f.name).exists():
             shutil.copy2(f, cfg.paper / f.name)
     secs = [s for s in outline(cfg).get("sections", []) if s.get("file") != "abstract"]
     body = "\n".join(f"\\input{{{s['file']}}}" for s in secs)
-    authors = " \\and ".join(cfg.authors) if cfg.authors else "Anonymous"
+    review = cfg.mode == "review"
+    authors = "Anonymous Authors" if review or not cfg.authors else " \\and ".join(cfg.authors)
+    affiliation = "Anonymous Institution" if review else cfg.affiliation
+    mode = venues.VENUES.get(cfg.template, {}).get("mode", {}).get(cfg.mode, "")
     tex = (tpl.replace("%%TITLE%%", outline(cfg).get("title") or cfg.title).replace("%%AUTHORS%%", authors)
-           .replace("%%AFFILIATION%%", cfg.affiliation).replace("%%ABSTRACT%%", "\\input{abstract}")
-           .replace("%%BODY%%", body))
+           .replace("%%AFFILIATION%%", affiliation).replace("%%ABSTRACT%%", "\\input{abstract}")
+           .replace("%%MODE%%", mode).replace("%%BODY%%", body))
     if "\\providecommand{\\src}" not in tex:
         tex = re.sub(r"(\\documentclass[^\n]*\n)", r"\1\\providecommand{\\src}[1]{}\n\\providecommand{\\val}[2][1]{}\n",
                      tex, count=1)
@@ -263,7 +276,7 @@ class Outline(Stage):
         return [Task("outliner", "outline", context(cfg) + (
             "Task: plan the paper and write .scriptorium/outline.json. The storyline is chosen: expand the pitch in "
             ".scriptorium/story.json (its title, insight, Figure 1, contributions and section plan) into the full "
-            f"outline, keeping its framing. Budget about {cfg.page_limit * 480} words of "
+            f"outline, keeping its framing. Budget about {cfg.page_limit * cfg.words_per_page} words of "
             "prose in total across sections, which leaves room for figures and tables at this page limit. Every "
             "number a section will print must be a key in .scriptorium/numbers.md."))]
 
@@ -694,6 +707,9 @@ def _after(st: Stage, *deps: str) -> Stage:
 
 def pipeline(cfg: Config) -> list[Stage]:
     """Every stage, in an order that respects its dependencies (the order the interactive mode walks)."""
+    if cfg.audit:
+        from . import audit
+        return audit.pipeline(cfg)
     from . import team as T
     from . import visuals as V
     from . import lit as L

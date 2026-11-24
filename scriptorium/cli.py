@@ -1,7 +1,8 @@
 """scriptorium: a team of agents that writes a paper from a research repository, with every number and citation checked.
 
 Set up and run (from the root of the research repository):
-    scriptorium init                 create scriptorium.toml, brief.md and paper/, and lock the repository's data
+    scriptorium init                 set up: venue, authors, preset (asks, or takes --venue --title ...); locks the data
+    scriptorium doctor               check Claude Code, LaTeX, Python packages and the bibliographic databases
     scriptorium run                  run every remaining stage headless with `claude -p`
     scriptorium run --from outline   rerun from a stage (that stage and every stage that depends on it)
     scriptorium run --pause-at story stop once a stage is done, to read or edit its output before going on
@@ -22,6 +23,7 @@ Used by the agents, and handy by hand:
     scriptorium cite card KEY        what a cited paper says: its reading card and abstract
     scriptorium figure SCRIPT        run one figure script from the repository root
     scriptorium build                rerun the figure scripts and compile paper/main.tex
+    scriptorium audit PAPER_DIR      check an existing LaTeX paper: build, references, citations, claims, reviews
     scriptorium figlint [ID ...]     check figures at print size: text size, overlaps, contrast, colours, recipe values
     scriptorium themes               render a sample plot and diagram in every figure theme, to choose one
     scriptorium lint                 flag prose habits that read as machine-written
@@ -95,10 +97,45 @@ def need_root() -> C.Config:
     return C.load(root)
 
 
+def _ask(prompt: str, default: str) -> str:
+    try:
+        got = input(f"{prompt} [{default}]: ").strip()
+    except EOFError:
+        got = ""
+    return got or default
+
+
+def init_answers(a) -> dict:
+    """Settings for a new scriptorium.toml: from flags, else asked interactively (when a terminal is attached)."""
+    from . import venues
+    ans = {"title": a.title, "authors": [x.strip() for x in a.authors.split(",")] if a.authors else None,
+           "affiliation": a.affiliation, "template": a.venue, "preset": a.preset, "mode": a.mode}
+    interactive = sys.stdin.isatty() and not a.yes
+    if interactive:
+        print("Setting up Scriptorium. Press Enter to keep the value in brackets.\n")
+        ans["title"] = ans["title"] or _ask("Working title", "Working title")
+        au = _ask("Authors, comma-separated", ", ".join(ans["authors"] or []) or "First Author")
+        ans["authors"] = [x.strip() for x in au.split(",") if x.strip()]
+        ans["affiliation"] = ans["affiliation"] or _ask("Affiliation", "Your institution")
+        print("Venues: " + ", ".join(f"{k} ({v['name']}, {v['page_limit']} pages)" for k, v in venues.VENUES.items())
+              + ", default (a clean two-column layout)")
+        ans["template"] = ans["template"] or _ask("Venue", "default")
+        ans["mode"] = ans["mode"] or _ask("Mode: review (anonymous) or final", "review")
+        ans["preset"] = ans["preset"] or _ask("Preset: lite, standard or max", "standard")
+    t = ans.get("template") or "default"
+    if t != "default" and not venues.is_venue(t) and not (Path(t) / "main.tex").exists():
+        sys.exit(f"scriptorium init: unknown venue {t!r}; choose one of {', '.join(venues.VENUES)}, default, "
+                 "or a folder holding main.tex")
+    v = venues.VENUES.get(t, {})
+    ans["venue"] = a.venue_text or v.get("name") or "workshop"
+    ans["page_limit"] = a.page_limit or v.get("page_limit") or 8
+    return ans
+
+
 def cmd_init(a) -> None:
     root = Path.cwd().resolve()
     if not (root / "scriptorium.toml").exists():
-        (root / "scriptorium.toml").write_text(C.DEFAULT_TOML)
+        (root / "scriptorium.toml").write_text(C.render_toml(**init_answers(a)))
         print("created scriptorium.toml")
     if not (root / "brief.md").exists():
         (root / "brief.md").write_text(BRIEF)
@@ -109,6 +146,13 @@ def cmd_init(a) -> None:
     if not (cfg.work / "style.md").exists():
         shutil.copy2(C.TEMPLATES / "style.md", cfg.work / "style.md")
     anchor.init(cfg)
+    from . import venues
+    if venues.is_venue(cfg.template):
+        try:
+            got = venues.fetch(cfg.template, cfg.paper)
+            print(f"fetched the official {venues.VENUES[cfg.template]['name']} style files: {', '.join(got)}")
+        except Exception as e:  # noqa: BLE001  offline is fine; render_main retries before the first build
+            print(f"could not fetch the {cfg.template} style files now ({e}); they are fetched again at the outline")
     gi = root / ".gitignore"
     lines = gi.read_text().splitlines() if gi.exists() else []
     if ".scriptorium/" not in lines:
@@ -333,6 +377,72 @@ def cmd_figure(a) -> None:
     sys.exit(r.returncode)
 
 
+def cmd_doctor(a) -> None:
+    """Check everything a run needs, before it spends any tokens."""
+    import importlib.util
+    import urllib.request
+    rows = []
+
+    def row(ok, what, detail=""):
+        rows.append((ok, what, detail))
+    root = C.find_root()
+    cfg = C.load(root) if root else None
+    claude = (cfg.claude_bin() if cfg else "claude")
+    path = shutil.which(claude) or (claude if Path(claude).exists() else None)
+    ver = subprocess.run([path, "--version"], capture_output=True, text=True).stdout.strip() if path else ""
+    row(bool(path), "Claude Code", ver or "install it from https://claude.com/claude-code")
+    eng = cfg.latex_engine() if cfg else (shutil.which("tectonic") or shutil.which("latexmk"))
+    row(bool(eng), "LaTeX engine", eng or "install tectonic (https://tectonic-typesetting.github.io) or latexmk")
+    for mod, why in (("matplotlib", "figures"), ("numpy", "figures and statistics"), ("pymupdf", "page counts and "
+                     "figure lint"), ("paperanchor", "number checks")):
+        row(importlib.util.find_spec(mod) is not None, f"Python package {mod}", f"needed for {why}")
+    for name, url in (("OpenAlex", "https://api.openalex.org/works?per-page=1"),
+                      ("Crossref", "https://api.crossref.org/works?rows=1"),
+                      ("arXiv", "https://export.arxiv.org/api/query?search_query=all:test&max_results=1")):
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "scriptorium doctor"}),
+                                        timeout=15) as r:
+                row(r.status == 200, f"{name} reachable", "")
+        except Exception as e:  # noqa: BLE001
+            row(False, f"{name} reachable", f"{str(e)[:60]} (citations fall back to the other databases)")
+    if cfg:
+        row(True, "Project", f"{cfg.title} | venue {cfg.template} ({cfg.mode}) | preset {cfg.preset} | "
+                             f"{len(S.pipeline(cfg))} stages")
+        if cfg.template not in ("", "default"):
+            from . import venues
+            if venues.is_venue(cfg.template):
+                have = all((cfg.paper / Path(f).name).exists() for f in venues.VENUES[cfg.template]["files"])
+                row(have, "Venue style files", "in paper/" if have else "run `scriptorium init` again to fetch them")
+    for ok, what, detail in rows:
+        print(f"{'ok  ' if ok else 'FAIL'} {what}" + (f": {detail}" if detail else ""))
+    sys.exit(0 if all(ok for ok, w, _ in rows if "reachable" not in w) else 1)
+
+
+def cmd_audit(a) -> None:
+    from . import audit
+    src = Path(a.paper)
+    out = Path(a.out) if a.out else Path.cwd() / f"{src.resolve().name}-audit"
+    cfg = audit.setup(src, out, venue=a.venue_text, template=a.venue or "default")
+    print(f"audit folder: {out} (your paper is copied to {out}/src and never changed)")
+    if a.setup_only:
+        return
+    if shutil.which(cfg.claude_bin()) is None and not Path(cfg.claude_bin()).exists():
+        sys.exit("scriptorium: the `claude` command was not found; install Claude Code first")
+    history.init(cfg)
+    real, sys.stdout = sys.stdout, Tee(sys.stdout, cfg.work / "run.log")
+    try:
+        status = engine.run_graph(cfg)
+    finally:
+        sys.stdout.f.close()
+        sys.stdout = real
+    rep = cfg.work / "audit" / "report.md"
+    if rep.exists():
+        print("\n" + rep.read_text())
+        print(f"\nreport: {rep} (and report.html)")
+    if status != "done":
+        sys.exit(1)
+
+
 def cmd_figlint(a) -> None:
     cfg = need_root()
     from . import figlint, visuals
@@ -453,7 +563,17 @@ def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(prog="scriptorium", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", action="version", version=f"scriptorium {__version__}")
     sub = ap.add_subparsers(dest="cmd", required=True)
-    sub.add_parser("init").set_defaults(f=cmd_init)
+    p = sub.add_parser("init")
+    p.add_argument("--venue", default="", help="neurips, iclr, icml, cvpr, acl, miccai, ieee, default, or a folder")
+    p.add_argument("--title", default="")
+    p.add_argument("--authors", default="", help="comma-separated")
+    p.add_argument("--affiliation", default="")
+    p.add_argument("--preset", default="", choices=["", "lite", "standard", "max"])
+    p.add_argument("--mode", default="", choices=["", "review", "final"])
+    p.add_argument("--page-limit", dest="page_limit", type=int, default=0)
+    p.add_argument("--venue-text", dest="venue_text", default="", help="the venue as the agents should see it")
+    p.add_argument("--yes", "-y", action="store_true", help="never ask; use flags and defaults")
+    p.set_defaults(f=cmd_init)
     p = sub.add_parser("run")
     p.add_argument("--from", dest="from_stage")
     p.add_argument("--to", "--pause-at", dest="to_stage")
@@ -497,6 +617,14 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--no-figures", action="store_true")
     p.set_defaults(f=cmd_build)
     sub.add_parser("lint").set_defaults(f=cmd_lint)
+    sub.add_parser("doctor").set_defaults(f=cmd_doctor)
+    p = sub.add_parser("audit", help="check an existing LaTeX paper (it is copied; the original is never changed)")
+    p.add_argument("paper", help="the folder holding the paper's .tex and .bib files")
+    p.add_argument("--out", default="", help="the audit folder (default: <paper>-audit here)")
+    p.add_argument("--venue", default="", help="neurips, iclr, icml, cvpr, acl, miccai, ieee: sets limits and reviewers")
+    p.add_argument("--venue-text", dest="venue_text", default="", help="the venue as the reviewers should see it")
+    p.add_argument("--setup-only", action="store_true")
+    p.set_defaults(f=cmd_audit)
     p = sub.add_parser("figlint")
     p.add_argument("ids", nargs="*")
     p.set_defaults(f=cmd_figlint)

@@ -70,37 +70,50 @@ def _openalex_abstract(work: dict) -> str:
     return " ".join(w for _, w in pos)
 
 
+def _from_openalex(ref: str) -> dict | None:
+    w = cite._json(cite._get("https://api.openalex.org/works/" + urllib.parse.quote(ref, safe=":/")), "OpenAlex")
+    ab = _openalex_abstract(w)
+    return {"title": w.get("title") or "", "year": str(w.get("publication_year") or ""), "abstract": ab,
+            "source": "openalex"} if ab else None
+
+
+def _from_arxiv(aid: str) -> dict | None:
+    import xml.etree.ElementTree as ET
+    xml = cite._get("https://export.arxiv.org/api/query?" + urllib.parse.urlencode({"id_list": aid}))
+    ns = {"a": "http://www.w3.org/2005/Atom"}
+    e = ET.fromstring(xml).find("a:entry", ns)
+    ab = re.sub(r"\s+", " ", e.findtext("a:summary", "", ns) or "").strip() if e is not None else ""
+    return {"title": re.sub(r"\s+", " ", e.findtext("a:title", "", ns) or "").strip(),
+            "year": (e.findtext("a:published", "", ns) or "")[:4], "abstract": ab, "source": "arxiv"} if ab else None
+
+
+def _from_s2(ref: str) -> dict | None:
+    d = cite._json(cite._get_s2(f"https://api.semanticscholar.org/graph/v1/paper/{ref}?fields=title,year,abstract"),
+                   "Semantic Scholar")
+    ab = d.get("abstract") or ""
+    return {"title": d.get("title") or "", "year": str(d.get("year") or ""), "abstract": ab, "source": "s2"} if ab else None
+
+
 def fetch_abstract(cid: str) -> dict:
-    """{title, year, abstract, source} for an id, from OpenAlex, arXiv or Semantic Scholar; abstract '' if none."""
+    """{title, year, abstract, source, errors} for an id. Tries every source that can know the paper, so one source
+    rate-limiting this network (arXiv often does) does not leave a paper without its abstract."""
     kind, _, val = cid.partition(":")
-    if kind == "arxiv":
-        import xml.etree.ElementTree as ET
-        xml = cite._get("https://export.arxiv.org/api/query?" + urllib.parse.urlencode({"id_list": val}))
-        ns = {"a": "http://www.w3.org/2005/Atom"}
-        e = ET.fromstring(xml).find("a:entry", ns)
-        if e is not None:
-            return {"title": _ws(e.findtext("a:title", "", ns)), "year": (e.findtext("a:published", "", ns) or "")[:4],
-                    "abstract": re.sub(r"\s+", " ", e.findtext("a:summary", "", ns) or "").strip(), "source": "arxiv"}
-    if kind in ("doi", "openalex"):
-        ref = f"https://doi.org/{val}" if kind == "doi" else val
+    tries = {"arxiv": [(_from_openalex, f"https://doi.org/10.48550/arXiv.{val}"), (_from_arxiv, val),
+                       (_from_s2, f"ARXIV:{val}")],
+             "doi": [(_from_openalex, f"https://doi.org/{val}"), (_from_s2, f"DOI:{val}")],
+             "openalex": [(_from_openalex, val)],
+             "s2": [(_from_s2, val)],
+             "dblp": []}.get(kind, [])
+    errors = []
+    for fn, ref in tries:
         try:
-            w = cite._json(cite._get("https://api.openalex.org/works/" + urllib.parse.quote(ref, safe=":/")), "OpenAlex")
-            ab = _openalex_abstract(w)
-            if ab:
-                return {"title": w.get("title") or "", "year": str(w.get("publication_year") or ""), "abstract": ab,
-                        "source": "openalex"}
-        except Exception:  # noqa: BLE001  fall through to Semantic Scholar
-            pass
-    s2 = {"doi": "DOI:", "arxiv": "ARXIV:", "s2": ""}.get(kind)
-    if s2 is not None:
-        try:
-            d = cite._json(cite._get_s2(f"https://api.semanticscholar.org/graph/v1/paper/{s2}{val}?fields=title,year,"
-                                        "abstract,tldr"), "Semantic Scholar")
-            ab = d.get("abstract") or ((d.get("tldr") or {}).get("text") or "")
-            return {"title": d.get("title") or "", "year": str(d.get("year") or ""), "abstract": ab, "source": "s2"}
-        except Exception:  # noqa: BLE001
-            pass
-    return {"title": "", "year": "", "abstract": "", "source": ""}
+            d = fn(ref)
+        except Exception as e:  # noqa: BLE001  try the next source
+            errors.append(f"{fn.__name__[6:]}: {str(e)[:120]}")
+            continue
+        if d:
+            return {**d, "errors": errors}
+    return {"title": "", "year": "", "abstract": "", "source": "", "errors": errors}
 
 
 def abstract(cfg: Config, cid: str, refresh: bool = False) -> dict:
@@ -108,6 +121,8 @@ def abstract(cfg: Config, cid: str, refresh: bool = False) -> dict:
     if p.exists() and not refresh:
         return json.loads(p.read_text())
     d = {"id": cid, **fetch_abstract(cid)}
+    if not d["abstract"] and d.get("errors"):
+        return d                   # a network failure is not kept, so the next call tries again
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(d, indent=1))
     return d
@@ -183,8 +198,11 @@ def card_problems(cfg: Config, cid: str) -> list[str]:
     if c.get("relation") and c["relation"] not in RELATIONS:
         errs.append(f"card {cid}: relation must be one of {', '.join(RELATIONS)}")
     ab = abstract_cached(cfg, cid)
+    if ab is None and c.get("unverifiable"):
+        return errs                # no source returned the abstract; the card says so
     if ab is None:
-        errs.append(f"card {cid}: fetch the abstract first with `scriptorium cite abstract {cid}`")
+        errs.append(f"card {cid}: fetch the abstract first with `scriptorium cite abstract {cid}`; if no source "
+                    "returns it, set \"unverifiable\": true")
     elif ab.get("abstract"):
         for q in c.get("quotes") or []:
             if _ws(q) not in _ws(ab["abstract"]):
@@ -214,8 +232,10 @@ class Read(S.Stage):
             f"describe:\n{ids}\nFetch each abstract with `scriptorium cite abstract ID`; quote it exactly." + extra))
 
     def tasks(self, cfg):
+        """Only batches with a missing or failing card: a rerun does not reread papers already carded."""
         (lit_dir(cfg) / "cards").mkdir(parents=True, exist_ok=True)
-        return [self.task_for(cfg, i, b) for i, b in enumerate(self.batches(cfg))]
+        return [self.task_for(cfg, i, b) for i, b in enumerate(self.batches(cfg))
+                if any(card_problems(cfg, p["id"]) for p in b)]
 
     def validate(self, cfg):
         return [e for p in shortlist(cfg) for e in card_problems(cfg, p["id"])]
@@ -233,6 +253,12 @@ class Read(S.Stage):
     def after(self, cfg):
         render_cards(cfg)
 
+    def on_fail(self, cfg, errors):
+        """Cards that still fail are left out of cards.md; the literature never stops the paper."""
+        bad = {p["id"] for p in shortlist(cfg) if card_problems(cfg, p["id"])}
+        (lit_dir(cfg) / "dropped.json").write_text(json.dumps(sorted(bad), indent=1))
+        return "continue"
+
 
 def render_cards(cfg: Config) -> None:
     d = S.read_json(lit_dir(cfg) / "shortlist.json") or {}
@@ -242,7 +268,10 @@ def render_cards(cfg: Config) -> None:
         if not rows:
             continue
         lines.append(f"## {topic}\n")
+        dropped = set(S.read_json(lit_dir(cfg) / "dropped.json") or [])
         for p in rows:
+            if p["id"] in dropped:
+                continue
             c = card(cfg, p["id"])
             lines.append(f"- `{p['id']}` {c.get('title', '')} ({c.get('year', '')}), {c.get('relation', '')}: "
                          f"{c.get('summary', '')}" + (" (abstract unavailable)" if c.get("unverifiable") else ""))

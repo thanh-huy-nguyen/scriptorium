@@ -38,7 +38,7 @@ class PipelineTest(unittest.TestCase):
         with redirect_stdout(StringIO()):
             cli.main(["init"])
         t = (self.tmp / "scriptorium.toml").read_text()
-        t = t.replace('latex = ""', f'latex = "{HERE / "fake_latex.py"}"').replace("review_rounds = 1", "review_rounds = 2")
+        t = t.replace('latex = ""', f'latex = "{HERE / "fake_latex.py"}"').replace("# review_rounds = 1", "review_rounds = 2")
         (self.tmp / "scriptorium.toml").write_text(t)
 
     def tearDown(self):
@@ -170,7 +170,7 @@ class ProseTest(unittest.TestCase):
         from scriptorium import lint, stages
         d = Path(tempfile.mkdtemp())
         (d / "paper").mkdir()
-        (d / "scriptorium.toml").write_text(C.DEFAULT_TOML)
+        (d / "scriptorium.toml").write_text(C.render_toml())
         (d / "paper" / "a.tex").write_text("We regularise it to \\val[1]{acc}. Analyses & -- \\\\\n% \\val{x}\n")
         cfg = C.load(d)
         probs = stages.val_problems(cfg)

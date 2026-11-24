@@ -183,6 +183,11 @@ elif agent == "terminologist":
         {"canonical": "Baseline", "kind": "baseline", "definition": "the baseline", "variants": []},
         {"canonical": "accuracy", "kind": "metric", "definition": "share correct", "variants": []}],
         "abbreviations": [{"short": "XYZ", "long": "ex why zed"}], "symbols": []}))
+elif agent == "auditor" and "existing paper" in prompt:
+    (work / "audit.json").write_text(json.dumps({"findings": [
+        {"file": "01_paper.tex", "quote": "Our method is the best on every dataset.", "claim": None,
+         "verdict": "overclaim", "fix": "name the datasets where it wins"},
+        {"file": "abstract.tex", "quote": "We study things.", "claim": None, "verdict": "ok"}]}))
 elif agent == "auditor":
     (work / "audit.json").write_text(json.dumps({"findings": [
         {"file": "03_results.tex", "quote": "See Figure~\\ref{fig:fig_acc} and Table~\\ref{tab:main}.",
@@ -228,7 +233,8 @@ elif agent == "cite_auditor":
     (work / "lit" / "citecheck.json").write_text(json.dumps({"findings": out}))
 elif agent == "reviewer":
     out = re.search(r"\.scriptorium/reviews/(\S+\.json)", prompt).group(1)
-    revised = "We revised this." in (paper / "03_results.tex").read_text()
+    res = paper / "03_results.tex"
+    revised = res.exists() and "We revised this." in res.read_text()
     score = 6 + (1 if revised else 0) * (-2 if os.environ.get("FAKE_REVISE_WORSE") else 1)
     (work / "reviews" / out).write_text(json.dumps({"summary": "s", "strengths": [], "questions": [],
                                                     "weaknesses": [{"issue": "i", "where": "w", "severity": "major",

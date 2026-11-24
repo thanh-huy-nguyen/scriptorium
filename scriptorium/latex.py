@@ -98,10 +98,12 @@ def parse_log(log: str) -> tuple[list[str], list[str], int]:
     return errors[:10], undefined, overfull
 
 
-def build(cfg: Config, figures: bool = True) -> Build:
+def build(cfg: Config, figures: bool = True, src: Path | None = None, main: str = "main.tex") -> Build:
+    """Compile paper/main.tex (or `main` in another source folder, for audits of existing papers)."""
     b = Build()
-    if figures:
+    if figures and src is None:
         b.figure_errors = run_figures(cfg)
+    src = src or cfg.paper
     engine = cfg.latex_engine()
     logdir = cfg.work / "logs"
     logdir.mkdir(parents=True, exist_ok=True)
@@ -109,20 +111,21 @@ def build(cfg: Config, figures: bool = True) -> Build:
         b.errors = ["no LaTeX engine found: install tectonic (https://tectonic-typesetting.github.io) or latexmk, "
                     "or set run.latex in scriptorium.toml"]
         return b
-    pdf = cfg.paper / "main.pdf"
+    stem = Path(main).stem
+    pdf = src / f"{stem}.pdf"
     if pdf.exists():
         pdf.unlink()
     if Path(engine).name.startswith("tectonic"):
-        cmd = [engine, "-X", "compile", "--keep-logs", "main.tex"]
+        cmd = [engine, "-X", "compile", "--keep-logs", main]
     else:
-        cmd = [engine, "-pdf", "-interaction=nonstopmode", "-file-line-error", "main.tex"]
+        cmd = [engine, "-pdf", "-interaction=nonstopmode", "-file-line-error", main]
     try:
-        r = subprocess.run(cmd, cwd=cfg.paper, capture_output=True, text=True, timeout=600)
+        r = subprocess.run(cmd, cwd=src, capture_output=True, text=True, timeout=600)
         out = r.stdout + "\n" + r.stderr
     except subprocess.TimeoutExpired:
         out = "! LaTeX build timed out after 600 s"
     (logdir / "build.log").write_text(out)
-    log = (cfg.paper / "main.log").read_text(errors="replace") if (cfg.paper / "main.log").exists() else out
+    log = (src / f"{stem}.log").read_text(errors="replace") if (src / f"{stem}.log").exists() else out
     b.errors, b.undefined, b.overfull = parse_log(log + ("\n" + out if "error:" in out else ""))
     if not b.errors:
         b.errors = [ln.split("error:", 1)[1].strip()[:200] for ln in out.splitlines() if "error:" in ln][:5]
