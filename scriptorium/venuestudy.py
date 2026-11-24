@@ -332,7 +332,12 @@ NOTE_KEYS = ("framing", "key_idea", "figure1", "contributions", "emphasis", "str
 
 
 def _norm(t: str) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
+    """Letters and digits only, after Unicode normalization and with words hyphenated across PDF lines joined, so a
+    quote matches the extracted text despite ligatures (fi), line-break hyphens and spacing."""
+    import unicodedata
+    t = unicodedata.normalize("NFKC", t).replace("\u00ad", "")
+    t = re.sub(r"(\w)-\s*\n\s*(\w)", r"\1\2", t)
+    return re.sub(r"[^a-z0-9]+", "", t.lower())
 
 
 def note_problems(cfg: Config, ex: dict) -> list[str]:
