@@ -67,6 +67,8 @@ class Canvas:
         self.size = 7.5
         self.panels: list[tuple[tuple, object]] = []     # (x, y, w, h), title text: titles must fit their panel
         self.issues: list[str] = []                      # problems the kit can see itself; the lint reports them
+        self.regions: list[tuple] = []                   # every panel and box: text inside one must stay inside it
+        self.labels: list = []
 
     # -- text -----------------------------------------------------------------------------------------------------
     def text(self, x, y, s, size=None, color=None, ha="center", va="center", weight="normal", bg: str | None = None,
@@ -76,6 +78,7 @@ class Canvas:
                          fontweight=weight, zorder=6, **kw)
         if bg:
             t.set_gid("bg:" + bg)
+        self.labels.append(t)
         return t
 
     # -- containers -----------------------------------------------------------------------------------------------
@@ -83,6 +86,7 @@ class Canvas:
         """A flat pastel panel with rounded corners, an optional plain title and a numbered step circle."""
         from matplotlib.patches import FancyBboxPatch
         fill = fill or self.soft["fills"][k % len(self.soft["fills"])]
+        self.regions.append((x, y, w, h))
         self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.08", fc=fill,
                                          ec="none", zorder=1))
         if title:
@@ -97,8 +101,10 @@ class Canvas:
             size=None):
         """A rounded box. ours=True draws it in the accent (parts of our method that learn)."""
         from matplotlib.patches import FancyBboxPatch
+        self.regions.append((x, y, w, h))
         if ours:
-            fc, ec, tc = self.soft["soft"], self.pal["ours"], self.pal["ours"]
+            fc, ec = self.soft["soft"], self.pal["ours"]
+            tc = sf.readable(self.pal["ours"], fc)
         else:
             fc, ec, tc = fill or "#FFFFFF", edge or self.pal["edge"], self.pal["text"]
         self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.06", fc=fc, ec=ec,
@@ -272,6 +278,17 @@ class Canvas:
             if x1 > x + w - 0.04:
                 self.issues.append(f"the panel title '{t.get_text()[:30]}' runs to the panel's edge; shorten it or "
                                    "widen the panel")
+        for t in self.labels:
+            ax, ay = t.get_position()
+            inside = [r for r in self.regions if r[0] <= ax <= r[0] + r[2] and r[1] <= ay <= r[1] + r[3]]
+            if not inside:
+                continue
+            rx, ry, rw, rh = min(inside, key=lambda r: r[2] * r[3])          # the innermost container
+            bb = t.get_window_extent(r)
+            (x0, y0), (x1, y1) = inv.transform((bb.x0, bb.y0)), inv.transform((bb.x1, bb.y1))
+            if x0 < rx - 0.02 or x1 > rx + rw + 0.02 or y0 < ry - 0.02 or y1 > ry + rh + 0.02:
+                self.issues.append(f"the label '{t.get_text()[:30]}' runs past the edge of the box or panel it sits "
+                                   "in; shorten it, wrap it onto two lines, or enlarge the box")
         self.fig._scriptorium_issues = list(dict.fromkeys(self.issues))
         sf.save(self.fig, fid)
 

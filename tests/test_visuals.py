@@ -111,6 +111,11 @@ class VisualsTest(unittest.TestCase):
         probs = " | ".join(figlint.lint(self.cfg, [{"id": "bad", "kind": "diagram"}])["bad"])
         self.assertIn("is diagonal", probs)
         self.assertIn("runs to the panel's edge", probs)
+        self.draw("spill", "import scriptorium_diagram as sd\nd = sd.canvas('column', height=1.6)\n"
+                           "d.box(0.2, 0.2, 0.8, 0.5, '')\nd.text(0.3, 0.45, 'a label far too long for this box', "
+                           "ha='left')\nd.save('spill')\n")
+        self.assertIn("runs past the edge of the box",
+                      " | ".join(figlint.lint(self.cfg, [{"id": "spill", "kind": "diagram"}])["spill"]))
 
     def test_outline_needs_one_teaser_and_planned_figures_must_be_included(self):
         self.cli("run", "--pause-at", "outline")

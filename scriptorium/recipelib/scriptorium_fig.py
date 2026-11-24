@@ -47,6 +47,25 @@ THEMES = {
 DEFAULT_THEME = "harbor"
 
 
+def _lum(h: str) -> float:
+    def ch(c):
+        c = c / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (int(h[i:i + 2], 16) for i in (1, 3, 5))
+    return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b)
+
+
+def readable(fg: str, bg: str, ratio: float = 4.5) -> str:
+    """fg, darkened just enough to reach the contrast ratio on bg (labels in the method's colour on its own tint)."""
+    for k in range(0, 21):
+        r, g, b = (int(fg[i:i + 2], 16) for i in (1, 3, 5))
+        c = "#{:02X}{:02X}{:02X}".format(*(round(v * (1 - k * 0.05)) for v in (r, g, b)))
+        hi, lo = sorted((_lum(c), _lum(bg)), reverse=True)
+        if (hi + 0.05) / (lo + 0.05) >= ratio:
+            return c
+    return "#000000"
+
+
 def tint(hex_color: str, t: float) -> str:
     """Mix a colour with white: t=0 keeps it, t=1 gives white."""
     r, g, b = (int(hex_color[i:i + 2], 16) for i in (1, 3, 5))
