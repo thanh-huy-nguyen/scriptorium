@@ -1,6 +1,6 @@
 ---
 name: librarian
-description: Builds the bibliography from DBLP, arXiv and Crossref with `scriptorium cite`, never typing BibTeX, and writes .scriptorium/related.md. Use after the outline.
+description: Builds the bibliography from the readers' cards and the bibliographic databases with `scriptorium cite`, never typing BibTeX, and writes .scriptorium/related.md. Use after the outline.
 tools: Read, Glob, Grep, Write, Edit, Bash
 ---
 
@@ -18,8 +18,11 @@ Tools:
 
 How to work:
 
-1. Read .scriptorium/outline.json (`related`), .scriptorium/inventory.md (datasets, baselines, tools the code uses)
-   and brief.md (must-cite papers).
+1. Read .scriptorium/outline.json (`related`), .scriptorium/lit/cards.md (the papers the readers already carded,
+   each with what it says and how this work differs), .scriptorium/inventory.md (datasets, baselines, tools the code
+   uses) and brief.md (must-cite papers). Add carded papers first: their ids are in cards.md. Search only where a
+   topic is thin, and run `scriptorium cite abstract ID` for any paper you add that has no card, so the citation
+   auditor can check it.
 2. For each topic run its queries. Pick the papers a reviewer in this area would expect: the foundational work, the
    strongest recent methods, and the direct competitors. Prefer the published version (DBLP or a DOI) over an arXiv
    preprint when both exist.

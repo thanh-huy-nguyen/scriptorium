@@ -18,8 +18,12 @@ Used by the agents, and handy by hand:
     scriptorium cite search QUERY    look a paper up in OpenAlex, arXiv, Crossref and DBLP (--source s2 for Semantic Scholar)
     scriptorium cite add ID          add doi:DOI, arxiv:ID, openalex:W..., dblp:KEY or s2:ID to paper/refs.bib
     scriptorium cite verify          every \\cite resolves and every entry was fetched, not typed
+    scriptorium cite abstract ID     fetch and keep a paper's abstract (OpenAlex, arXiv, Semantic Scholar)
+    scriptorium cite card KEY        what a cited paper says: its reading card and abstract
     scriptorium figure SCRIPT        run one figure script from the repository root
     scriptorium build                rerun the figure scripts and compile paper/main.tex
+    scriptorium figlint [ID ...]     check figures at print size: text size, overlaps, contrast, colours, recipe values
+    scriptorium themes               render a sample plot and diagram in every figure theme, to choose one
     scriptorium lint                 flag prose habits that read as machine-written
     scriptorium ledger               check the claim ledger and write .scriptorium/ledger.md
     scriptorium table [ID ...]       render paper/table_ID.tex from .scriptorium/tables/ID.json
@@ -274,6 +278,10 @@ def cmd_cite(a) -> None:
             sys.exit("usage: scriptorium cite search QUERY")
         srcs = tuple(a.source.split(",")) if a.source else cite.DEFAULT_SOURCES
         hits = cite.search(q, a.n, srcs)
+        root = C.find_root()
+        if root:
+            from . import lit
+            lit.record(root, q, hits)
         for h in hits:
             au = ", ".join(h["authors"][:3]) + (" et al." if len(h["authors"]) > 3 else "")
             print(f"{h['id']}\n    {h['title']} ({h['year']}, {h['venue']})\n    {au}")
@@ -284,6 +292,20 @@ def cmd_cite(a) -> None:
     if a.action == "add":
         for cid in a.args:
             print(cite.add(cfg.root, cid, a.key))
+    elif a.action == "abstract":
+        from . import lit
+        for cid in a.args:
+            d = lit.abstract(cfg, cid, refresh=a.refresh)
+            print(f"{cid}: {d.get('title')} ({d.get('year')}), from {d.get('source') or 'nowhere'}\n"
+                  f"{d.get('abstract') or '(no abstract could be fetched: mark the card unverifiable)'}\n")
+    elif a.action == "card":
+        from . import lit
+        for key in a.args:
+            cid, c, ab = lit.key_card(cfg, key)
+            print(f"{key} -> {cid or '(not added with cite add)'}")
+            print(json.dumps(c, indent=1) if c else "(no card)")
+            print("abstract: " + ((ab or {}).get("abstract") or "(none fetched; try `scriptorium cite abstract ID`)")
+                  + "\n")
     elif a.action == "verify":
         rep = cite.verify(cfg.root)
         probs = cite.problems(rep)
@@ -309,6 +331,27 @@ def cmd_figure(a) -> None:
     made = [str(p.relative_to(cfg.root)) for p in (cfg.root / stem.parent).glob(stem.name + ".*") if p.suffix != ".py"]
     print(("wrote: " + ", ".join(sorted(made))) if made else "no output file next to the script")
     sys.exit(r.returncode)
+
+
+def cmd_figlint(a) -> None:
+    cfg = need_root()
+    from . import figlint, visuals
+    ids = a.ids or visuals.figure_ids(cfg)
+    specs = [dict(visuals.spec(cfg, i), id=i) for i in ids]
+    res = figlint.lint(cfg, specs, visuals.ours_labels(cfg))
+    bad = 0
+    for fid, probs in res.items():
+        bad += bool(probs)
+        print(f"{fid}: ok" if not probs else f"{fid}: {len(probs)} problem(s)\n  - " + "\n  - ".join(probs))
+    sys.exit(1 if bad else 0)
+
+
+def cmd_themes(a) -> None:
+    from . import visuals
+    root = C.find_root()
+    out = Path(a.out) if a.out else ((root / C.WORK / "themes") if root else Path.cwd() / "scriptorium-themes")
+    page = visuals.gallery(out)
+    print(f"wrote {page}: the same plot and diagram in every theme. Set one with [figures] theme = \"...\"")
 
 
 def cmd_build(a) -> None:
@@ -440,7 +483,8 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("files", nargs="*")
     p.set_defaults(f=cmd_check)
     p = sub.add_parser("cite")
-    p.add_argument("action", choices=["search", "add", "verify"])
+    p.add_argument("action", choices=["search", "add", "verify", "abstract", "card"])
+    p.add_argument("--refresh", action="store_true")
     p.add_argument("args", nargs="*")
     p.add_argument("-n", type=int, default=5)
     p.add_argument("--source", default="")
@@ -453,6 +497,12 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--no-figures", action="store_true")
     p.set_defaults(f=cmd_build)
     sub.add_parser("lint").set_defaults(f=cmd_lint)
+    p = sub.add_parser("figlint")
+    p.add_argument("ids", nargs="*")
+    p.set_defaults(f=cmd_figlint)
+    p = sub.add_parser("themes")
+    p.add_argument("--out", default="")
+    p.set_defaults(f=cmd_themes)
     sub.add_parser("ledger").set_defaults(f=cmd_ledger)
     p = sub.add_parser("table")
     p.add_argument("ids", nargs="*")

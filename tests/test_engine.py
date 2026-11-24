@@ -59,11 +59,11 @@ class EngineTest(unittest.TestCase):
         self.assertIn("all stages done", out, out)
         evs = events.read(self.cfg)
         idx = {(e["ev"], e.get("stage")): i for i, e in enumerate(evs)}
-        branch = ("library", "figures", "tables")
+        branch = ("notation", "library", "figplan", "tables")
         first_done = min(idx[("stage_done", b)] for b in branch)
         for b in branch:
             self.assertLess(idx[("stage_start", b)], first_done, f"{b} waited for a sibling")
-        self.assertGreater(idx[("stage_start", "draft")], max(idx[("stage_done", b)] for b in branch))
+        self.assertGreater(idx[("stage_start", "draft")], max(idx[("stage_done", b)] for b in branch + ("critique",)))
         self.assertEqual(evs[-1]["ev"], "run_end")
         self.assertEqual(evs[-1]["status"], "done")
 
@@ -90,6 +90,8 @@ class EngineTest(unittest.TestCase):
         self.cli("reset", "figures")
         s = state.load(self.cfg)
         self.assertEqual(s["stages"]["figures"]["status"], "pending")
+        self.assertEqual(s["stages"]["critique"]["status"], "pending")
+        self.assertEqual(s["stages"]["figplan"]["status"], "done")
         self.assertEqual(s["stages"]["draft"]["status"], "pending")
         self.assertEqual(s["stages"]["library"]["status"], "done")
         self.assertEqual(s["stages"]["tables"]["status"], "done")

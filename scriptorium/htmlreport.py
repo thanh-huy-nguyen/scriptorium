@@ -165,9 +165,12 @@ def write(cfg: Config, errs: list[str] | None = None) -> Path:
         h.append("<h2>Figures</h2><div class=figs>")
         for f in figs:
             script = f.with_suffix(".py")
+            crit = S.read_json(cfg.work / "figures" / f"{f.stem}.critique.json") or {}
+            rounds = len(list((cfg.work / "figures").glob(f"{f.stem}.critique.r*.json"))) + (1 if crit else 0)
+            verdict = (f" · critic: {_e(crit.get('verdict'))} after {rounds} round(s)" if crit else "")
             h.append(f"<figure><img src='../paper/figures/{_e(f.name)}' alt='{_e(f.stem)}'><figcaption><b>{_e(f.stem)}"
                      f"</b> · drawn by <code>paper/figures/{_e(script.name) if script.exists() else '?'}</code>"
-                     "</figcaption></figure>")
+                     f"{verdict}</figcaption></figure>")
         h.append("</div>")
 
     # Reviews

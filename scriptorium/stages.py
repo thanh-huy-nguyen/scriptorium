@@ -3,8 +3,8 @@
 Stages form a graph; a stage starts as soon as the stages it depends on are done, so independent teams work at the
 same time (engine.py schedules them):
 
-    scout -> { experiments | evidence -> stats } -> ledger -> story -> outline
-          -> { notation | library | figures | tables } -> draft -> frame -> edit -> audit -> polish -> fit
+    scout -> { experiments | evidence -> stats | search -> read } -> ledger -> story -> outline
+          -> { notation | library | figplan -> figures -> critique | tables } -> draft -> frame -> edit -> { audit | citecheck } -> polish -> fit
           -> review0 -> (chair -> revise_r -> review_r)* -> final -> package
 
 The specialist stages (experiments, stats, notation, audit, polish, fit, chair, package) live in team.py.
@@ -322,6 +322,13 @@ class Outline(Stage):
                 errs.append(f"figure id {f.get('id')!r} must be lowercase letters, digits and _")
             if f.get("kind") not in ("plot", "diagram"):
                 errs.append(f"figure {f.get('id')}: kind must be 'plot' or 'diagram'")
+        teasers = [f for f in figs if f.get("teaser")]
+        if len(teasers) != 1:
+            errs.append("exactly one figure is the teaser (`\"teaser\": true`): Figure 1, in the introduction")
+        else:
+            intro = [s for s in secs if s.get("file", "").startswith("01_")]
+            if intro and teasers[0].get("id") not in (intro[0].get("figures") or []):
+                errs.append(f"the teaser figure {teasers[0].get('id')!r} belongs in the introduction's `figures`")
         if not o.get("related"):
             errs.append("`related` must list the topics the related work needs, each with search queries")
         return errs
@@ -335,8 +342,9 @@ class Library(Stage):
     def tasks(self, cfg):
         return [Task("librarian", "library", context(cfg) + (
             "Task: build the bibliography for the topics in .scriptorium/outline.json (`related`), plus the "
-            "datasets, baselines and tools named in .scriptorium/inventory.md. Find each paper with `scriptorium cite "
-            "search`, add it with `scriptorium cite add`, and write .scriptorium/related.md."))]
+            "datasets, baselines and tools named in .scriptorium/inventory.md. Start from the papers the readers "
+            "already carded in .scriptorium/lit/cards.md; search for more with `scriptorium cite search` only where "
+            "a topic is thin. Add each paper with `scriptorium cite add`, and write .scriptorium/related.md."))]
 
     def validate(self, cfg):
         rep = cite.verify(cfg.root)
@@ -346,30 +354,6 @@ class Library(Stage):
             errs.append(f"paper/refs.bib holds {n} entries; find more of the work the paper builds on")
         if not (cfg.work / "related.md").exists():
             errs.append(".scriptorium/related.md is missing")
-        return errs
-
-
-class Figures(Stage):
-    def tasks(self, cfg):
-        out = []
-        for f in outline(cfg).get("figures", []):
-            out.append(Task("illustrator", f"figure-{f['id']}", context(cfg) + (
-                f"Task: make figure `{f['id']}` as planned in .scriptorium/outline.json:\n{json.dumps(f, indent=1)}\n"
-                f"Write paper/figures/{f['id']}.py, which reads the repository's data and saves "
-                f"paper/figures/{f['id']}.pdf and paper/figures/{f['id']}.png. Run it with `scriptorium figure "
-                f"paper/figures/{f['id']}.py`, look at the PNG, and fix what looks wrong. Then write "
-                f".scriptorium/figures/{f['id']}.md with a draft caption and what the figure shows.")))
-        return out
-
-    def before(self, cfg):
-        (cfg.paper / "figures").mkdir(exist_ok=True)
-        (cfg.work / "figures").mkdir(exist_ok=True)
-
-    def validate(self, cfg):
-        errs = latex.run_figures(cfg)
-        for f in outline(cfg).get("figures", []):
-            if not (cfg.paper / "figures" / f"{f['id']}.pdf").exists():
-                errs.append(f"paper/figures/{f['id']}.pdf was not produced")
         return errs
 
 
@@ -490,8 +474,9 @@ class Draft(Stage):
     def fix_tasks(self, cfg, errors):
         msg = "\n\nThe checks found these problems. Fix the ones in your file:\n- " + "\n- ".join(errors)
         out = []
+        named = any(s["file"] in e for s in self.sections(cfg) for e in errors)
         for s in self.sections(cfg):
-            if (cfg.paper / f"{s['file']}.tex").exists() and not any(s["file"] in e for e in errors):
+            if named and (cfg.paper / f"{s['file']}.tex").exists() and not any(s["file"] in e for e in errors):
                 continue
             t = self.task_for(cfg, s, msg)
             t.label += "-fix"
@@ -710,23 +695,30 @@ def _after(st: Stage, *deps: str) -> Stage:
 def pipeline(cfg: Config) -> list[Stage]:
     """Every stage, in an order that respects its dependencies (the order the interactive mode walks)."""
     from . import team as T
+    from . import visuals as V
+    from . import lit as L
     st: list[Stage] = [
         _after(Scout("scout")),
         _after(T.Experiments("experiments"), "scout"),
         _after(Evidence("evidence"), "scout"),
         _after(T.Stats("stats"), "evidence"),
+        _after(L.Search("search"), "scout"),
+        _after(L.Read("read"), "search"),
         _after(Ledger("ledger"), "stats", "experiments"),
-        _after(Story("story"), "ledger"),
+        _after(Story("story"), "ledger", "read"),
         _after(Outline("outline"), "story"),
         _after(T.Notation("notation"), "outline"),
-        _after(Library("library"), "outline"),
-        _after(Figures("figures"), "outline"),
+        _after(Library("library"), "outline", "read"),
+        _after(V.FigPlan("figplan"), "outline"),
+        _after(V.Figures("figures"), "figplan"),
+        _after(V.Critique("critique", cfg.critic_rounds), "figures"),
         _after(Tables("tables"), "outline"),
-        _after(Draft("draft", 1), "notation", "library", "figures", "tables"),
+        _after(Draft("draft", 1), "notation", "library", "critique", "tables"),
         _after(Draft("frame", 2), "draft"),
         _after(Edit("edit"), "frame"),
         _after(T.Audit("audit"), "edit"),
-        _after(T.Polish("polish"), "audit"),
+        _after(L.CiteCheck("citecheck"), "edit"),
+        _after(T.Polish("polish"), "audit", "citecheck"),
         _after(T.Fit("fit"), "polish"),
         _after(Review("review0", 0), "fit"),
     ]

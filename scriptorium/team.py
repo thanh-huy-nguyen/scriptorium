@@ -248,7 +248,9 @@ class Polish(S.Stage):
     max_fix = 2
 
     def task_for(self, cfg, f, extra=""):
-        fnd = open_findings(cfg, f)
+        from . import lit
+        fnd = open_findings(cfg, f) + [dict(x, verdict=f"{x['verdict']} citation \\cite{{{x.get('key')}}}")
+                                       for x in lit.open_citations(cfg, f)]
         flags = [x for x in lint.lint(cfg.paper) if x.startswith(f"{f}.tex")]
         notes = [x for x in notation.check_text(cfg) if x.startswith(f"{f}.tex")]
         items = ([f"- [{x['verdict']}] \"{x['quote']}\" -> {x['fix']}" for x in fnd] +
@@ -264,7 +266,14 @@ class Polish(S.Stage):
         return [self.task_for(cfg, f) for f in section_files(cfg)]
 
     def validate(self, cfg):
+        from . import lit
         errs = []
+        for x in lit.open_citations(cfg):
+            f = str(x.get("file", "")).removesuffix(".tex")
+            p = cfg.paper / f"{f}.tex"
+            if p.exists() and x.get("quote") and _ws(x["quote"]) in _ws(p.read_text()):
+                errs.append(f"{f}.tex: the {x['verdict']} citation of {x.get('key')} is unchanged: "
+                            f"\"{x['quote'][:120]}\"")
         for x in open_findings(cfg):
             f = str(x.get("file", "")).removesuffix(".tex")
             p = cfg.paper / f"{f}.tex"

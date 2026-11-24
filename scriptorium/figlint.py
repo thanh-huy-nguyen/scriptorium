@@ -95,12 +95,15 @@ def lint_layout(fid: str, lay: dict, placed: str | None, ours_labels: list[str])
         x0, y0, x1, y1 = t["box"]
         if x0 < -0.01 or y0 < -0.01 or x1 > W + 0.01 or y1 > H + 0.01:
             out.append(f"{fid}: text '{t['text'][:30]}' runs off the figure")
-        if contrast(t.get("color", "#000000")) < 4.5:
-            out.append(f"{fid}: text '{t['text'][:30]}' in {t.get('color')} has contrast below 4.5:1 on white")
+        bg = t.get("bg") or "#ffffff"
+        if contrast(t.get("color", "#000000"), bg) < 4.5:
+            out.append(f"{fid}: text '{t['text'][:30]}' in {t.get('color')} has contrast below 4.5:1 on {bg}")
     for i in range(len(texts)):
         for j in range(i + 1, len(texts)):
             if _overlap(texts[i]["box"], texts[j]["box"]) > 0.15:
                 out.append(f"{fid}: text '{texts[i]['text'][:25]}' overlaps '{texts[j]['text'][:25]}'")
+    if lay.get("kind") == "diagram":
+        return sorted(set(out))
     for lg in lay.get("legends", []):
         inside = sum(lg[0] <= x <= lg[2] and lg[1] <= y <= lg[3] for x, y in lay.get("marks", []))
         if inside:

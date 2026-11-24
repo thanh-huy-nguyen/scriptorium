@@ -116,6 +116,7 @@ def figure(width: str | float = "column", aspect: float = 0.62, **kw):
     if not plt.rcParams.get("font.family") == ["serif"]:
         use()
     w = WIDTHS.get(width, width) if isinstance(width, str) else float(width)
+    kw.setdefault("layout", "constrained")       # keeps labels and an outside legend inside the figure
     fig, ax = plt.subplots(figsize=(w, w * aspect), **kw)
     fig._scriptorium_width = width if isinstance(width, str) else "custom"
     return fig, ax
@@ -132,6 +133,42 @@ def recipe(key: str) -> float:
     return float(rec["value"])
 
 
+def grouped_bars(ax, groups: list[str], data: dict, ours: str | None = None, reference: str | None = None,
+                 points: dict | None = None, width: float = 0.8, err_label: str = "sd"):
+    """The house form for aggregate comparisons: one bar per method in each group, error bars, and the individual
+    seeds as small dots. `data` maps method -> (means, errors), one value per group, each from sf.recipe();
+    `points` maps method -> one list of per-seed values per group (optional)."""
+    import numpy as np
+    names = list(data)
+    n = len(names)
+    w = width / max(n, 1)
+    x = np.arange(len(groups))
+    rng = np.random.default_rng(0)
+    for i, name in enumerate(names):
+        means, errs = data[name]
+        c = color(name, ours=(name == ours), reference=(name == reference))
+        pos = x - width / 2 + w * (i + 0.5)
+        ax.bar(pos, means, w * 0.9, color=c, label=name, zorder=2, linewidth=0)
+        ax.errorbar(pos, means, yerr=errs, fmt="none", ecolor=palette()["text"], elinewidth=0.7, capsize=2,
+                    zorder=3)
+        for g, vals in enumerate((points or {}).get(name) or []):
+            jit = (rng.random(len(vals)) - 0.5) * w * 0.45
+            ax.scatter(pos[g] + jit, vals, s=4, color="#FFFFFF", edgecolors=palette()["text"], linewidths=0.4,
+                       zorder=4, label="_seeds")
+    ax.set_xticks(x, groups)
+    ax.grid(axis="x", visible=False)
+    return ax
+
+
+def legend_above(ax, ncol: int | None = None, **kw):
+    """A legend in one row above the axes, never on the data."""
+    h, lab = ax.get_legend_handles_labels()
+    keep = [(a, b) for a, b in zip(h, lab) if not b.startswith("_")]
+    return ax.legend([a for a, _ in keep], [b for _, b in keep], loc="lower center", bbox_to_anchor=(0.5, 1.0),
+                     ncol=ncol or len(keep), frameon=False, handlelength=1.0, columnspacing=1.0, borderaxespad=0.2,
+                     **kw)
+
+
 def _layout(fig) -> dict:
     """Positions of every text, axes, legend and data mark, in inches from the bottom left, for the figure lint."""
     fig.canvas.draw()
@@ -143,12 +180,28 @@ def _layout(fig) -> dict:
         return [round(bb.x0 / dpi, 4), round(bb.y0 / dpi, 4), round(bb.x1 / dpi, 4), round(bb.y1 / dpi, 4)]
 
     texts, marks, series, legends, axes = [], [], [], [], []
+    hidden = set()                 # tick labels matplotlib does not draw (ticks outside the view limits)
+    for ax in fig.axes:
+        for axis in (ax.xaxis, ax.yaxis):
+            if not ax.axison or not axis.get_visible():
+                for t in axis.get_major_ticks() + axis.get_minor_ticks():
+                    hidden.update({id(t.label1), id(t.label2)})
+                continue
+            try:
+                drawn = {id(t) for t in axis._update_ticks()}
+                for t in axis.get_major_ticks() + axis.get_minor_ticks():
+                    if id(t) not in drawn:
+                        hidden.update({id(t.label1), id(t.label2)})
+            except Exception:  # noqa: BLE001  private API; without it every tick label is checked
+                pass
     for t in fig.findobj(lambda a: hasattr(a, "get_text") and hasattr(a, "get_fontsize")):
         try:
-            if not t.get_visible() or not t.get_text().strip():
+            if not t.get_visible() or not t.get_text().strip() or id(t) in hidden:
                 continue
+            gid = t.get_gid() or ""
             texts.append({"text": t.get_text()[:80], "size": float(t.get_fontsize()), "box": box(t.get_window_extent(r)),
-                          "color": _hex(t.get_color()), "legend": False})
+                          "color": _hex(t.get_color()), "legend": False,
+                          "bg": gid[3:] if gid.startswith("bg:") else "#ffffff"})
         except Exception:  # noqa: BLE001
             continue
     for ax in fig.axes:
@@ -177,6 +230,11 @@ def _layout(fig) -> dict:
                         series.append({"label": c.get_label(), "color": _hex(fc[0])})
             except Exception:  # noqa: BLE001
                 continue
+        for cont in ax.containers:
+            lab = cont.get_label() if hasattr(cont, "get_label") else ""
+            first = next(iter(cont), None) if hasattr(cont, "__iter__") else None
+            if lab and not lab.startswith("_") and first is not None and hasattr(first, "get_facecolor"):
+                series.append({"label": lab, "color": _hex(first.get_facecolor())})
         for patch in ax.patches:
             try:
                 bb = patch.get_window_extent(r)
@@ -189,7 +247,8 @@ def _layout(fig) -> dict:
         x0, y0, x1, y1 = t["box"]
         t["legend"] = any(l[0] - 0.01 <= x0 and x1 <= l[2] + 0.01 and l[1] - 0.01 <= y0 and y1 <= l[3] + 0.01
                           for l in legends)
-    return {"size": [float(W), float(H)], "width": getattr(fig, "_scriptorium_width", "custom"), "texts": texts,
+    return {"size": [float(W), float(H)], "width": getattr(fig, "_scriptorium_width", "custom"),
+            "kind": getattr(fig, "_scriptorium_kind", "plot"), "texts": texts,
             "axes": axes, "legends": legends, "marks": marks, "series": series, "theme": _state["theme"],
             "palette": palette(), "recipes": sorted(set(_state.get("recipes", [])))}
 

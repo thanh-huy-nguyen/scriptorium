@@ -82,6 +82,21 @@ def validate(cfg: Config, path: str | Path) -> list[str]:
         return team.audit_problems(cfg)
     if len(parts) == 2 and parts[0] == "reviews" and p.name.endswith("_meta.json"):
         return team.meta_problems(p)
+    if parts == ("figures", "plan.json"):
+        from . import visuals
+        return visuals.plan_problems(cfg)
+    if len(parts) == 2 and parts[0] == "figures" and p.name.endswith(".critique.json"):
+        from . import visuals
+        return visuals.critique_problems(p)
+    if parts[:1] == ("lit",):
+        from . import lit
+        if parts == ("lit", "shortlist.json"):
+            return lit.shortlist_problems(cfg)
+        if parts == ("lit", "citecheck.json"):
+            return lit.citecheck_problems(cfg)
+        if len(parts) == 3 and parts[1] == "cards":
+            d = json.loads(p.read_text()) if p.exists() else {}
+            return lit.card_problems(cfg, d.get("id") or p.stem) if d else [f"{rel} is missing or empty"]
     if parts == ("inventory.md",):
         return stages.Scout("scout").validate(cfg)
     if parts == ("ledger.json",):

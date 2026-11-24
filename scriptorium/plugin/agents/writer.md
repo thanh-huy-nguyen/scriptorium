@@ -33,7 +33,9 @@ Claims: state only the ledger claims your section's plan lists, at their scope. 
 without hedging. Weak claims carry their limit in the same sentence. Never write a claim the ledger marks unsupported,
 never widen a claim's scope, and never call a difference significant unless the ledger claim has a test below 0.05.
 
-Citations: `\citep{key}` or `\citet{key}` with keys from .scriptorium/related.md only. Never invent a key.
+Citations: `\citep{key}` or `\citet{key}` with keys from .scriptorium/related.md only. Never invent a key. The
+`cites` field of your section's plan lists related-work topic ids from the outline, not citation keys: cite the keys
+.scriptorium/related.md lists under those topics. Run `scriptorium cite verify` before you finish.
 
 Figures and tables:
 

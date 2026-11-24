@@ -30,7 +30,9 @@ def jail_env(cfg: Config, base: dict | None = None) -> dict[str, str]:
     """Environment for running agent-written code (recipes, figure scripts) from the orchestrator."""
     env = dict(base if base is not None else os.environ)
     env["SCRIPTORIUM_JAIL_ROOT"] = str(cfg.root)
-    env["PYTHONPATH"] = os.pathsep.join(p for p in [str(JAIL_DIR), env.get("PYTHONPATH", "")] if p)
+    env["PYTHONPATH"] = os.pathsep.join(p for p in [str(JAIL_DIR), str(PKG / "recipelib"), env.get("PYTHONPATH", "")]
+                                        if p)
+    env.setdefault("SCRIPTORIUM_ROOT", str(cfg.root))
     return recipe_env(env)
 
 

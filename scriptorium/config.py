@@ -39,12 +39,16 @@ unset_api_key = false         # true: drop ANTHROPIC_API_KEY so sessions use you
 latex = ""                    # tectonic or latexmk; found on PATH when empty
 python = ""                   # interpreter for recipes and figure scripts; the current one when empty
 
+[figures]
+theme = "academia"            # academia | nature | minimal; compare them with `scriptorium themes`
+critic_rounds = 2             # times a figure critic may send a figure back to its maker
+
 [lock]
 ignore = []                   # extra glob patterns the data lock may ignore (e.g. "wandb/**")
 '''
 
 ROLES = ("scout", "experimentalist", "evidence", "statistician", "cartographer", "architect", "outliner",
-         "terminologist", "librarian", "illustrator", "tablesetter", "writer", "editor", "auditor", "line_editor",
+         "terminologist", "searcher", "reader", "librarian", "figure_planner", "plotter", "diagrammer", "figure_critic", "tablesetter", "writer", "editor", "auditor", "cite_auditor", "line_editor",
          "typesetter", "reviewer", "chair", "reviser")
 
 
@@ -73,6 +77,8 @@ class Config:
     contest_n: int = 3                    # candidates for the abstract and the introduction (1 turns contests off)
     comprehension: bool = True            # quiz a reader on the compiled paper after editing
     comprehension_min: float = 0.8        # share of discriminative questions the reader must get right
+    theme: str = "academia"               # figure theme (scriptorium_fig.THEMES)
+    critic_rounds: int = 2                # figure critic rounds
 
     def model(self, role: str) -> str:
         return self.models.get(role) or self.models.get("default") or "sonnet"
@@ -134,4 +140,7 @@ def load(root: Path) -> Config:
     cfg.contest_n = int(r.get("contest_n", cfg.contest_n))
     cfg.comprehension = bool(r.get("comprehension", cfg.comprehension))
     cfg.comprehension_min = float(r.get("comprehension_min", cfg.comprehension_min))
+    fg = data.get("figures", {})
+    cfg.theme = str(fg.get("theme", cfg.theme))
+    cfg.critic_rounds = int(fg.get("critic_rounds", cfg.critic_rounds))
     return cfg

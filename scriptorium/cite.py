@@ -394,13 +394,20 @@ def verify(root: Path) -> dict[str, list[str]]:
     untracked = sorted(k for k in entries if k not in prov)
     edited = sorted(k for k in entries if k in prov and prov[k].get("hash") != _norm(entries[k]))
     unused = sorted(k for k in entries if k not in cited)
-    return {"missing": missing, "untracked": untracked, "edited": edited, "unused": unused}
+    where = {k: sorted(set(cited[k])) for k in missing}
+    return {"missing": missing, "untracked": untracked, "edited": edited, "unused": unused, "missing_in": where}
 
 
 def problems(report: dict[str, list[str]]) -> list[str]:
     out = []
     if report["missing"]:
-        out.append("cited but not in refs.bib: " + ", ".join(report["missing"]))
+        by_file: dict[str, list[str]] = {}
+        for k in report["missing"]:
+            for f in (report.get("missing_in") or {}).get(k) or ["?"]:
+                by_file.setdefault(f, []).append(k)
+        for f, keys in sorted(by_file.items()):
+            out.append(f"{f} cites keys that are not in refs.bib: {', '.join(keys)}. Cite only keys listed in "
+                       ".scriptorium/related.md (topic ids from the outline are not citation keys)")
     if report["untracked"]:
         out.append("in refs.bib but not added with `scriptorium cite add` (typed BibTeX is not allowed): "
                    + ", ".join(report["untracked"]))

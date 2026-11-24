@@ -84,6 +84,15 @@ def check(cfg: Config, numbers: dict) -> tuple[list[str], list[str]]:
                 if k in good and k not in body_keys:
                     warns.append(f"{name}: \\src{{{k}}} appears up front but never in the results, tables or figures")
     errs += [f"notation: {e}" for e in notation.check_text(cfg)]
+    try:
+        import json as _j
+        planned = [f["id"] for f in (_j.loads((cfg.work / "outline.json").read_text()).get("figures") or [])
+                   if f.get("id")]
+    except (OSError, ValueError, KeyError, TypeError):
+        planned = []
+    for fid in planned:
+        if not re.search(r"\\includegraphics(\[[^\]]*\])?\{figures/" + re.escape(fid) + r"(\.pdf|\.png)?\}", alltext):
+            errs.append(f"figure {fid} is planned but never included (\\includegraphics{{figures/{fid}.pdf}})")
     return sorted(set(errs)), sorted(set(warns))
 
 

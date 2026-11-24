@@ -35,7 +35,7 @@ Write .scriptorium/outline.json, valid JSON with exactly these fields:
      "content": "rows, columns and statistics to show", "numbers": ["keys the table prints"]}
   ],
   "figures": [
-    {"id": "teaser", "kind": "plot", "section": "intro", "width": "column", "claim": "ledger claim id",
+    {"id": "teaser", "kind": "diagram", "teaser": true, "section": "intro", "width": "full", "claim": "ledger claim id",
      "message": "the one thing the reader should see", "data": ["results/...json"],
      "spec": "what to draw: axes, groups, colors, error bars, annotations", "caption": "draft caption"}
   ],
@@ -56,7 +56,8 @@ Rules:
 - `numbers` holds only keys that appear in numbers.md with a value. Results sections list every key their tables
   print. Prose quotes few numbers; tables hold the rest.
 - Two to five figures. `kind` is `plot` (drawn from data) or `diagram` (a method or overview sketch drawn with simple
-  shapes). Figure 1 shows the problem and the result together.
+  shapes). Exactly one figure is the teaser (`"teaser": true`): Figure 1, placed in the introduction, showing the
+  problem and the result together. The figure planner details each figure after you.
 - Results subsection titles state the finding, not the experiment.
 - Word budgets add up to the total in your task.
 - Three to seven related topics, each with two or three search queries that would find the key papers.

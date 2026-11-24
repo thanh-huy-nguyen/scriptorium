@@ -71,6 +71,7 @@ def validate(cfg: Config) -> list[str]:
 def _body(text: str) -> str:
     """Prose only: drop comments and the arguments of commands whose text is not prose (labels, refs, cites, files)."""
     t = re.sub(r"(?<!\\)%.*", "", text)
+    t = re.sub(r"\\(sub)*section\*?(\[[^\]]*\])?\{[^}]*\}", " ", t)        # headings may use title case
     t = re.sub(r"\\(label|ref|cref|Cref|autoref|eqref|cite[a-zA-Z]*|input|include|includegraphics|src|url|href)"
                r"\*?(\[[^\]]*\])*\{[^}]*\}", " ", t)
     return t
@@ -94,7 +95,10 @@ def check_text(cfg: Config, order: list[str] | None = None) -> list[str]:
             for f, body in texts.items():
                 n = len(pat.findall(body))
                 if n:
-                    errs.append(f"{f}.tex: {v!r} appears {n} time(s); the paper's name is {t.get('canonical')!r}")
+                    where = (f" (fix it in .scriptorium/tables/{f[6:]}.json and rerun `scriptorium table {f[6:]}`)"
+                             if f.startswith("table_") else "")
+                    errs.append(f"{f}.tex: {v!r} appears {n} time(s); the paper's name is {t.get('canonical')!r}"
+                                + where)
     body_files = [f for f in files if f != "abstract" and f in texts]
     body = "\n".join(texts[f] for f in body_files)
     for a in d.get("abbreviations") or []:
