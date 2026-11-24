@@ -1,0 +1,212 @@
+"""House style for figure scripts in paper/figures/*.py.
+
+    import scriptorium_fig as sf
+    sf.use()                                   # the project's theme (scriptorium.toml [figures] theme)
+    fig, ax = sf.figure("column", aspect=0.62) # sized at print width, so font sizes are real points
+    for m in methods:
+        ax.bar(x, sf.recipe(f"acc_{m}_mean"), color=sf.color(m, ours=(m == "filter")))
+    sf.save(fig, "noise_sweep")                # paper/figures/noise_sweep.{pdf,png} + layout for the figure lint
+
+Themes:
+- academia (default): Northwestern purple for the paper's own method, deep inks for baselines (navy, brass, hunter,
+  oxblood, walnut, teal), warm near-black text, Source Serif 4.
+- nature: light and clean, a colorblind-safe set (Okabe-Ito order) with purple for ours.
+- minimal: grays for baselines and the accent for ours; for dense conference figures.
+
+Rules the lint checks (scriptorium figlint): text at least 6.2 pt at print size, no overlapping or clipped text, the
+legend off the data, series distinguishable under colour-vision deficiency, ours in the accent colour, and plotted
+values taken from recipes.
+"""
+from __future__ import annotations
+
+import json
+import os
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+WIDTHS = {"column": 3.25, "full": 6.75, "half": 3.25}   # inches; two-column venue defaults
+
+THEMES = {
+    "academia": {"ours": "#4E2A84", "base": ["#2F5D8A", "#B07D2B", "#3F7D4E", "#8E3B46", "#7A5638", "#1F7F78"],
+                 "ref": "#8A8A8A", "text": "#231F20", "grid": "#E6E1D8", "panel": "#FBF8F2", "edge": "#5B4E3F"},
+    "nature": {"ours": "#4E2A84", "base": ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#56B4E9", "#CC79A7"],
+               "ref": "#999999", "text": "#1A1A1A", "grid": "#EBEBEB", "panel": "#FFFFFF", "edge": "#4D4D4D"},
+    "minimal": {"ours": "#4E2A84", "base": ["#4D4D4D", "#8C8C8C", "#2F5D8A", "#B3B3B3", "#666666", "#A6A6A6"],
+                "ref": "#BFBFBF", "text": "#111111", "grid": "#EEEEEE", "panel": "#FFFFFF", "edge": "#333333"},
+}
+_state = {"theme": "academia", "assigned": {}}
+
+
+def _root() -> Path:
+    r = os.environ.get("SCRIPTORIUM_ROOT") or os.environ.get("SCRIPTORIUM_JAIL_ROOT")
+    return Path(r) if r else Path.cwd()
+
+
+def theme_name() -> str:
+    env = os.environ.get("SCRIPTORIUM_THEME")
+    if env:
+        return env
+    try:
+        import tomllib
+        t = tomllib.loads((_root() / "scriptorium.toml").read_text())
+        return t.get("figures", {}).get("theme", "academia")
+    except Exception:  # noqa: BLE001
+        return "academia"
+
+
+def palette() -> dict:
+    return THEMES[_state["theme"]]
+
+
+def use(theme: str | None = None, base_size: float = 7.5) -> dict:
+    """Set matplotlib's rcParams to the theme. Returns the palette."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib import font_manager
+    _state["theme"] = theme or theme_name()
+    if _state["theme"] not in THEMES:
+        _state["theme"] = "academia"
+    for f in (HERE / "fonts").glob("*.ttf"):
+        try:
+            font_manager.fontManager.addfont(str(f))
+        except Exception:  # noqa: BLE001
+            pass
+    p = palette()
+    plt.rcParams.update({
+        "font.family": "serif", "font.serif": ["Source Serif 4", "DejaVu Serif"], "font.size": base_size,
+        "axes.titlesize": base_size, "axes.labelsize": base_size, "xtick.labelsize": base_size - 0.5,
+        "ytick.labelsize": base_size - 0.5, "legend.fontsize": base_size - 0.5, "legend.frameon": False,
+        "axes.edgecolor": p["edge"], "axes.labelcolor": p["text"], "text.color": p["text"],
+        "xtick.color": p["text"], "ytick.color": p["text"], "axes.linewidth": 0.6, "xtick.major.width": 0.6,
+        "ytick.major.width": 0.6, "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True,
+        "axes.axisbelow": True, "grid.color": p["grid"], "grid.linewidth": 0.5, "lines.linewidth": 1.4,
+        "lines.markersize": 3.5, "errorbar.capsize": 2, "savefig.dpi": 300, "pdf.fonttype": 42,
+        "axes.prop_cycle": matplotlib.cycler(color=p["base"]),
+    })
+    return p
+
+
+def color(name: str, ours: bool = False, reference: bool = False) -> str:
+    """The method's colour, the same in every figure of the paper: ours gets the accent, the untrained or trivial
+    reference gets gray, each baseline gets the next ink in the order first seen (stored in paper/figures/.colors.json
+    so all figures agree)."""
+    p = palette()
+    if ours:
+        return p["ours"]
+    if reference:
+        return p["ref"]
+    store = _root() / "paper" / "figures" / ".colors.json"
+    try:
+        known = json.loads(store.read_text())
+    except Exception:  # noqa: BLE001
+        known = {}
+    if name not in known:
+        known[name] = len(known) % len(p["base"])
+        try:
+            store.write_text(json.dumps(known, indent=1))
+        except OSError:
+            pass
+    return p["base"][known[name]]
+
+
+def figure(width: str | float = "column", aspect: float = 0.62, **kw):
+    """A figure at its final print width (column, full, or inches), so every font size is a real point size."""
+    import matplotlib.pyplot as plt
+    if not plt.rcParams.get("font.family") == ["serif"]:
+        use()
+    w = WIDTHS.get(width, width) if isinstance(width, str) else float(width)
+    fig, ax = plt.subplots(figsize=(w, w * aspect), **kw)
+    fig._scriptorium_width = width if isinstance(width, str) else "custom"
+    return fig, ax
+
+
+def recipe(key: str) -> float:
+    """The value of a recipe in paper/sources.py, as last computed (.scriptorium/numbers.json). Plot these values so
+    the figure shows exactly the numbers the text prints."""
+    nums = json.loads((_root() / ".scriptorium" / "numbers.json").read_text())
+    rec = nums.get(key)
+    if not rec or "value" not in rec:
+        raise KeyError(f"{key!r} is not a working recipe; add it to paper/sources.py and run `scriptorium numbers`")
+    _state.setdefault("recipes", []).append(key)
+    return float(rec["value"])
+
+
+def _layout(fig) -> dict:
+    """Positions of every text, axes, legend and data mark, in inches from the bottom left, for the figure lint."""
+    fig.canvas.draw()
+    r = fig.canvas.get_renderer()
+    dpi = fig.dpi
+    W, H = fig.get_size_inches()
+
+    def box(bb):
+        return [round(bb.x0 / dpi, 4), round(bb.y0 / dpi, 4), round(bb.x1 / dpi, 4), round(bb.y1 / dpi, 4)]
+
+    texts, marks, series, legends, axes = [], [], [], [], []
+    for t in fig.findobj(lambda a: hasattr(a, "get_text") and hasattr(a, "get_fontsize")):
+        try:
+            if not t.get_visible() or not t.get_text().strip():
+                continue
+            texts.append({"text": t.get_text()[:80], "size": float(t.get_fontsize()), "box": box(t.get_window_extent(r)),
+                          "color": _hex(t.get_color()), "legend": False})
+        except Exception:  # noqa: BLE001
+            continue
+    for ax in fig.axes:
+        axes.append(box(ax.get_window_extent(r)))
+        leg = ax.get_legend()
+        if leg is not None and leg.get_visible():
+            legends.append(box(leg.get_window_extent(r)))
+        for ln in ax.get_lines():
+            if not ln.get_visible() or ln.get_label().startswith("_child") and len(ln.get_xdata()) < 2:
+                continue
+            xy = ax.transData.transform(list(zip(ln.get_xdata(), ln.get_ydata()))) if len(ln.get_xdata()) else []
+            pts = list(xy)
+            if ln.get_linestyle() not in ("None", "none", "") and len(pts) > 1:
+                pts = [(x0 + (x1 - x0) * k / 12, y0 + (y1 - y0) * k / 12)
+                       for (x0, y0), (x1, y1) in zip(pts[:-1], pts[1:]) for k in range(12)] + [tuple(pts[-1])]
+            marks += [[round(x / dpi, 4), round(y / dpi, 4)] for x, y in pts]
+            series.append({"label": ln.get_label(), "color": _hex(ln.get_color())})
+        for c in ax.collections:
+            try:
+                offs = c.get_offsets()
+                if len(offs):
+                    xy = ax.transData.transform(offs)
+                    marks += [[round(x / dpi, 4), round(y / dpi, 4)] for x, y in xy]
+                    fc = c.get_facecolor()
+                    if len(fc):
+                        series.append({"label": c.get_label(), "color": _hex(fc[0])})
+            except Exception:  # noqa: BLE001
+                continue
+        for patch in ax.patches:
+            try:
+                bb = patch.get_window_extent(r)
+                if bb.width > 0 and bb.height > 0:
+                    marks.append([round((bb.x0 + bb.x1) / 2 / dpi, 4), round(bb.y1 / dpi, 4)])
+                    series.append({"label": patch.get_label(), "color": _hex(patch.get_facecolor())})
+            except Exception:  # noqa: BLE001
+                continue
+    for t in texts:
+        x0, y0, x1, y1 = t["box"]
+        t["legend"] = any(l[0] - 0.01 <= x0 and x1 <= l[2] + 0.01 and l[1] - 0.01 <= y0 and y1 <= l[3] + 0.01
+                          for l in legends)
+    return {"size": [float(W), float(H)], "width": getattr(fig, "_scriptorium_width", "custom"), "texts": texts,
+            "axes": axes, "legends": legends, "marks": marks, "series": series, "theme": _state["theme"],
+            "palette": palette(), "recipes": sorted(set(_state.get("recipes", [])))}
+
+
+def _hex(c) -> str:
+    from matplotlib.colors import to_hex
+    try:
+        return to_hex(c)
+    except Exception:  # noqa: BLE001
+        return "#000000"
+
+
+def save(fig, fid: str) -> None:
+    """Save paper/figures/<fid>.pdf and .png, plus <fid>.layout.json for the figure lint."""
+    out = _root() / "paper" / "figures"
+    out.mkdir(parents=True, exist_ok=True)
+    lay = _layout(fig)
+    fig.savefig(out / f"{fid}.pdf", bbox_inches=None)
+    fig.savefig(out / f"{fid}.png", dpi=200, bbox_inches=None)
+    (out / f"{fid}.layout.json").write_text(json.dumps(lay))

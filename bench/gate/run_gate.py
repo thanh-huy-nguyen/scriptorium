@@ -131,7 +131,7 @@ def collect(data: Path, panel: str, only: set[str] | None, parallel: int) -> Non
     pairs = [p for p in build_pairs(data) if not only or p["test"] in only]
     todo = []
     for p in pairs:
-        want = len(J.PANELS[panel]) * 2 * SAMPLES[p["test"]]
+        want = len(J.PANELS[panel]) * (1 if p["test"] == "human" else 2) * SAMPLES[p["test"]]
         if done[p["id"]] < want:
             todo.append(p)
     print(f"{len(todo)} pairs to judge on the {panel} panel", flush=True)
@@ -141,7 +141,9 @@ def collect(data: Path, panel: str, only: set[str] | None, parallel: int) -> Non
             a, b, task = J.Candidate("a", p["a_text"]), J.Candidate("b", p["b_text"]), TASK_HUMAN
         else:
             a, b, task = pdf_cand("a", Path(p["a"])), pdf_cand("b", Path(p["b"])), TASK_VERSIONS
-        votes = J.compare(cfg, panel, task, a, b, samples=SAMPLES[p["test"]], canary="gate", parallel=6)
+        one = (sum(map(ord, p["id"])) % 2) if p["test"] == "human" else None
+        votes = J.compare(cfg, panel, task, a, b, samples=SAMPLES[p["test"]], canary="gate", parallel=6,
+                          one_order=one)
         with lock, vf.open("a") as f:
             for v in votes:
                 f.write(json.dumps({"pair": p["id"], "test": p["test"], "kind": p.get("kind"), "persona": v.persona,

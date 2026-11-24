@@ -42,6 +42,8 @@ TOKEN_KEYS = ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache
 LIMIT_RE = re.compile(r"usage limit|limit reached|hit your limit|rate.?limit|too many requests|overloaded|\b429\b|\b529\b"
                       r"|quota|try again later", re.I)
 RESET_EPOCH_RE = re.compile(r"limit reached\|(\d{9,11})")
+# A model the subscription does not cover. Never retried, never paid for: callers fall back to another model.
+UNAVAILABLE_RE = re.compile(r"requires usage credits|switch to another model|not available on your plan", re.I)
 _limit_lock = threading.Lock()
 _resume_after = [0.0]          # shared across threads: when the subscription is expected to accept requests again
 
@@ -173,6 +175,9 @@ def _call(cfg: Config, cmd: list[str], prompt: str, cwd: Path, env: dict, echo=p
         text = " ".join(str(x) for x in ((out or {}).get("result"), err, raw) if x)
         failed = (not out) or out.get("is_error")
         status = (out or {}).get("api_error_status")
+        if failed and UNAVAILABLE_RE.search(text):
+            return {"ok": False, "out": out or {}, "raw": raw, "err": "model unavailable: " + text[:300],
+                    "attempts": attempt + 1, "waited_s": round(waited), "tokens": tokens, "unavailable": True}
         w = limit_wait(text, attempt, cfg, status) if failed else None
         if w is None or attempt >= cfg.limit_max_retries:
             return {"ok": bool(out) and not out.get("is_error"), "out": out or {}, "raw": raw, "err": err,
@@ -275,6 +280,7 @@ def run_judge(cfg: Config, model: str, prompt: str, files: dict[str, Path] | Non
             text = json.dumps(out["structured_output"])
         return {"ok": r["ok"], "text": text, "tokens": r["tokens"], "seconds": round(time.time() - t0, 1),
                 "attempts": r["attempts"], "waited_s": r["waited_s"], "model": model,
+                "unavailable": r.get("unavailable", False),
                 "error": "" if r["ok"] else (r["err"] or r["raw"] or "")[-500:]}
     finally:
         shutil.rmtree(tmp, ignore_errors=True)

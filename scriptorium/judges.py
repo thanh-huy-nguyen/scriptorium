@@ -28,9 +28,11 @@ SCHEMA = {"type": "object", "properties": {
     "confidence": {"type": "integer", "enum": [1, 2, 3]},
     "reason": {"type": "string"}}, "required": ["preferred", "confidence", "reason"]}
 
+# Models covered by a Claude subscription. Fable needs paid usage credits, which Scriptorium never uses, so panels
+# run on Opus and Sonnet; a different model for a persona can be set with [models] judge_opus / judge_sonnet.
 PANELS = {
-    "selection": [("sel_area_chair", "fable"), ("sel_skeptic", "fable"), ("sel_reader", "fable")],
-    "development": [("dev_chair", "opus"), ("dev_methods", "fable"), ("dev_editor", "opus")],
+    "selection": [("sel_area_chair", "opus"), ("sel_skeptic", "opus"), ("sel_reader", "opus")],
+    "development": [("dev_chair", "opus"), ("dev_methods", "sonnet"), ("dev_editor", "opus")],
 }
 FALLBACK = {"fable": "opus", "opus": "sonnet"}
 
@@ -102,11 +104,15 @@ def pdf_text(path: Path) -> str:
 
 
 def compare(cfg: Config, panel: str, task: str, a: Candidate, b: Candidate, samples: int = 1, canary: str = "",
-            personas: list[tuple[str, str]] | None = None, echo=print, parallel: int | None = None) -> list[Vote]:
-    """Every persona of the panel judges (a, b) and (b, a), `samples` times each."""
+            personas: list[tuple[str, str]] | None = None, echo=print, parallel: int | None = None,
+            one_order: int | None = None) -> list[Vote]:
+    """Every persona of the panel judges (a, b) and (b, a), `samples` times each. With `one_order` set, each persona
+    judges a single order instead, alternating across personas starting from that offset (half the calls; position
+    bias then averages out across personas and pairs rather than within each)."""
     jobs = []
-    for persona, model in personas or PANELS[panel]:
-        for order in ("AB", "BA"):
+    for k, (persona, model) in enumerate(personas or PANELS[panel]):
+        orders = ("AB", "BA") if one_order is None else (("AB", "BA")[(k + one_order) % 2],)
+        for order in orders:
             for s in range(samples):
                 jobs.append((persona, cfg.models.get(f"judge_{model}", model), order, s))
 
@@ -117,7 +123,7 @@ def compare(cfg: Config, panel: str, task: str, a: Candidate, b: Candidate, samp
         files = {**f1.files, **f2.files}
         prompt = _prompt(persona, task, f1, f2, canary)
         r = run_judge(cfg, model, prompt, files=files or None, echo=echo, json_schema=SCHEMA)
-        if not r["ok"] and model in FALLBACK and "model" in (r.get("error") or "").lower():
+        if not r["ok"] and model in FALLBACK and (r.get("unavailable") or "model" in (r.get("error") or "").lower()):
             model = FALLBACK[model]
             r = run_judge(cfg, model, prompt, files=files or None, echo=echo, json_schema=SCHEMA)
         try:
