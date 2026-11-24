@@ -31,7 +31,11 @@ sf.save(fig, "noise_sweep")                        # PDF, PNG and the layout fil
 - Follow the plan's chart form: grouped bars with error bars and seed dots for aggregate comparisons, lines for
   trends, box plots for distributions. Label both axes with units. No title inside the plot. Legend above or beside,
   never on the data.
-- Draw at the planned width ("column" or "full"); do not change font sizes below the theme's.
+- Draw at the planned width ("column" or "full"); never set a font size below the theme's (8 pt labels, 7.5 pt
+  ticks and legends; titles of panels such as "(a) Accuracy" are set in the display face for you).
+- Labels are in sentence case: "Test accuracy (%)", "Label noise rate", "Cross-entropy". The house style capitalizes
+  axis labels, titles, legend entries and category ticks when the figure is saved; names that keep their case
+  (nnU-Net, arXiv, p-value) are left alone.
 
 Run `scriptorium figure paper/figures/<id>.py`, then `scriptorium figlint <id>`, and fix every problem. Then Read the
 PNG and fix what looks wrong: crowded ticks, clipped labels, wasted space, a message that does not jump out (at most

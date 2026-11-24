@@ -1,22 +1,36 @@
-"""Diagram kit for paper/figures/*.py: flat pastel panels, rounded boxes, thick straight arrows, numbered steps and a
-small set of vector icons drawn from simple shapes, so every diagram in a paper shares one look.
+"""Diagram kit for paper/figures/*.py: flat pastel panels, rounded cards, arrows that line up by construction,
+numbered steps and a small set of vector icons drawn from simple shapes, so every diagram in a paper shares one look.
 
     import scriptorium_diagram as sd
     d = sd.canvas("full", height=2.2)                      # coordinates are inches from the bottom left
-    p = d.panel(0.1, 0.1, 2.1, 2.0, "Annotate a case", step=1)
-    d.icon("person", *p.center(dy=0.2), size=0.6)
-    d.box(2.6, 0.8, 1.4, 0.6, "Model", ours=True)
-    d.arrow((2.2, 1.1), (2.6, 1.1))
+    a = d.panel(0.05, 0.05, 2.0, 2.1, "Annotate a case", step=1)
+    b = d.panel(2.35, 0.05, 2.0, 2.1, "Train the model", step=2, k=1)
+    d.card(*a.inset(0.1), "Clinician", "marks a few pixels", icon="person")
+    d.connect(a, b)                                        # centred in the gap, at the middle of their shared span
     d.save("teaser")                                       # paper/figures/teaser.{pdf,png} + layout for the lint
 
-Rules the lint checks: text at least 6.2 pt at print size, no text overlapping other text or running off the figure,
-readable contrast. Keep labels to one to three words; put notation in the caption, not the figure.
+Typography: panel titles in Source Serif 4 semibold, card titles in Inter semibold, labels in Inter at 8 pt, notes at
+7.5 pt in a dark gray that keeps 7:1 contrast. Every label is set in sentence case (first letter capitalized) unless
+case=None; a label that wraps is one text with line breaks, never several texts.
+
+Arrows: d.connect(a, b) joins two panels, cards or boxes through the middle of the span they share, so arrows between
+shapes of equal height sit at the same height; d.flow([a, b, c]) joins a row or column at one common height;
+style="badge" draws a round arrow badge for narrow gutters. d.arrow draws a straight or curved arrow between two
+points; d.elbow and d.route draw right angles with rounded corners. Heads are TikZ-style stealth heads.
+
+Rules the lint checks: text at least 7 pt at print size, no text overlapping other text or running off the figure,
+readable contrast, no diagonal arrows, labels inside their box. Keep labels to one to three words; put notation in the
+caption, not the figure.
 """
 from __future__ import annotations
 
 import math
 
 import scriptorium_fig as sf
+
+INK, NOTE = "#1B1F24", "#3D434A"               # text; secondary text (about 10:1 on white, 8:1 on the pale fills)
+SIZES = {"title": 10.5, "heading": 9.0, "text": 8.0, "note": 7.5, "step": 8.0}
+
 
 def soft(theme: str) -> dict:
     """Diagram fills harmonized with the theme: pale tints of the method colour and its partner, two neutrals."""
@@ -29,9 +43,40 @@ ICONS = ("person", "network", "monitor", "images", "document", "database", "char
          "gear", "cursor")
 
 
+def text_width(s: str, size: float, weight: str = "normal", family: str | None = None) -> float:
+    """Width of a one-line label in inches."""
+    from matplotlib.font_manager import FontProperties
+    from matplotlib.textpath import TextToPath
+    fp = FontProperties(family=family or sf.TEXT_FONT, weight=weight, size=size)
+    w, _, _ = TextToPath().get_text_width_height_descent(s, fp, ismath=False)
+    return w / 72.0
+
+
+def line_height(size: float, spacing: float = 1.25) -> float:
+    """Height in inches of one line of a multi-line label (Inter's line box is 1.21 em)."""
+    return size * 1.21 * spacing / 72.0
+
+
+def wrap(s: str, width: float, size: float, weight: str = "normal", family: str | None = None) -> str:
+    """Break a label into lines no wider than `width` inches (explicit line breaks are kept)."""
+    out = []
+    for para in s.split("\n"):
+        line = ""
+        for w in para.split():
+            cand = f"{line} {w}".strip()
+            if line and text_width(cand, size, weight, family) > 0.96 * width:      # rendering runs a little wider
+                out.append(line)
+                line = w
+            else:
+                line = cand
+        out.append(line)
+    return "\n".join(out)
+
+
 class Region:
-    def __init__(self, x, y, w, h):
+    def __init__(self, x, y, w, h, rect=None):
         self.x, self.y, self.w, self.h = x, y, w, h
+        self.rect = rect or (x, y, w, h)           # the drawn shape (for a panel: including its title)
 
     def center(self, dx: float = 0.0, dy: float = 0.0) -> tuple[float, float]:
         return self.x + self.w / 2 + dx, self.y + self.h / 2 + dy
@@ -48,6 +93,21 @@ class Region:
     def bottom(self, dx: float = 0.0):
         return self.x + self.w / 2 + dx, self.y
 
+    def inset(self, m: float = 0.1) -> tuple[float, float, float, float]:
+        """(x, y, w, h) of the area `m` inches inside this region, to place a card in it."""
+        return self.x + m, self.y + m, self.w - 2 * m, self.h - 2 * m
+
+    def rows(self, n: int, gap: float = 0.08, m: float = 0.1) -> list[tuple[float, float, float, float]]:
+        """n equal slots stacked top to bottom inside the region, `gap` apart and `m` from its edges."""
+        x, y, w, h = self.inset(m)
+        hh = (h - gap * (n - 1)) / n
+        return [(x, y + h - (i + 1) * hh - i * gap, w, hh) for i in range(n)]
+
+    def cols(self, n: int, gap: float = 0.08, m: float = 0.1) -> list[tuple[float, float, float, float]]:
+        x, y, w, h = self.inset(m)
+        ww = (w - gap * (n - 1)) / n
+        return [(x + i * (ww + gap), y, ww, h) for i in range(n)]
+
 
 class Canvas:
     def __init__(self, width="full", height: float = 2.2, theme: str | None = None):
@@ -59,12 +119,14 @@ class Canvas:
         self.fig = plt.figure(figsize=(self.W, self.H))
         self.fig._scriptorium_width = width if isinstance(width, str) else "custom"
         self.fig._scriptorium_kind = "diagram"
+        self.fig._scriptorium_case = False             # the kit sets case per label (case=None keeps a label as is)
         self.ax = self.fig.add_axes((0, 0, 1, 1))
         self.ax.set_xlim(0, self.W)
         self.ax.set_ylim(0, self.H)
         self.ax.set_aspect("equal")
         self.ax.axis("off")
-        self.size = 7.5
+        self.size = SIZES["text"]
+        self.sizes = dict(SIZES)
         self.panels: list[tuple[tuple, object]] = []     # (x, y, w, h), title text: titles must fit their panel
         self.issues: list[str] = []                      # problems the kit can see itself; the lint reports them
         self.regions: list[tuple] = []                   # every panel and box: text inside one must stay inside it
@@ -72,10 +134,20 @@ class Canvas:
 
     # -- text -----------------------------------------------------------------------------------------------------
     def text(self, x, y, s, size=None, color=None, ha="center", va="center", weight="normal", bg: str | None = None,
-             **kw):
-        """A label. `bg` is the colour behind it when that is not white, so the lint measures contrast correctly."""
-        t = self.ax.text(x, y, s, fontsize=size or self.size, color=color or self.pal["text"], ha=ha, va=va,
-                         fontweight=weight, zorder=6, **kw)
+             case: str | None = "sentence", family: str | None = None, note: bool = False, **kw):
+        """A label in sentence case. `bg` is the colour behind it when that is not white, so the lint measures contrast
+        correctly; note=True sets it as secondary text (smaller, dark gray)."""
+        if case == "sentence":
+            s = "\n".join([sf.sentence(s.split("\n")[0])] + s.split("\n")[1:])
+        if note:
+            size, color = size or self.sizes["note"], color or NOTE
+        kw.setdefault("linespacing", 1.25)
+        if va in ("center", "center_baseline") and "\n" not in s:
+            # centre the capitals on y (Inter's cap height is 0.73 em), so words with and without descenders
+            # sit on one line and line up with the icons beside them
+            va, y = "baseline", y - 0.365 * (size or self.size) / 72.0
+        t = self.ax.text(x, y, s, fontsize=size or self.size, color=color or INK, ha=ha, va=va,
+                         fontweight=weight, zorder=6, family=family or sf.TEXT_FONT, **kw)
         if bg:
             t.set_gid("bg:" + bg)
         self.labels.append(t)
@@ -83,65 +155,231 @@ class Canvas:
 
     # -- containers -----------------------------------------------------------------------------------------------
     def panel(self, x, y, w, h, title: str = "", step: int | None = None, fill: str | None = None, k: int = 0):
-        """A flat pastel panel with rounded corners, an optional plain title and a numbered step circle."""
+        """A flat pastel panel with rounded corners, an optional title in the display face and a numbered step.
+        Returns the area under the title."""
         from matplotlib.patches import FancyBboxPatch
         fill = fill or self.soft["fills"][k % len(self.soft["fills"])]
         self.regions.append((x, y, w, h))
-        self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.08", fc=fill,
+        self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.09", fc=fill,
                                          ec="none", zorder=1))
-        if title:
-            tx = x + 0.12 + (0.24 if step is not None else 0)
-            t = self.text(tx, y + h - 0.14, title, ha="left", va="center", bg=fill)
-            self.panels.append(((x, y, w, h), t))
-        if step is not None:
-            self.step(x + 0.17, y + h - 0.14, step)
-        return Region(x, y, w, h - (0.3 if title else 0))
+        band = 0.0
+        if title or step is not None:
+            band = 0.36
+            ty = y + h - 0.19
+            if step is not None:
+                self.step(x + 0.2, ty, step)
+            if title:
+                tx = x + (0.38 if step is not None else 0.14)
+                size = self.sizes["title"]
+                while size > 9.0 and text_width(sf.sentence(title), size, "semibold", sf.DISPLAY_FONT) > 0.94 * (
+                        x + w - 0.1 - tx):
+                    size -= 0.25                       # a long title shrinks a little before the kit flags it
+                t = self.text(tx, ty, title, ha="left", va="center_baseline", size=size,
+                              weight="semibold", family=sf.DISPLAY_FONT, bg=fill)
+                self.panels.append(((x, y, w, h), t))
+        return Region(x, y, w, h - band, rect=(x, y, w, h))
 
     def box(self, x, y, w, h, label: str = "", ours: bool = False, fill: str | None = None, edge: str | None = None,
-            size=None):
-        """A rounded box. ours=True draws it in the accent (parts of our method that learn)."""
+            size=None, weight: str = "medium"):
+        """A rounded box with a centred label. ours=True draws it in the accent (parts of our method that learn)."""
         from matplotlib.patches import FancyBboxPatch
         self.regions.append((x, y, w, h))
         if ours:
             fc, ec = self.soft["soft"], self.pal["ours"]
-            tc = sf.readable(self.pal["ours"], fc)
+            tc = sf.readable(self.pal["ours"], fc, 7.0)
         else:
-            fc, ec, tc = fill or "#FFFFFF", edge or self.pal["edge"], self.pal["text"]
+            fc, ec, tc = fill or "#FFFFFF", edge or self.pal["edge"], INK
         self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.06", fc=fc, ec=ec,
                                          lw=1.0, zorder=3))
         if label:
-            self.text(x + w / 2, y + h / 2, label, color=tc, size=size, bg=fc)
+            self.text(x + w / 2, y + h / 2, wrap(label, w - 0.12, size or self.size, weight), color=tc, size=size,
+                      bg=fc, weight=weight, ha="center", multialignment="center")
         return Region(x, y, w, h)
 
-    def step(self, x, y, n: int, r: float = 0.09):
+    def card(self, x, y, w, h, title: str, body: str = "", icon: str | None = None, ours: bool = False,
+             fill: str | None = None, edge: str | None = None, layout: str = "auto"):
+        """A white card: a title, a short body wrapped to the card's width and an optional icon, the block centred
+        vertically. layout="inline" puts the icon on the title's line, so the body uses the full width (the default
+        for narrow cards); layout="side" puts it left of the whole block (the default for wide, short cards)."""
+        from matplotlib.patches import FancyBboxPatch
+        self.regions.append((x, y, w, h))
+        fc = fill or "#FFFFFF"
+        ec = edge or (self.pal["ours"] if ours else self.pal["edge"])
+        self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0,rounding_size=0.07", fc=fc, ec=ec,
+                                         lw=1.1 if ours else 0.9, zorder=3))
+        if layout == "auto":
+            layout = "side" if icon and w > 2.6 * h else "inline"
+        hs, ns = self.sizes["heading"], self.sizes["note"]
+        pad = 0.095
+        bx = x + pad
+        isz = 0.0
+        if icon and layout == "side":
+            isz = min(0.3, h * 0.55)
+            bx = x + pad + isz + 0.09
+        elif icon:
+            isz = min(0.19, hs * 1.5 / 72)
+        tx = bx + (isz + 0.06 if icon and layout == "inline" else 0)
+        title = wrap(sf.sentence(title), x + w - pad - tx, hs, "semibold")
+        body = wrap(sf.sentence(body), x + w - pad - bx, ns) if body else ""
+        nt, nb = title.count("\n") + 1, (body.count("\n") + 1 if body else 0)
+        lh_t, lh_b, sep = line_height(hs, 1.15), line_height(ns, 1.25), (0.045 if body else 0)
+        block = nt * lh_t + nb * lh_b + sep
+        top = y + h / 2 + block / 2
+        tcol = sf.readable(self.pal["ours"], fc, 7.0) if ours else INK
+        self.text(tx, top, title, ha="left", va="top", size=hs, weight="semibold", color=tcol, bg=fc, case=None,
+                  linespacing=1.15)
+        if body:
+            self.text(bx, top - nt * lh_t - sep, body, ha="left", va="top", note=True, bg=fc, case=None,
+                      linespacing=1.25)
+        if icon and layout == "side":
+            self.icon(icon, x + pad + isz / 2, y + h / 2, size=isz, ours=ours)
+        elif icon:
+            self.icon(icon, bx + isz / 2, top - lh_t / 2, size=isz, ours=ours)
+        if block > h - 0.1:
+            self.issues.append(f"the card '{title[:30]}' is too small for its text; enlarge it or shorten the text")
+        return Region(x, y, w, h)
+
+    def step(self, x, y, n: int, r: float = 0.105):
         from matplotlib.patches import Circle
         self.ax.add_patch(Circle((x, y), r, fc=self.pal["ours"], ec="none", zorder=5))
-        self.text(x, y - 0.005, str(n), color="#FFFFFF", size=self.size - 1, bg=self.pal["ours"])
+        self.text(x, y, str(n), color="#FFFFFF", size=self.sizes["step"], weight="semibold", bg=self.pal["ours"],
+                  va="center_baseline", case=None)
 
     # -- connectors -----------------------------------------------------------------------------------------------
-    def arrow(self, p0, p1, color: str | None = None, width: float = 2.2, label: str = "", ours: bool = False):
-        """A thick straight arrow with a rounded tail. Route around text yourself: arrows must never cross labels."""
-        from matplotlib.patches import FancyArrowPatch
-        c = color or (self.pal["ours"] if ours else self.soft["ink"])
-        dx, dy = abs(p1[0] - p0[0]), abs(p1[1] - p0[1])
-        if dx > 0.03 and dy > 0.03:
+    def _color(self, color, ours):
+        return color or (self.pal["ours"] if ours else self.soft["ink"])
+
+    def _head(self, tip, u, width, c, scale=1.0):
+        """A stealth head: a long point with a notched back, sized to the line width."""
+        from matplotlib.patches import Polygon
+        L = (0.055 + 0.02 * width) * scale
+        hw = 0.5 * L
+        n = (-u[1], u[0])
+        back = (tip[0] - u[0] * L, tip[1] - u[1] * L)
+        notch = (tip[0] - u[0] * L * 0.68, tip[1] - u[1] * L * 0.68)
+        self.ax.add_patch(Polygon([tip, (back[0] + n[0] * hw, back[1] + n[1] * hw), notch,
+                                   (back[0] - n[0] * hw, back[1] - n[1] * hw)], closed=True, fc=c, ec=c, lw=0.5,
+                                  joinstyle="round", zorder=5))
+        return notch
+
+    def _shaft(self, pts, width, c, dashed=False):
+        xs, ys = zip(*pts)
+        self.ax.plot(xs, ys, color=c, lw=width, solid_capstyle="round", dash_capstyle="round",
+                     solid_joinstyle="round", ls=(0, (2.5, 2)) if dashed else "-", zorder=4)
+
+    def arrow(self, p0, p1, color: str | None = None, width: float = 1.8, label: str = "", ours: bool = False,
+              curve: float = 0.0, gap: float = 0.0, dashed: bool = False, head: float = 1.0):
+        """An arrow from p0 to p1 with a stealth head. curve bends it (a fraction of its length; positive bends
+        left); gap leaves white space at both ends. Arrows must never cross labels."""
+        c = self._color(color, ours)
+        dx, dy = p1[0] - p0[0], p1[1] - p0[1]
+        d = math.hypot(dx, dy) or 1e-9
+        if not curve and abs(dx) > 0.03 and abs(dy) > 0.03:
             self.issues.append(f"the arrow from ({p0[0]:.2f}, {p0[1]:.2f}) to ({p1[0]:.2f}, {p1[1]:.2f}) is diagonal; "
-                               "use horizontal or vertical runs (d.elbow for a corner)")
-        self.ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle=f"-|>,head_length={2.6 * width},head_width={1.9 * width}", mutation_scale=1,
-                                          lw=width, color=c, capstyle="round", joinstyle="round", zorder=4,
-                                          shrinkA=2, shrinkB=2))
+                               "use horizontal or vertical runs (d.elbow or d.route for a corner), or curve it")
+        ux, uy = dx / d, dy / d
+        p0 = (p0[0] + ux * gap, p0[1] + uy * gap)
+        p1 = (p1[0] - ux * gap, p1[1] - uy * gap)
+        if curve:
+            n = (-uy, ux)
+            ctrl = ((p0[0] + p1[0]) / 2 + n[0] * curve * d, (p0[1] + p1[1]) / 2 + n[1] * curve * d)
+            pts = [((1 - t) ** 2 * p0[0] + 2 * (1 - t) * t * ctrl[0] + t * t * p1[0],
+                    (1 - t) ** 2 * p0[1] + 2 * (1 - t) * t * ctrl[1] + t * t * p1[1]) for t in
+                   [k / 40 for k in range(41)]]
+            tx, ty = p1[0] - ctrl[0], p1[1] - ctrl[1]
+            tn = math.hypot(tx, ty) or 1e-9
+            u = (tx / tn, ty / tn)
+        else:
+            pts, u = [p0, p1], (ux, uy)
+        notch = self._head(p1, u, width, c, head)
+        # end the shaft inside the head, at its notch
+        pts = [p for p in pts if (p[0] - p1[0]) * u[0] + (p[1] - p1[1]) * u[1] < -(math.hypot(notch[0] - p1[0],
+                                                                                          notch[1] - p1[1]))]
+        self._shaft(pts + [notch], width, c, dashed)
         if label:
             mx, my = (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2
-            horiz = abs(p1[0] - p0[0]) >= abs(p1[1] - p0[1])
-            self.text(mx, my + (0.11 if horiz else 0), label, size=self.size - 1,
+            horiz = abs(dx) >= abs(dy)
+            self.text(mx, my + (0.1 if horiz else 0), label, size=self.sizes["note"], color=NOTE,
                       ha="center" if horiz else "left", va="bottom" if horiz else "center")
 
+    def route(self, points, radius: float = 0.08, **kw):
+        """An arrow along horizontal and vertical runs through `points`, with rounded corners."""
+        c = self._color(kw.get("color"), kw.get("ours", False))
+        width = kw.get("width", 1.8)
+        pts = [points[0]]
+        for a, b, cc in zip(points[:-2], points[1:-1], points[2:]):
+            la, lb = math.hypot(b[0] - a[0], b[1] - a[1]), math.hypot(cc[0] - b[0], cc[1] - b[1])
+            r = min(radius, la / 2, lb / 2)
+            pa = (b[0] - (b[0] - a[0]) / la * r, b[1] - (b[1] - a[1]) / la * r)
+            pb = (b[0] + (cc[0] - b[0]) / lb * r, b[1] + (cc[1] - b[1]) / lb * r)
+            pts.append(pa)
+            pts += [((1 - t) ** 2 * pa[0] + 2 * (1 - t) * t * b[0] + t * t * pb[0],
+                     (1 - t) ** 2 * pa[1] + 2 * (1 - t) * t * b[1] + t * t * pb[1]) for t in [k / 8 for k in
+                                                                                            range(1, 8)]]
+            pts.append(pb)
+        self._shaft(pts, width, c, kw.get("dashed", False))
+        self.arrow(pts[-1], points[-1], **kw)
+
     def elbow(self, p0, p1, via: str = "h", **kw):
-        """Two straight segments meeting at a right angle (horizontal first with via='h')."""
+        """Two straight runs meeting at a rounded right angle (horizontal first with via='h')."""
         mid = (p1[0], p0[1]) if via == "h" else (p0[0], p1[1])
-        self.ax.plot([p0[0], mid[0]], [p0[1], mid[1]], color=kw.get("color") or self.soft["ink"],
-                     lw=kw.get("width", 2.2), solid_capstyle="round", zorder=4)
-        self.arrow(mid, p1, **kw)
+        self.route([p0, mid, p1], **kw)
+
+    def _badge(self, c, u, r, color):
+        from matplotlib.patches import Circle
+        self.ax.add_patch(Circle(c, r, fc=color, ec="none", zorder=5))
+        L = r * 1.05
+        p0 = (c[0] - u[0] * L * 0.55, c[1] - u[1] * L * 0.55)
+        tip = (c[0] + u[0] * L * 0.6, c[1] + u[1] * L * 0.6)
+        self.ax.plot([p0[0], tip[0] - u[0] * 0.03], [p0[1], tip[1] - u[1] * 0.03], color="#FFFFFF", lw=1.6,
+                     solid_capstyle="round", zorder=6)
+        n = (-u[1], u[0])
+        a = 0.42 * r
+        self.ax.plot([tip[0] - u[0] * a + n[0] * a, tip[0], tip[0] - u[0] * a - n[0] * a],
+                     [tip[1] - u[1] * a + n[1] * a, tip[1], tip[1] - u[1] * a - n[1] * a], color="#FFFFFF", lw=1.6,
+                     solid_capstyle="round", solid_joinstyle="round", zorder=6)
+
+    def connect(self, a: Region, b: Region, at: float | None = None, gap: float = 0.05, style: str = "arrow",
+                **kw):
+        """Join two shapes. Side by side: a horizontal arrow through the middle of the height they share (or at
+        y=at); stacked: a vertical arrow through the middle of the width they share. Otherwise a rounded elbow.
+        style="badge" puts a round arrow badge in the middle of the gap instead."""
+        ax_, ay, aw, ah = a.rect
+        bx, by, bw, bh = b.rect
+        ylo, yhi = max(ay, by), min(ay + ah, by + bh)
+        xlo, xhi = max(ax_, bx), min(ax_ + aw, bx + bw)
+        if yhi - ylo > 0.04 and (bx >= ax_ + aw - 1e-6 or ax_ >= bx + bw - 1e-6):
+            y = (ylo + yhi) / 2 if at is None else at
+            p0, p1 = ((ax_ + aw, y), (bx, y)) if bx >= ax_ + aw - 1e-6 else ((ax_, y), (bx + bw, y))
+        elif xhi - xlo > 0.04:
+            x = (xlo + xhi) / 2 if at is None else at
+            p0, p1 = ((x, ay), (x, by + bh)) if by + bh <= ay + 1e-6 else ((x, ay + ah), (x, by))
+        else:
+            right = bx >= ax_ + aw
+            p0 = (ax_ + aw + gap, ay + ah / 2) if right else (ax_ - gap, ay + ah / 2)
+            p1 = (bx + bw / 2, by + bh + gap) if by + bh < ay else (bx + bw / 2, by - gap)
+            self.elbow(p0, p1, via="h", **kw)
+            return
+        if style == "badge":
+            dist = math.hypot(p1[0] - p0[0], p1[1] - p0[1])
+            u = ((p1[0] - p0[0]) / dist, (p1[1] - p0[1]) / dist)
+            r = min(0.13, dist / 2 + 0.06)
+            self._badge(((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2), u, r, self._color(kw.get("color"),
+                                                                                     kw.get("ours", False)))
+            return
+        self.arrow(p0, p1, gap=gap, **kw)
+
+    def flow(self, shapes: list[Region], **kw):
+        """Join a row (or column) of shapes left to right (top to bottom), every arrow at one common height (or x):
+        the middle of the span all of them share."""
+        rs = [s.rect for s in shapes]
+        lo, hi = max(r[1] for r in rs), min(r[1] + r[3] for r in rs)
+        horiz = hi - lo > 0.04
+        if not horiz:
+            lo, hi = max(r[0] for r in rs), min(r[0] + r[2] for r in rs)
+        kw.setdefault("at", (lo + hi) / 2 if hi > lo else None)
+        for a, b in zip(shapes[:-1], shapes[1:]):
+            self.connect(a, b, **kw)
 
     # -- images -----------------------------------------------------------------------------------------------------
     def image(self, path, x, y, w, h, border: str | None = None):

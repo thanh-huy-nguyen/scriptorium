@@ -13,7 +13,12 @@ Themes:
 - nature: light and clean, a colorblind-safe set (Okabe-Ito order) with purple for ours.
 - minimal: grays for baselines and the accent for ours; for dense conference figures.
 
-Rules the lint checks (scriptorium figlint): text at least 6.2 pt at print size, no overlapping or clipped text, the
+Typography: Inter for every label (axis labels in its medium weight), Source Serif 4 semibold for titles, 8 pt text
+at print size. Labels are set in sentence case when the figure is saved ("Test accuracy (%)", "Label noise rate"):
+the first letter of an axis label, title, legend entry or category tick is capitalized, unless the first word is a
+name or symbol that keeps its case (nnU-Net, arXiv, p-value, x). sf.keepcase(text) exempts one label.
+
+Rules the lint checks (scriptorium figlint): text at least 7 pt at print size, no overlapping or clipped text, the
 legend off the data, series distinguishable under colour-vision deficiency, ours in the accent colour, and plotted
 values taken from recipes.
 """
@@ -21,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -45,6 +51,83 @@ THEMES = {
                 "ref": "#BFBFBF", "text": "#111111", "grid": "#EEEEEE", "panel": "#FFFFFF", "edge": "#333333"},
 }
 DEFAULT_THEME = "harbor"
+
+TEXT_FONT, DISPLAY_FONT = "Inter", "Source Serif 4"     # labels; titles
+SIZES = {"title": 9.5, "label": 8.0, "tick": 7.5, "legend": 7.5}
+
+# First words that keep their case: units, libraries written in lower case, abbreviations of Latin
+_KEEP = {"vs", "e.g", "i.e", "et", "al", "etc", "ms", "mm", "cm", "km", "px", "kb", "mb", "gb", "fps", "db", "hz",
+         "khz", "ml", "kg", "numpy", "pytorch", "sklearn", "scikit-learn", "scipy", "pandas", "jax", "tensorflow",
+         "matplotlib", "log2", "ln", "exp", "max", "min", "argmax", "softmax"}
+
+
+def sentence(s):
+    """Sentence case for a label: capitalize its first letter, unless the first word keeps its case (a symbol such as
+    x or p-value, a name with inner capitals such as nnU-Net or arXiv, a unit, code)."""
+    if not isinstance(s, str) or not s.strip() or s.lstrip().startswith("$") \
+            or re.fullmatch(r"\s*\(?[a-z0-9]{1,3}\)\s*", s):
+        return s
+    m = re.match(r"\s*(?:\(?[a-z0-9]{1,2}\)\s+)?[\"'“‘(\[]*", s)       # past a panel tag such as (a)
+    i = m.end()
+    word = re.match(r"\S+", s[i:])
+    if not word:
+        return s
+    w = word.group(0).rstrip(".,:;)]”’\"'")
+    if not w or not w[0].isalpha() or not w[0].islower():
+        return s
+    if (len(w) == 1 and w != "a") or re.match(r"^[a-z]-", w) or any(c.isupper() for c in w[1:]) \
+            or any(c.isdigit() for c in w) or re.search(r"[._/\\=@]", w) or w.lower() in _KEEP:
+        return s
+    return s[:i] + s[i].upper() + s[i + 1:]
+
+
+def keepcase(text_artist):
+    """Exempt one label (a matplotlib Text) from sentence case."""
+    text_artist.set_gid((text_artist.get_gid() or "") + " keepcase")
+    return text_artist
+
+
+def _sentence_case(fig) -> None:
+    """Axis labels, titles, legend entries and category ticks in sentence case; titles in the display face."""
+    from matplotlib.ticker import FixedFormatter, FuncFormatter
+
+    def fix(t):
+        if t is not None and "keepcase" not in (t.get_gid() or ""):
+            t.set_text(sentence(t.get_text()))
+
+    for ax in fig.axes:
+        for t in (ax.title, getattr(ax, "_left_title", None), getattr(ax, "_right_title", None)):
+            if t is not None and t.get_text():
+                fix(t)
+                if "keepfont" not in (t.get_gid() or ""):
+                    t.set_fontfamily(DISPLAY_FONT)
+                    t.set_fontweight("semibold")
+        fix(ax.xaxis.label)
+        fix(ax.yaxis.label)
+        for axis in (ax.xaxis, ax.yaxis):
+            f = axis.get_major_formatter()
+            if isinstance(f, FixedFormatter):                 # category labels (older matplotlib)
+                f.seq = [sentence(x) for x in f.seq]
+            elif isinstance(f, FuncFormatter) and not getattr(f, "_scriptorium_case", False):
+                g = FuncFormatter(lambda v, pos, _f=f: sentence(_f(v, pos)))   # category labels (matplotlib 3.9+)
+                g._scriptorium_case = True
+                axis.set_major_formatter(g)
+        leg = ax.get_legend()
+        if leg is not None:
+            for t in leg.get_texts():
+                fix(t)
+            if leg.get_title() is not None:
+                fix(leg.get_title())
+    for t in fig.legends:
+        for x in t.get_texts():
+            fix(x)
+    for name in ("_suptitle", "_supxlabel", "_supylabel"):
+        t = getattr(fig, name, None)
+        if t is not None:
+            fix(t)
+            if name == "_suptitle":
+                t.set_fontfamily(DISPLAY_FONT)
+                t.set_fontweight("semibold")
 
 
 def _lum(h: str) -> float:
@@ -94,7 +177,7 @@ def palette() -> dict:
     return THEMES[_state["theme"]]
 
 
-def use(theme: str | None = None, base_size: float = 7.5) -> dict:
+def use(theme: str | None = None, base_size: float = SIZES["label"]) -> dict:
     """Set matplotlib's rcParams to the theme. Returns the palette."""
     import matplotlib
     matplotlib.use("Agg")
@@ -110,9 +193,11 @@ def use(theme: str | None = None, base_size: float = 7.5) -> dict:
             pass
     p = palette()
     plt.rcParams.update({
-        "font.family": "sans-serif", "font.sans-serif": ["Inter", "DejaVu Sans"], "font.size": base_size,
-        "axes.titlesize": base_size, "axes.labelsize": base_size, "xtick.labelsize": base_size - 0.5,
-        "ytick.labelsize": base_size - 0.5, "legend.fontsize": base_size - 0.5, "legend.frameon": False,
+        "font.family": "sans-serif", "font.sans-serif": [TEXT_FONT, "DejaVu Sans"], "font.serif": [DISPLAY_FONT],
+        "font.size": base_size, "axes.titlesize": base_size + 1.5, "axes.titleweight": "semibold",
+        "axes.titlepad": 6, "axes.labelsize": base_size, "axes.labelweight": "medium",
+        "xtick.labelsize": base_size - 0.5, "ytick.labelsize": base_size - 0.5, "legend.fontsize": base_size - 0.5,
+        "legend.frameon": False,
         "axes.edgecolor": p["edge"], "axes.labelcolor": p["text"], "text.color": p["text"],
         "xtick.color": p["text"], "ytick.color": p["text"], "axes.linewidth": 0.6, "xtick.major.width": 0.6,
         "ytick.major.width": 0.6, "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True,
@@ -305,6 +390,8 @@ def save(fig, fid: str) -> None:
     """Save paper/figures/<fid>.pdf and .png, plus <fid>.layout.json for the figure lint."""
     out = _root() / "paper" / "figures"
     out.mkdir(parents=True, exist_ok=True)
+    if getattr(fig, "_scriptorium_case", True):
+        _sentence_case(fig)
     lay = _layout(fig)
     fig.savefig(out / f"{fid}.pdf", bbox_inches=None)
     fig.savefig(out / f"{fid}.png", dpi=200, bbox_inches=None)

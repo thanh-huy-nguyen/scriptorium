@@ -20,7 +20,7 @@ from pathlib import Path
 
 from .config import Config
 
-MIN_PT = 6.2
+MIN_PT = 7.0
 WIDTHS = {"column": 3.25, "full": 6.75, "half": 3.25}
 
 

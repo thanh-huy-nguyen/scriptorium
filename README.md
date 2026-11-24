@@ -142,8 +142,12 @@ After editing, an auditor checks every claim sentence against the ledger, and th
 sentence it flags.
 
 **Figures come from code.** Each figure is a script that reads recipe values, drawn at its print width in the house
-style (`scriptorium themes` shows the six themes: harmonized pairs such as teal and rose, navy and amber, forest and coral, where your method takes the first colour and the strongest comparison its partner). The figure lint checks text size, overlaps, contrast, colour-blind
-safety and that your method is always the accent colour; a vision critic then sends weak figures back to their maker.
+style (`scriptorium themes` shows the six themes: harmonized pairs such as teal and rose, navy and amber, forest and
+coral, where your method takes the first colour and the strongest comparison its partner). Titles are set in Source
+Serif 4 and labels in Inter at 8 pt or more, every label in sentence case. Diagrams are built from panels and cards,
+and the diagram kit places each arrow in the middle of the span two shapes share, so a row of arrows lines up by
+construction. The figure lint checks text size (7 pt at least), overlaps, contrast, colour-blind safety and that your
+method is always the accent colour; a vision critic then sends weak figures back to their maker.
 
 **Your data stays read-only.** Pipeline agents can edit only `paper/` and `.scriptorium/`; a hook refuses any other
 file edit. After every stage, the orchestrator compares the repository with the snapshot `scriptorium init` took. A

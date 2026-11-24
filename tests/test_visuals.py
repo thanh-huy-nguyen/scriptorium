@@ -86,7 +86,7 @@ class VisualsTest(unittest.TestCase):
         res = figlint.lint(self.cfg, [{"id": "tiny", "kind": "plot"}, {"id": "wrongours", "kind": "plot"},
                                       {"id": "missing", "kind": "plot"}])
         tiny = " | ".join(res["tiny"])
-        self.assertIn("below 6.2 pt", tiny)
+        self.assertIn("below 7.0 pt", tiny)
         self.assertIn("overlaps", tiny)
         self.assertIn("legend covers", tiny)
         self.assertIn("no value comes from scriptorium_fig.recipe()", tiny)
@@ -128,6 +128,50 @@ class VisualsTest(unittest.TestCase):
                            "ha='left')\nd.save('spill')\n")
         self.assertIn("runs past the edge of the box",
                       " | ".join(figlint.lint(self.cfg, [{"id": "spill", "kind": "diagram"}])["spill"]))
+
+    def test_sentence_case_keeps_names_symbols_and_panel_tags(self):
+        sys.path.insert(0, str(RECIPELIB))
+        import scriptorium_fig as sf
+        cases = {"repository survey": "Repository survey", "a failed check": "A failed check",
+                 "(a) what the checks caught": "(a) What the checks caught", "(a)": "(a)",
+                 "nnU-Net accuracy": "nnU-Net accuracy", "arXiv papers": "arXiv papers", "p-value": "p-value",
+                 "x": "x", "k-fold splits": "k-fold splits", "ms per image": "ms per image",
+                 "85 numbers": "85 numbers", "“reads well”": "“Reads well”", "$\\alpha$ rate": "$\\alpha$ rate"}
+        for raw, want in cases.items():
+            self.assertEqual(sf.sentence(raw), want, raw)
+
+    def test_saved_plot_labels_are_in_sentence_case(self):
+        (self.work / "numbers.json").write_text(json.dumps({"a": {"value": 1.0}}))
+        self.draw("case", "import scriptorium_fig as sf\nsf.use()\nfig, ax = sf.figure('column')\n"
+                          "ax.bar([0, 1], [sf.recipe('a'), 1], color=sf.color('B'), label='cross-entropy')\n"
+                          "ax.set_xticks([0, 1], ['label noise', 'nnU-Net'])\nax.set_ylabel('test accuracy (%)')\n"
+                          "ax.set_title('(a) accuracy', loc='left')\nsf.legend_above(ax)\nsf.save(fig, 'case')\n")
+        texts = {t["text"] for t in json.loads((self.tmp / "paper" / "figures" / "case.layout.json").read_text())
+                 ["texts"]}
+        for want in ("Label noise", "nnU-Net", "Test accuracy (%)", "(a) Accuracy", "Cross-entropy"):
+            self.assertIn(want, texts)
+
+    def test_connected_arrows_share_one_height_and_cards_flag_overflow(self):
+        sys.path.insert(0, str(RECIPELIB))
+        os.environ["SCRIPTORIUM_ROOT"] = str(self.tmp)
+        import scriptorium_diagram as sd
+        d = sd.canvas("full", height=2.0)
+        shapes = [d.box(0.2, 0.4, 1.0, 0.8), d.box(1.8, 0.2, 1.0, 1.4), d.box(3.4, 0.6, 1.0, 0.7)]
+        before = len(d.ax.lines)
+        d.flow(shapes)
+        ys = {round(y, 4) for ln in d.ax.lines[before:] for y in ln.get_ydata()}
+        self.assertEqual(ys, {0.9})                      # the middle of the span all three share (0.6 to 1.2)
+        a, b = d.box(0.2, 0.2, 1.0, 0.5), d.box(0.2, 1.2, 1.0, 0.5)
+        before = len(d.ax.lines)
+        d.connect(a, b)
+        xs = {round(x, 4) for ln in d.ax.lines[before:] for x in ln.get_xdata()}
+        self.assertEqual(xs, {0.7})                      # stacked: a vertical arrow through the shared width
+        d.card(4.6, 0.2, 0.9, 0.3, "Discovery", "scout, experimentalist, analyst, statistician", icon="database")
+        self.assertTrue(any("too small for its text" in i for i in d.issues))
+        t = d.text(1.0, 1.9, "noisy data")
+        self.assertEqual(t.get_text(), "Noisy data")
+        self.assertEqual(d.text(1.0, 1.9, "nnU-Net", case=None).get_text(), "nnU-Net")
+        os.environ.pop("SCRIPTORIUM_ROOT", None)
 
     def test_typed_colours_are_refused(self):
         (self.tmp / "paper" / "figures").mkdir(parents=True, exist_ok=True)

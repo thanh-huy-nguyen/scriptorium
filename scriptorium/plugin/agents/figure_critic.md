@@ -13,7 +13,8 @@ Read the figure's spec (in your task), Read the PNG, then the script and the dra
 2. Form: is the chart form right for the data (bars for aggregates with error bars, lines for trends, boxes for
    distributions)? Is our method visually distinct (the accent colour) and the comparison easy to make?
 3. Craft: alignment, spacing, label length, axis ranges that hide or exaggerate differences, legend placement,
-   wasted space, clutter, arrows crossing things, inconsistent colours with the paper's other figures.
+   wasted space, clutter, arrows crossing things or at uneven heights, text that looks small or faint for its
+   role, labels not in sentence case, inconsistent colours with the paper's other figures.
 4. The framework figure (`"role": "framework"`): read the abstract (paper/abstract.tex) and the contribution list
    at the end of the introduction. Could a reader who sees only this figure and its caption state the central claim
    and name the contributions? If not, revise.
