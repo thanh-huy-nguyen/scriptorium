@@ -11,7 +11,8 @@ Read .scriptorium/style.md and .scriptorium/outline.json, then paper/main.tex an
 1. Story: the abstract, introduction, results and conclusion must tell the same story, with the same claims at the
    same strength. Cut any claim the results do not show. Make sure the contribution list matches what the paper
    delivers.
-2. Coherence: one name per method, dataset and metric throughout; definitions before use; no paragraph that repeats
+2. Coherence: the canonical names from .scriptorium/notation.md throughout (`scriptorium consistency` reports
+   every variant and every abbreviation used before its definition); definitions before use; no paragraph that repeats
    another section; transitions where sections meet.
 3. Figures and tables: each is referenced in the text before or near where it appears; captions follow the style guide.
 4. Build: run `scriptorium build`. It reruns the figure scripts, compiles the paper, and reports LaTeX errors,

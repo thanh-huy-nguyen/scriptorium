@@ -43,8 +43,9 @@ python = ""                   # interpreter for recipes and figure scripts; the 
 ignore = []                   # extra glob patterns the data lock may ignore (e.g. "wandb/**")
 '''
 
-ROLES = ("scout", "evidence", "cartographer", "architect", "outliner", "librarian", "illustrator", "tablesetter", "writer", "editor",
-         "reviewer", "reviser")
+ROLES = ("scout", "experimentalist", "evidence", "statistician", "cartographer", "architect", "outliner",
+         "terminologist", "librarian", "illustrator", "tablesetter", "writer", "editor", "auditor", "line_editor",
+         "typesetter", "reviewer", "chair", "reviser")
 
 
 @dataclass

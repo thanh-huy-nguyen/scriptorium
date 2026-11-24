@@ -1,6 +1,6 @@
 ---
 name: write-paper
-description: Write a research paper from the current repository with the Scriptorium agent team (scout, evidence, outliner, librarian, illustrator, writers, editor, reviewers, reviser). Every number recomputes from the data and every citation is fetched. Use when the user asks to write, draft or regenerate a paper from their repository.
+description: Write a research paper from the current repository with the Scriptorium agent team (scout, experimentalist, evidence, statistician, cartographer, architects, outliner, terminologist, librarian, illustrator, table setter, writers, editor, auditor, line editors, typesetter, reviewers, area chair, reviser). Every number recomputes from the data and every citation is fetched. Use when the user asks to write, draft or regenerate a paper from their repository.
 ---
 
 # Write a paper with Scriptorium
@@ -20,7 +20,7 @@ stage in code; you start the agents and pass results along. Run everything from 
 Repeat until `scriptorium next` reports that every stage is done:
 
 1. Run `scriptorium next`. It prints JSON: `{"stage": ..., "tasks": [{"agent", "label", "model", "prompt"}, ...]}`.
-2. Start one subagent per task with the Agent tool: `subagent_type` is the task's `agent` (for example
+2. Start one subagent per task (stages run one at a time here; `scriptorium run` runs independent stages in parallel) with the Agent tool: `subagent_type` is the task's `agent` (for example
    `scriptorium:writer`), `model` is the task's `model`, and the prompt is the task's `prompt`, passed exactly as
    given. Start all tasks of a stage in one message so they run in parallel. A stage with no tasks (the final check)
    needs no agents.

@@ -4,6 +4,11 @@
 finishes; the stage runs the same checker before the next agent starts. Each checker returns a list of problems.
 
     .scriptorium/inventory.md          long enough to be a real survey
+    .scriptorium/setup.json            team.setup_problems (every fact quoted from its source file)
+    .scriptorium/stats.json            team.stats_problems (verdicts match the p-values)
+    .scriptorium/notation.json         notation.validate
+    .scriptorium/audit.json            team.audit_problems
+    .scriptorium/reviews/<s>_meta.json team.meta_problems
     .scriptorium/ledger.json           ledger.validate (claims, scope, evidence keys)
     .scriptorium/pitches/<f>.json      contest.pitch_problems
     .scriptorium/outline.json          stages.Outline.validate
@@ -66,6 +71,17 @@ def validate(cfg: Config, path: str | Path) -> list[str]:
         return [f"{path}: not a handoff file (handoffs live in .scriptorium/)"]
     parts = rel.parts
     nums = stages.read_json(cfg.work / "numbers.json") or {}
+    from . import notation, team
+    if parts == ("setup.json",):
+        return team.setup_problems(cfg)
+    if parts == ("stats.json",):
+        return team.stats_problems(cfg)
+    if parts == ("notation.json",):
+        return notation.validate(cfg)
+    if parts == ("audit.json",):
+        return team.audit_problems(cfg)
+    if len(parts) == 2 and parts[0] == "reviews" and p.name.endswith("_meta.json"):
+        return team.meta_problems(p)
     if parts == ("inventory.md",):
         return stages.Scout("scout").validate(cfg)
     if parts == ("ledger.json",):

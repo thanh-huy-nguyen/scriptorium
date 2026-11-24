@@ -140,6 +140,35 @@ elif agent == "writer":
             if os.environ.get("FAKE_BAD_NUMBER"):
                 body = body.replace(f"{acc('ours'):.1f}", "99.9")
     (paper / f"{target}.tex").write_text(body)
+elif agent == "experimentalist":
+    facts = [{"id": f"f{i}", "topic": t, "text": f"Fact {i}.", "source": "train.py", "quote": "print('train')"}
+             for i, t in enumerate(["data", "splits", "models", "training", "evaluation"])]
+    (work / "setup.json").write_text(json.dumps({"facts": facts, "gaps": ["hardware"]}))
+elif agent == "statistician":
+    (work / "stats.json").write_text(json.dumps({"comparisons": [
+        {"id": "ours_vs_base", "a": "ours", "b": "base", "setting": "all runs", "test_key": "p_ours_vs_base",
+         "verdict": "not significant" if os.environ.get("FAKE_BAD_VERDICT") else "significant"}]}))
+elif agent == "terminologist":
+    (work / "notation.json").write_text(json.dumps({"terms": [
+        {"canonical": "Ours", "kind": "method", "definition": "our method", "variants": ["OursNet"]},
+        {"canonical": "Baseline", "kind": "baseline", "definition": "the baseline", "variants": []},
+        {"canonical": "accuracy", "kind": "metric", "definition": "share correct", "variants": []}],
+        "abbreviations": [{"short": "XYZ", "long": "ex why zed"}], "symbols": []}))
+elif agent == "auditor":
+    (work / "audit.json").write_text(json.dumps({"findings": [
+        {"file": "03_results.tex", "quote": "See Figure~\\ref{fig:fig_acc} and Table~\\ref{tab:main}.",
+         "claim": "ours_beats_base", "verdict": "overclaim", "fix": "say what they show"},
+        {"file": "01_intro.tex", "quote": "Text Text Text", "claim": None, "verdict": "ok"}]}))
+elif agent == "line_editor":
+    f = re.search(r"line-edit paper/([a-z0-9_]+)\.tex", prompt).group(1)
+    p = paper / f"{f}.tex"
+    if not os.environ.get("FAKE_LAZY_EDITOR"):
+        p.write_text(p.read_text().replace("See Figure~\\ref{fig:fig_acc} and Table~\\ref{tab:main}.",
+                                           "Figure~\\ref{fig:fig_acc} and Table~\\ref{tab:main} show the gain."))
+elif agent == "chair":
+    out = re.search(r"\.scriptorium/reviews/(\S+_meta\.json)", prompt).group(1)
+    (work / "reviews" / out).write_text(json.dumps({"decision": "minor revision", "summary": "s",
+        "required_changes": [{"change": "c", "where": "w", "action": "edit text"}]}))
 elif agent == "reviewer":
     out = re.search(r"\.scriptorium/reviews/(\S+\.json)", prompt).group(1)
     revised = "We revised this." in (paper / "03_results.tex").read_text()

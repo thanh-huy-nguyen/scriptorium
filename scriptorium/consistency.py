@@ -46,6 +46,7 @@ def front(name: str) -> bool:
 
 
 def check(cfg: Config, numbers: dict) -> tuple[list[str], list[str]]:
+    from . import notation
     fs = files(cfg)
     good = {k for k, v in numbers.items() if isinstance(v, dict) and "value" in v and not v.get("error")}
     errs, warns = [], []
@@ -82,6 +83,7 @@ def check(cfg: Config, numbers: dict) -> tuple[list[str], list[str]]:
             for k in SRC_RE.findall(t):
                 if k in good and k not in body_keys:
                     warns.append(f"{name}: \\src{{{k}}} appears up front but never in the results, tables or figures")
+    errs += [f"notation: {e}" for e in notation.check_text(cfg)]
     return sorted(set(errs)), sorted(set(warns))
 
 

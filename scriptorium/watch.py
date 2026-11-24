@@ -35,7 +35,7 @@ def render(cfg: Config, width: int = 100) -> str:
 
     started = {e["stage"]: e["t"] for e in evs if e["ev"] == "stage_start"}
     done_at = {e["stage"]: e["t"] for e in evs if e["ev"] in ("stage_done", "stage_failed")}
-    lines.append(f"{'stage':<10} {'state':<5} {'after':<24} {'sessions':>8} {'out tokens':>11} {'time':>7}  note")
+    lines.append(f"{'stage':<12} {'state':<5} {'after':<24} {'sessions':>8} {'out tokens':>11} {'time':>7}  note")
     for st in S.pipeline(cfg):
         rec = s["stages"].get(st.name, {})
         status = rec.get("status", "pending")
@@ -50,13 +50,13 @@ def render(cfg: Config, width: int = 100) -> str:
             note += ("; " if note else "") + f"{rec['fixes']} fix round(s)"
         if status == "failed" and rec.get("errors"):
             note += ("; " if note else "") + rec["errors"][0].splitlines()[0][:50]
-        lines.append(f"{st.name:<10} {MARK.get(status, status):<5} {', '.join(st.deps)[:24]:<24} "
+        lines.append(f"{st.name:<12} {MARK.get(status, status):<5} {', '.join(st.deps)[:24]:<24} "
                      f"{u.get('sessions', 0):>8} {u.get('output_tokens', 0):>11,} {t:>7}  {note}"[:width])
 
     run = events.running_tasks(evs) if not ended else []
     lines += ["", f"Agents working now ({len(run)})"]
     for e in run:
-        lines.append(f"  {e['stage']:<10} {e['agent']:<13} {e['label']:<28} {e.get('model', ''):<8} "
+        lines.append(f"  {e['stage']:<12} {e['agent']:<15} {e['label']:<28} {e.get('model', ''):<8} "
                      f"{_dur(now - e['t']):>7}"[:width])
     waits = [e for e in evs if e["ev"] == "limit_wait"]
     if waits and not ended and now - waits[-1]["t"] < waits[-1]["minutes"] * 60:
@@ -80,7 +80,7 @@ def render(cfg: Config, width: int = 100) -> str:
             msg = "skipped" if e.get("skipped") else "accepted" + (f" (history {e['commit']})" if e.get("commit") else "")
         else:
             msg = "FAILED"
-        lines.append(f"  {ts} {e.get('stage', ''):<10} {msg}"[:width])
+        lines.append(f"  {ts} {e.get('stage', ''):<12} {msg}"[:width])
     return "\n".join(lines)
 
 

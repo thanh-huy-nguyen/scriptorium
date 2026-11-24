@@ -35,7 +35,7 @@ def run_stage(cfg: Config, st: S.Stage, echo=print) -> dict:
 
 
 def _echo_for(name: str, out):
-    width = 8
+    width = 11
 
     def echo(msg: str) -> None:
         for line in str(msg).splitlines() or [""]:

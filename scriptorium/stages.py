@@ -3,8 +3,11 @@
 Stages form a graph; a stage starts as soon as the stages it depends on are done, so independent teams work at the
 same time (engine.py schedules them):
 
-    scout -> evidence -> ledger -> story -> outline -> { library | figures | tables } -> draft -> frame -> edit
-          -> review0 -> (revise_r -> review_r)* -> final
+    scout -> { experiments | evidence -> stats } -> ledger -> story -> outline
+          -> { notation | library | figures | tables } -> draft -> frame -> edit -> audit -> polish -> fit
+          -> review0 -> (chair -> revise_r -> review_r)* -> final -> package
+
+The specialist stages (experiments, stats, notation, audit, polish, fit, chair, package) live in team.py.
 
 Agents do the reading and writing. Everything that can be checked without a model is checked here: recipes run,
 the outline parses and names only numbers that exist, citations come from the bibliographic databases, the paper
@@ -35,9 +38,11 @@ def context(cfg: Config) -> str:
     return (
         f'Paper: "{cfg.title}" for {cfg.venue}, at most {cfg.page_limit} pages of main text (references excluded).\n'
         "The authors' brief is brief.md at the repository root. Shared notes live in .scriptorium/: inventory.md (what "
-        "the repository holds), numbers.md (every number the paper may print, with its recipe key), ledger.md (every "
-        "claim the paper may make, with its scope and strength), outline.json (the plan), related.md (verified "
-        "related work), style.md (how to write). Read the ones your task needs.\n"
+        "the repository holds), setup.md (the experimental setup, each fact quoted from its source file), numbers.md "
+        "(every number the paper may print, with its recipe key), stats.md (the statistical test behind every "
+        "comparison), ledger.md (every claim the paper may make, with its scope and strength), outline.json (the "
+        "plan), notation.md (the one name for each method, dataset and metric, and the abbreviations), related.md "
+        "(verified related work), style.md (how to write). Read the ones your task needs.\n"
         "You may create or edit files only in paper/ and .scriptorium/. Everything else in the repository is "
         "read-only data and code: never modify, create or delete files there.\n"
     )
@@ -185,7 +190,8 @@ class Evidence(Stage):
     def tasks(self, cfg):
         return [Task("evidence", "evidence", context(cfg) + (
             "Task: write paper/sources.py, one recipe for every number a paper about this work could print, using "
-            ".scriptorium/inventory.md as the map. Run `scriptorium numbers` until every recipe returns a value. "
+            ".scriptorium/inventory.md as the map. The statistician adds the statistical tests after you; you cover "
+            "the values. Run `scriptorium numbers` until every recipe returns a value. "
             "Then write .scriptorium/evidence_notes.md: what the data supports, and every claim in brief.md that the "
             "data does not support."))]
 
@@ -209,7 +215,8 @@ class Ledger(Stage):
     def tasks(self, cfg):
         return [Task("cartographer", "ledger", context(cfg) + (
             "Task: build the claim ledger, .scriptorium/ledger.json: every claim a paper about this work could make, "
-            "with its scope, evidence keys and strength, and the status of every claim in brief.md. Run `scriptorium "
+            "with its scope, evidence keys and strength, and the status of every claim in brief.md. The tests and "
+            "their verdicts are in .scriptorium/stats.md; the setup in .scriptorium/setup.md. Run `scriptorium "
             "ledger` until it reports no problems. If a comparison needs a statistical test that has no recipe yet, "
             "add the recipe to paper/sources.py (see the statistics rules there) and run `scriptorium numbers`."))]
 
@@ -626,8 +633,12 @@ class Revise(Stage):
 
     def tasks(self, cfg):
         src = state.load(cfg).get("accepted", "review0")
+        meta = cfg.work / "reviews" / f"{src}_meta.json"
+        lead = (f"the area chair's meta-review .scriptorium/reviews/{src}_meta.json (its required changes, in order), "
+                f"with the full reviews in .scriptorium/reviews/{src}_all.md" if meta.exists()
+                else f".scriptorium/reviews/{src}_all.md")
         return [Task("reviser", f"revise-{self.rnd}", context(cfg) + (
-            f"Task: revise the paper in response to .scriptorium/reviews/{src}_all.md. Address the major points first. "
+            f"Task: revise the paper in response to {lead}. Address the major points first. "
             "A point that would need a new experiment is answered by narrowing the claim or stating the limit, never "
             f"by inventing a result. Run `scriptorium build` and fix what it reports. Write what you changed for each "
             f"point to .scriptorium/reviews/response{self.rnd}.md."))]
@@ -698,25 +709,34 @@ def _after(st: Stage, *deps: str) -> Stage:
 
 def pipeline(cfg: Config) -> list[Stage]:
     """Every stage, in an order that respects its dependencies (the order the interactive mode walks)."""
+    from . import team as T
     st: list[Stage] = [
         _after(Scout("scout")),
+        _after(T.Experiments("experiments"), "scout"),
         _after(Evidence("evidence"), "scout"),
-        _after(Ledger("ledger"), "evidence"),
+        _after(T.Stats("stats"), "evidence"),
+        _after(Ledger("ledger"), "stats", "experiments"),
         _after(Story("story"), "ledger"),
         _after(Outline("outline"), "story"),
+        _after(T.Notation("notation"), "outline"),
         _after(Library("library"), "outline"),
         _after(Figures("figures"), "outline"),
         _after(Tables("tables"), "outline"),
-        _after(Draft("draft", 1), "library", "figures", "tables"),
+        _after(Draft("draft", 1), "notation", "library", "figures", "tables"),
         _after(Draft("frame", 2), "draft"),
         _after(Edit("edit"), "frame"),
-        _after(Review("review0", 0), "edit"),
+        _after(T.Audit("audit"), "edit"),
+        _after(T.Polish("polish"), "audit"),
+        _after(T.Fit("fit"), "polish"),
+        _after(Review("review0", 0), "fit"),
     ]
     prev = "review0"
     for r in range(1, cfg.review_rounds + 1):
-        st += [_after(Revise(f"revise{r}", r), prev), _after(Review(f"review{r}", r), f"revise{r}")]
+        st += [_after(T.Chair(f"chair{r - 1}", f"review{r - 1}"), prev),
+               _after(Revise(f"revise{r}", r), f"chair{r - 1}"),
+               _after(Review(f"review{r}", r), f"revise{r}")]
         prev = f"review{r}"
-    st.append(_after(Final("final"), prev))
+    st += [_after(Final("final"), prev), _after(T.Package("package"), "final")]
     return st
 
 
@@ -746,7 +766,8 @@ def ready(cfg: Config, active: set[str] | frozenset = frozenset()) -> list[Stage
                 continue
             if not all(s["stages"].get(d, {}).get("status") in FINISHED for d in st.deps):
                 continue
-            if s.get("stop_reviews") and isinstance(st, (Revise, Review)):
+            from .team import Chair
+            if s.get("stop_reviews") and isinstance(st, (Revise, Review, Chair)):
                 state.mark(cfg, st.name, "skipped")
                 events.emit(cfg, "stage_done", stage=st.name, skipped=True)
                 return ready(cfg, active)

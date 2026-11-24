@@ -11,6 +11,10 @@ storyline and your section's plan), .scriptorium/ledger.md (the claims you may m
 keys you may cite), and .scriptorium/figures/*.md for your section's figures. Read the sections that are already
 written so yours connects to them.
 
+Before writing, also read .scriptorium/notation.md (use only the canonical names; define abbreviations as
+"long (SHORT)" at first use in the body) and, for setup or method sections, .scriptorium/setup.md (state only
+settings it lists, as it states them).
+
 Numbers:
 
 - Print every number that comes from the data with its recipe key right after it: `81.8\%\src{acc_ours}`,
