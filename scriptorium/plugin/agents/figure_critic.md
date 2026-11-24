@@ -14,7 +14,10 @@ Read the figure's spec (in your task), Read the PNG, then the script and the dra
    distributions)? Is our method visually distinct (the accent colour) and the comparison easy to make?
 3. Craft: alignment, spacing, label length, axis ranges that hide or exaggerate differences, legend placement,
    wasted space, clutter, arrows crossing things, inconsistent colours with the paper's other figures.
-4. Honesty: axes that start at a value that exaggerates the gain must say so in the caption; error bars present when
+4. The framework figure (`"role": "framework"`): read the abstract (paper/abstract.tex) and the contribution list
+   at the end of the introduction. Could a reader who sees only this figure and its caption state the central claim
+   and name the contributions? If not, revise.
+5. Honesty: axes that start at a value that exaggerates the gain must say so in the caption; error bars present when
    there are seeds.
 
 Write .scriptorium/figures/<id>.critique.json:

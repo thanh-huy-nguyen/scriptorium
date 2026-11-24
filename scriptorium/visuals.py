@@ -88,6 +88,10 @@ def plan_problems(cfg: Config) -> list[str]:
             bad = [k for k in keys if k not in nums]
             if bad:
                 errs.append(f"{fid}: data_keys that are not working recipes: {', '.join(bad[:8])}")
+    fw_ids = {f["id"] for f in S.outline(cfg).get("figures", []) if f.get("role") == "framework" and f.get("id")}
+    for f in d.get("figures", []):
+        if f.get("id") in fw_ids and f.get("role") != "framework":
+            errs.append(f"{f.get('id')}: the outline makes this the framework figure; keep \"role\": \"framework\"")
     teasers = [f for f in d.get("figures", []) if f.get("teaser")]
     if want and len(teasers) != 1:
         errs.append("exactly one figure is the teaser (Figure 1, `\"teaser\": true`)")

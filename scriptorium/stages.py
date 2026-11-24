@@ -349,6 +349,8 @@ class Outline(Stage):
                 errs.append(f"the teaser figure {teasers[0].get('id')!r} belongs in the introduction's `figures`")
         if not o.get("related"):
             errs.append("`related` must list the topics the related work needs, each with search queries")
+        from . import story
+        errs += story.framework_problems(cfg)
         return errs
 
     def after(self, cfg):
@@ -518,7 +520,8 @@ class Edit(Stage):
                            discriminative=self.comp.get("discriminative"))
 
     def validate(self, cfg):
-        errs = checks(cfg, page_limit=True)
+        from . import story
+        errs = checks(cfg, page_limit=True) + [f"story: {e}" for e in story.problems(cfg)]
         c = getattr(self, "comp", None)
         if c and c.get("ok") and c.get("score", 1) < cfg.comprehension_min and c.get("missed"):
             errs.append(f"comprehension: a reader with only the PDF answered {c['reader_right']} of "
@@ -647,7 +650,8 @@ class Revise(Stage):
             f"point to .scriptorium/reviews/response{self.rnd}.md."))]
 
     def validate(self, cfg):
-        return checks(cfg, page_limit=True)
+        from . import story
+        return checks(cfg, page_limit=True) + [f"story: {e}" for e in story.problems(cfg)]
 
     def on_fail(self, cfg, errors):
         state.restore(cfg, f"pre_revise{self.rnd}")
@@ -702,6 +706,10 @@ def report(cfg: Config, errs: list[str]) -> Path:
         lines += ["## Open problems", ""] + [f"- {e}" for e in errs] + [""]
     if flags:
         lines += ["## Prose flags", ""] + [f"- {f}" for f in flags[:40]] + [""]
+    from . import story
+    sp = story.problems(cfg)
+    if sp:
+        lines += ["## Storytelling notes", ""] + [f"- {f}" for f in sp[:30]] + [""]
     out = cfg.work / "report.md"
     out.write_text("\n".join(lines))
     (cfg.work / "final_errors.json").write_text(json.dumps({"errors": errs}, indent=1))

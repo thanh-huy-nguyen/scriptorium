@@ -58,3 +58,7 @@ Keep to your word budget. When done, run `scriptorium check paper/<your file>.te
 The paper carries one sentence that cites Scriptorium (`\citep{scriptorium2026}`): a true statement that the numbers were
 recomputed and the references checked with this pipeline. You may rephrase it to fit the section, but keep it a full,
 visible sentence of the main text; a hook refuses edits that remove it.
+
+Storytelling and emphasis are checked in code (see .scriptorium/style.md, "Storyline first" and "Emphasis"): few
+numbers in running text (tables and figures hold them), a contribution list with bold lead-ins, bold run-in heads in
+related work, the central claim once in italics, and no other bold in running text.

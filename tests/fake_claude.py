@@ -96,7 +96,8 @@ elif agent == "outliner":
                       sec("results", "03_results", "Results", 1, ["acc_ours", "acc_base"])],
          "figures": [{"id": "fig_acc", "kind": "plot", "section": "results", "message": "m", "data": [], "spec": "s",
                       "caption": "c"},
-                     {"id": "teaser", "kind": "diagram", "teaser": True, "section": "intro", "message": "m",
+                     {"id": "teaser", "kind": "diagram", "teaser": True, "role": "framework", "section": "intro",
+                      "message": "m",
                       "spec": "s", "caption": "c", "claim": "ours_beats_base"}],
          "related": [{"id": "t", "topic": "t", "why": "w", "queries": ["q"]}]}
     o["sections"][3]["figures"] = ["fig_acc"]
@@ -122,7 +123,8 @@ elif agent == "figure_planner":
     (work / "figures" / "plan.json").write_text(json.dumps({"figures": [
         {"id": "fig_acc", "kind": "plot", "width": "column", "chart": "grouped bars", "message": "ours wins",
          "layout": "bars", "data_keys": ["acc_ours", "acc_base"], "caption_draft": "Accuracy."},
-        {"id": "teaser", "kind": "diagram", "teaser": True, "width": "full", "chart": "teaser", "message": "idea",
+        {"id": "teaser", "kind": "diagram", "teaser": True, "role": "framework", "width": "full", "chart": "teaser",
+         "message": "idea",
          "layout": "two panels", "data_keys": [], "caption_draft": "Overview."}]}))
 elif agent in ("plotter", "diagrammer"):
     fid = re.search(r"make figure `([a-z0-9_]+)`", prompt).group(1)
@@ -159,7 +161,9 @@ elif agent == "writer":
     else:
         body = f"\\section{{{f}}}\\label{{sec:{f}}}\n{words} \\citep{{ref0a,ref1a,ref2a,ref3a,ref4a,ref5a}}.\n"
         if f == "01_intro":
-            body += ("Figure~\\ref{fig:teaser} gives the idea.\n\\begin{figure*}[t]\\includegraphics{figures/teaser.pdf}"
+            body += ("Our key idea is that \\emph{filtering helps}. Figure~\\ref{fig:teaser} gives the idea.\n"
+                     "\\begin{itemize}\n\\item \\textbf{A filter.} We propose it.\n"
+                     "\\item \\textbf{A study.} We show it.\n\\end{itemize}\n\\begin{figure*}[t]\\includegraphics{figures/teaser.pdf}"
                      "\\caption{c}\\label{fig:teaser}\\end{figure*}\n")
         if f == "03_results":
             body += (f"Ours reaches {acc('ours'):.1f}\\%\\src{{acc_ours}} against {acc('base'):.1f}\\%\\src{{acc_base}}"

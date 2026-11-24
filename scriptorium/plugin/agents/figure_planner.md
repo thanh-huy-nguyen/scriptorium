@@ -37,6 +37,10 @@ Rules for the form:
   without a recipe. Say what the error bars are.
 - Our method is always the accent colour; each baseline keeps one colour across all figures; gray only for a
   reference. Say which series is ours.
+- The figure the outline marks `"role": "framework"` shows the main idea as a reader should remember it: what goes
+  in, what the method does, and the outcome the abstract claims. Its `message` is the central claim; its `layout`
+  places each contribution in the picture (numbered steps or labelled parts the introduction can point to). Keep the
+  role in your spec.
 - `width`: column (one column) or full (both columns). Most plots are column width.
 - `caption_draft`: first sentence says what the figure shows; then how to read it and what to notice.
 

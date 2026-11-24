@@ -26,6 +26,8 @@ d.save("teaser")
 - Our method's learned parts use `ours=True` (the accent colour); everything else stays neutral.
 - Arrows are straight (use `elbow` for a right angle) and never cross text or icons. Leave white space; align
   panels on a grid of equal widths.
+- For the framework figure (`"role": "framework"`), the picture is the paper's main idea: a reader who sees only it
+  and its caption should be able to state the central claim and name the contributions.
 - For a teaser, show the problem and the result together: what goes in, what our method does, and the outcome a
   reader should remember (a small inset with a real number is fine if it comes from `scriptorium_fig.recipe`).
 

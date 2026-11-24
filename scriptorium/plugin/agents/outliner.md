@@ -58,6 +58,10 @@ Rules:
 - Two to five figures. `kind` is `plot` (drawn from data) or `diagram` (a method or overview sketch drawn with simple
   shapes). Exactly one figure is the teaser (`"teaser": true`): Figure 1, placed in the introduction, showing the
   problem and the result together. The figure planner details each figure after you.
+- One diagram has `"role": "framework"`: the main idea of the paper in one picture, carrying the central claim of the
+  abstract and the contributions. It may be the teaser itself or a method overview; the introduction lists it in
+  `figures` and refers to it.
+- Plan the introduction to end with two to four contributions, each a bold lead-in and one sentence.
 - Results subsection titles state the finding, not the experiment.
 - Word budgets add up to the total in your task.
 - Three to seven related topics, each with two or three search queries that would find the key papers.

@@ -253,8 +253,12 @@ class Polish(S.Stage):
                                        for x in lit.open_citations(cfg, f)]
         flags = [x for x in lint.lint(cfg.paper) if x.startswith(f"{f}.tex")]
         notes = [x for x in notation.check_text(cfg) if x.startswith(f"{f}.tex")]
+        from . import story
+        st = [x for x in story.problems(cfg) if x.startswith(f"{f}.tex")
+              or (x.startswith("abstract/introduction") and (f == "abstract" or f.startswith("01_")))]
         items = ([f"- [{x['verdict']}] \"{x['quote']}\" -> {x['fix']}" for x in fnd] +
-                 [f"- [lint] {x}" for x in flags] + [f"- [notation] {x}" for x in notes])
+                 [f"- [lint] {x}" for x in flags] + [f"- [notation] {x}" for x in notes] +
+                 [f"- [story] {x}" for x in st])
         todo = ("These sentences and problems must be fixed (a flagged sentence must not remain word for word):\n"
                 + "\n".join(items)) if items else "The audit found no problem in this file."
         return Task("line_editor", f"polish-{f}", S.context(cfg) + (
@@ -279,10 +283,13 @@ class Polish(S.Stage):
             p = cfg.paper / f"{f}.tex"
             if p.exists() and x.get("quote") and _ws(x["quote"]) in _ws(p.read_text()):
                 errs.append(f"{f}.tex: the {x['verdict']} sentence is unchanged: \"{x['quote'][:120]}\"")
-        return errs + S.checks(cfg)
+        from . import story
+        return errs + S.checks(cfg) + [f"story: {e}" for e in story.problems(cfg)]
 
     def fix_tasks(self, cfg, errors):
         bad = {f for f in section_files(cfg) if any(f in e for e in errors)} or set(section_files(cfg))
+        if any("abstract/introduction" in e for e in errors):
+            bad |= {f for f in section_files(cfg) if f == "abstract" or f.startswith("01_")}
         msg = "\n\nThe checks found these problems. Fix the ones in your file:\n- " + "\n- ".join(errors)
         return [self.task_for(cfg, f, msg) for f in section_files(cfg) if f in bad]
 
