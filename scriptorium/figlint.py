@@ -14,6 +14,7 @@ page. Every check is code; the vision critic comes after the lint passes.
 from __future__ import annotations
 
 import json
+import re
 import math
 from pathlib import Path
 
@@ -167,12 +168,45 @@ def lint_pdf(fid: str, pdf: Path) -> list[str]:
     return sorted(set(out))[:30]
 
 
+HEX_RE = re.compile(r"['\"]#([0-9A-Fa-f]{6})['\"]")
+
+
+def theme_colors(cfg: Config) -> dict:
+    import importlib.util
+    from .config import PKG
+    spec = importlib.util.spec_from_file_location("_sf", PKG / "recipelib" / "scriptorium_fig.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m.THEMES.get(cfg.theme, m.THEMES[m.DEFAULT_THEME])
+
+
+def typed_colors(script: Path) -> list[str]:
+    """Chromatic colours typed into a figure script (neutral grays are fine): figures take colours from the theme."""
+    out = []
+    for h in HEX_RE.findall(script.read_text() if script.exists() else ""):
+        r, g, b = (int(h[i:i + 2], 16) for i in (0, 2, 4))
+        if max(r, g, b) - min(r, g, b) > 24:
+            out.append("#" + h.upper())
+    return sorted(set(out))
+
+
+def color_rule(cfg: Config, fid: str) -> list[str]:
+    typed = typed_colors(cfg.paper / "figures" / f"{fid}.py")
+    if not typed:
+        return []
+    t = theme_colors(cfg)
+    return [f"{fid}: the script types colours ({', '.join(typed[:6])}); take them from the theme '{cfg.theme}' "
+            f"instead: sf.color(name, ours=True) is {t['ours']}, partner=True {t['partner']}, other baselines "
+            f"sf.color(name) from {', '.join(t['base'])}; diagram fills come from d.panel(k=...) and box(ours=True)"]
+
+
 def lint(cfg: Config, figures: list[dict], ours_labels: list[str] | None = None) -> dict[str, list[str]]:
     """Lint every planned figure. `figures` are the outline's figure entries (id, kind, width)."""
     res = {}
     fdir = cfg.paper / "figures"
     for f in figures:
         fid = f.get("id")
+        rule = color_rule(cfg, fid)
         lay_p, pdf = fdir / f"{fid}.layout.json", fdir / f"{fid}.pdf"
         if lay_p.exists():
             res[fid] = lint_layout(fid, json.loads(lay_p.read_text()), f.get("width"), ours_labels or [])
@@ -182,4 +216,5 @@ def lint(cfg: Config, figures: list[dict], ours_labels: list[str] | None = None)
                 res[fid].append(f"{fid}: a data plot must be saved with scriptorium_fig.save() so it can be checked")
         else:
             res[fid] = [f"{fid}: paper/figures/{fid}.pdf does not exist"]
+        res[fid] = res[fid] + rule
     return res

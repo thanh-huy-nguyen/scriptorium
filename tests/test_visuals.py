@@ -117,6 +117,16 @@ class VisualsTest(unittest.TestCase):
         self.assertIn("runs past the edge of the box",
                       " | ".join(figlint.lint(self.cfg, [{"id": "spill", "kind": "diagram"}])["spill"]))
 
+    def test_typed_colours_are_refused(self):
+        (self.tmp / "paper" / "figures").mkdir(parents=True, exist_ok=True)
+        (self.tmp / "paper" / "figures" / "x.py").write_text("PUR = '#4E2A84'\nGRAY = '#9AA0A6'\n")
+        from scriptorium.figlint import color_rule
+        rule = color_rule(self.cfg, "x")
+        self.assertEqual(len(rule), 1)
+        self.assertIn("#4E2A84", rule[0])
+        self.assertNotIn("#9AA0A6", rule[0])
+        self.assertIn("#0B6E79", rule[0], "names the theme's colour")
+
     def test_outline_needs_one_teaser_and_planned_figures_must_be_included(self):
         self.cli("run", "--pause-at", "outline")
         o = json.loads((self.work / "outline.json").read_text())

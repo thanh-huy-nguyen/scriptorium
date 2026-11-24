@@ -35,3 +35,8 @@ Run `scriptorium figure paper/figures/<id>.py`, then `scriptorium figlint <id>`,
 and fix what looks wrong: crowding, uneven spacing, an arrow touching a label, a message that does not read at a
 glance (at most four rounds). Then write .scriptorium/figures/<id>.md with the caption. Edit nothing outside
 paper/figures/ and .scriptorium/figures/.
+
+Colours: describe them by role (our method, its partner for the strongest comparison, other baselines, reference),
+never as hex codes. The theme in scriptorium.toml decides the actual colours; figure scripts take them from
+`scriptorium_fig` (`sf.color(name, ours=True)`, `partner=True`) and `scriptorium_diagram` (`ours=True`, `d.panel(k=...)`).
+Code refuses a figure script that types a chromatic colour.

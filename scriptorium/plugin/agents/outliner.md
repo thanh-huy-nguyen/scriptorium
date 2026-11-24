@@ -68,3 +68,8 @@ Rules:
 
 Before you finish, run `scriptorium validate <the JSON file you wrote>` and fix every problem it reports; the next
 agent starts only from a file that passes.
+
+Colours: describe them by role (our method, its partner for the strongest comparison, other baselines, reference),
+never as hex codes. The theme in scriptorium.toml decides the actual colours; figure scripts take them from
+`scriptorium_fig` (`sf.color(name, ours=True)`, `partner=True`) and `scriptorium_diagram` (`ours=True`, `d.panel(k=...)`).
+Code refuses a figure script that types a chromatic colour.

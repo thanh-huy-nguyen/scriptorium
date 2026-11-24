@@ -42,6 +42,11 @@ def context(cfg: Config) -> str:
         extra += ("How strong recent papers at the target venue, on this topic, are written is in "
                   ".scriptorium/venue_style.md: follow it for framing, Figure 1, contributions, emphasis, structure "
                   "and tone (it teaches craft; never copy wording from other papers).\n")
+    from .figlint import theme_colors
+    tc = theme_colors(cfg)
+    extra += (f"Figure colours come from the theme '{cfg.theme}': our method {tc['ours']}, its partner (the strongest "
+              f"comparison) {tc['partner']}, other baselines {', '.join(tc['base'])}, references {tc['ref']}. Never "
+              "type colours; figure scripts take them from scriptorium_fig and scriptorium_diagram.\n")
     req = required_sections(cfg)
     if req:
         extra += "The venue requires these sections: " + "; ".join(f"{r['title']} ({r['why']})" for r in req) + ".\n"
