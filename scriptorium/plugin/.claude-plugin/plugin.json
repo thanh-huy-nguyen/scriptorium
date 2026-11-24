@@ -1,6 +1,6 @@
 {
   "name": "scriptorium",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A team of agents that writes a research paper from your repository. Every number recomputes from the data (PaperAnchor) and every citation is fetched from DBLP, arXiv or Crossref.",
   "keywords": ["latex", "papers", "research", "multi-agent", "writing", "citations", "reproducibility"],
   "userConfig": {

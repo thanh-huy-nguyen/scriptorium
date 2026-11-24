@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scriptorium"
-version = "1.0.0.dev0"
+version = "1.0.0"
 description = "A team of agents that writes a research paper from your repository; every number recomputes from the data and every citation is fetched."
 readme = "README.md"
 license = { text = "MIT" }
