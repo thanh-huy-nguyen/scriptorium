@@ -14,7 +14,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import anchor, cite, consistency, latex, ledger, lint, lock, state
+from . import anchor, cite, consistency, contest, latex, ledger, lint, lock, state
 from . import tables as T
 from .config import TEMPLATES, Config
 from .runner import Task
@@ -218,12 +218,40 @@ class Ledger(Stage):
         ledger.render_md(cfg)
 
 
+class Story(Stage):
+    """Architects pitch competing storylines; the skim test and the selection panel pick one (contest.py)."""
+
+    def before(self, cfg):
+        (cfg.work / "pitches").mkdir(exist_ok=True)
+
+    def tasks(self, cfg):
+        return [Task("architect", f"pitch-{f}", context(cfg) + (
+            f"Task: pitch the paper's storyline under the {f} framing. Write .scriptorium/pitches/{f}.json as your "
+            "instructions describe, using only claims from .scriptorium/ledger.md."), role="architect")
+            for f in contest.FRAMINGS]
+
+    def validate(self, cfg):
+        ok = [f for f in contest.FRAMINGS if not contest.pitch_problems(cfg, f)]
+        if len(ok) >= 2:
+            return []
+        return [e for f in contest.FRAMINGS for e in contest.pitch_problems(cfg, f)]
+
+    def fix_tasks(self, cfg, errors):
+        bad = {f for f in contest.FRAMINGS if contest.pitch_problems(cfg, f)}
+        return [t for t in super().fix_tasks(cfg, errors) if t.label.removeprefix("pitch-").removesuffix("-fix") in bad]
+
+    def after(self, cfg):
+        contest.select_story(cfg)
+
+
 class Outline(Stage):
     max_fix = 2
 
     def tasks(self, cfg):
         return [Task("outliner", "outline", context(cfg) + (
-            f"Task: plan the paper and write .scriptorium/outline.json. Budget about {cfg.page_limit * 480} words of "
+            "Task: plan the paper and write .scriptorium/outline.json. The storyline is chosen: expand the pitch in "
+            ".scriptorium/story.json (its title, insight, Figure 1, contributions and section plan) into the full "
+            f"outline, keeping its framing. Budget about {cfg.page_limit * 480} words of "
             "prose in total across sections, which leaves room for figures and tables at this page limit. Every "
             "number a section will print must be a key in .scriptorium/numbers.md."))]
 
@@ -378,8 +406,58 @@ class Draft(Stage):
             f"{json.dumps(s, indent=1)}\n{wave_note}\nEdit only paper/{s['file']}.tex (and paper/sources.py if a "
             f"number you need has no recipe). Other writers own: {others}." + extra))
 
+    VARIANTS = ("Follow the plan closely.",
+                "Lead with the single finding a reader should remember; write the shortest version that carries the "
+                "storyline.",
+                "Lead with the problem as practitioners experience it and why current practice falls short; then the "
+                "idea.")
+
+    def contested(self, cfg):
+        if self.wave != 2 or cfg.contest_n < 2:
+            return []
+        return [s for s in self.sections(cfg) if s["file"] == "abstract" or s["file"].startswith("01_")]
+
     def tasks(self, cfg):
-        return [self.task_for(cfg, s) for s in self.sections(cfg)]
+        out = []
+        cont = {s["file"] for s in self.contested(cfg)}
+        for s in self.sections(cfg):
+            if s["file"] not in cont:
+                out.append(self.task_for(cfg, s))
+                continue
+            for i in range(cfg.contest_n):
+                t = self.task_for(cfg, s, f"\n\nThis is candidate {i + 1} of {cfg.contest_n} for this section; the "
+                                  "best one is chosen by comparison. " + self.VARIANTS[i % len(self.VARIANTS)])
+                t.prompt = t.prompt.replace(f"paper/{s['file']}.tex", f"paper/{s['file']}__v{i + 1}.tex")
+                t.label = f"write-{s['file']}-v{i + 1}"
+                out.append(t)
+        return out
+
+    def collect(self, cfg):
+        """Settle each contested section: candidates that fail the checks drop out, the panel picks among the rest."""
+        for s in self.contested(cfg):
+            f = s["file"]
+            cands = {}
+            for i in range(cfg.contest_n):
+                p = cfg.paper / f"{f}__v{i + 1}.tex"
+                if not p.exists() or len(p.read_text().split()) < 40:
+                    continue
+                ok, _ = anchor.check(cfg, str(p))
+                probs = val_problems(cfg, [str(p)])
+                if ok and not probs:
+                    cands[f"v{i + 1}"] = p
+            keep = cfg.work / "candidates" / f
+            keep.mkdir(parents=True, exist_ok=True)
+            if cands:
+                what = "abstract" if f == "abstract" else "introduction"
+                task = (f"Both candidates are the {what} of the same paper, written from the same plan and evidence. "
+                        f"Decide which {what} makes the stronger paper.")
+                win, _ = contest.tournament(cfg, self.name + ":" + f, task,
+                                            {n: contest.strip_tex(p.read_text()) for n, p in cands.items()})
+                shutil.copy2(cands[win], cfg.paper / f"{f}.tex")
+            for i in range(cfg.contest_n):
+                p = cfg.paper / f"{f}__v{i + 1}.tex"
+                if p.exists():
+                    shutil.move(str(p), keep / p.name)
 
     def validate(self, cfg):
         errs = []
@@ -401,6 +479,8 @@ class Draft(Stage):
         msg = "\n\nThe checks found these problems. Fix the ones in your file:\n- " + "\n- ".join(errors)
         out = []
         for s in self.sections(cfg):
+            if (cfg.paper / f"{s['file']}.tex").exists() and not any(s["file"] in e for e in errors):
+                continue
             t = self.task_for(cfg, s, msg)
             t.label += "-fix"
             out.append(t)
@@ -409,6 +489,28 @@ class Draft(Stage):
 
 class Edit(Stage):
     max_fix = 2
+
+    def collect(self, cfg):
+        self.comp = None
+        if not cfg.comprehension:
+            return
+        pdf = cfg.paper / "main.pdf"
+        rec = state.stage(state.load(cfg), self.name)
+        if pdf.exists() and rec.get("fixes", 0) == 0:
+            from . import comprehension
+            self.comp = comprehension.run(cfg, pdf)
+            contest.decide(cfg, self.name, "comprehension test", score=self.comp.get("score"),
+                           discriminative=self.comp.get("discriminative"))
+
+    def validate(self, cfg):
+        errs = checks(cfg, page_limit=True)
+        c = getattr(self, "comp", None)
+        if c and c.get("ok") and c.get("score", 1) < cfg.comprehension_min and c.get("missed"):
+            errs.append(f"comprehension: a reader with only the PDF answered {c['reader_right']} of "
+                        f"{c['discriminative']} questions right. Make the paper state these clearly (the question, the "
+                        "right answer, what the reader answered):\n" + "\n".join(
+                            f"  - {m['q']} | right: {m['key']} | reader: {m['reader']}" for m in c["missed"]))
+        return errs
 
     def tasks(self, cfg):
         return [Task("editor", "edit", context(cfg) + (
@@ -419,10 +521,6 @@ class Edit(Stage):
             "pages. Run `scriptorium consistency`: fix every error, and check each warning against .scriptorium/ledger.md "
             "(narrow any sentence that claims more than its ledger claim). Finish with `scriptorium lint` and fix the "
             "flagged prose."))]
-
-    def validate(self, cfg):
-        return checks(cfg, page_limit=True)
-
 
 class Review(Stage):
     max_fix = 1
@@ -588,7 +686,8 @@ def report(cfg: Config, errs: list[str]) -> Path:
 
 
 def pipeline(cfg: Config) -> list[Stage]:
-    st: list[Stage] = [Scout("scout"), Evidence("evidence"), Ledger("ledger"), Outline("outline"), Library("library"),
+    st: list[Stage] = [Scout("scout"), Evidence("evidence"), Ledger("ledger"), Story("story"), Outline("outline"),
+                       Library("library"),
                        Figures("figures"), Tables("tables"), Draft("draft", 1), Draft("frame", 2), Edit("edit"),
                        Review("review0", 0)]
     for r in range(1, cfg.review_rounds + 1):

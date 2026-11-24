@@ -148,7 +148,7 @@ def _tokens(out: dict) -> dict:
     return {k: int(u.get(k, 0) or 0) for k in TOKEN_KEYS}
 
 
-def _call(cfg: Config, cmd: list[str], prompt: str, cwd: Path, env: dict, echo=print) -> dict:
+def _call(cfg: Config, cmd: list[str], prompt: str, cwd: Path, env: dict, echo=print, resumable: bool = True) -> dict:
     """Run one `claude -p` command with limit handling. Returns {ok, out, raw, err, attempts, waited, tokens}."""
     tokens = {k: 0 for k in TOKEN_KEYS}
     waited, attempt, session = 0.0, 0, None
@@ -181,7 +181,7 @@ def _call(cfg: Config, cmd: list[str], prompt: str, cwd: Path, env: dict, echo=p
             _resume_after[0] = max(_resume_after[0], time.time() + w)
         waited += w
         attempt += 1
-        if out and out.get("session_id") and (out.get("num_turns") or 0) > 0:
+        if resumable and out and out.get("session_id") and (out.get("num_turns") or 0) > 1:
             session = out["session_id"]
 
 
@@ -268,7 +268,7 @@ def run_judge(cfg: Config, model: str, prompt: str, files: dict[str, Path] | Non
         if cfg.unset_api_key:
             env.pop("ANTHROPIC_API_KEY", None)
         t0 = time.time()
-        r = _call(cfg, cmd, prompt, tmp, env, echo)
+        r = _call(cfg, cmd, prompt, tmp, env, echo, resumable=False)
         out = r["out"]
         text = out.get("result") or ""
         if json_schema and out.get("structured_output") is not None:

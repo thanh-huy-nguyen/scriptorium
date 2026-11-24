@@ -43,7 +43,7 @@ python = ""                   # interpreter for recipes and figure scripts; the 
 ignore = []                   # extra glob patterns the data lock may ignore (e.g. "wandb/**")
 '''
 
-ROLES = ("scout", "evidence", "cartographer", "outliner", "librarian", "illustrator", "tablesetter", "writer", "editor",
+ROLES = ("scout", "evidence", "cartographer", "architect", "outliner", "librarian", "illustrator", "tablesetter", "writer", "editor",
          "reviewer", "reviser")
 
 
@@ -69,6 +69,9 @@ class Config:
     limit_max_wait_min: float = 360       # longest single wait for a usage-limit reset
     limit_max_retries: int = 12           # usage-limit retries per session before it counts as failed
     judge_parallel: int = 6               # judge sessions at the same time
+    contest_n: int = 3                    # candidates for the abstract and the introduction (1 turns contests off)
+    comprehension: bool = True            # quiz a reader on the compiled paper after editing
+    comprehension_min: float = 0.8        # share of discriminative questions the reader must get right
 
     def model(self, role: str) -> str:
         return self.models.get(role) or self.models.get("default") or "sonnet"
@@ -127,4 +130,7 @@ def load(root: Path) -> Config:
     cfg.limit_max_wait_min = float(r.get("limit_max_wait_min", cfg.limit_max_wait_min))
     cfg.limit_max_retries = int(r.get("limit_max_retries", cfg.limit_max_retries))
     cfg.judge_parallel = int(r.get("judge_parallel", cfg.judge_parallel))
+    cfg.contest_n = int(r.get("contest_n", cfg.contest_n))
+    cfg.comprehension = bool(r.get("comprehension", cfg.comprehension))
+    cfg.comprehension_min = float(r.get("comprehension_min", cfg.comprehension_min))
     return cfg

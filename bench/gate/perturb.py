@@ -104,7 +104,11 @@ def finish(paper: Path, vdir: Path, kind: str, usage: dict) -> dict:
     tex = vdir / meta["main"]
     base_tex = paper / "src" / meta["main"]
     rec = {"paper": paper.name, "variant": vdir.name, "kind": kind, "usage": usage, "ok": False}
-    if tex.read_text(errors="ignore") == base_tex.read_text(errors="ignore"):
+    changed = [str(f.relative_to(vdir)) for f in vdir.rglob("*.tex")
+               if (paper / "src" / f.relative_to(vdir)).exists()
+               and f.read_text(errors="ignore") != (paper / "src" / f.relative_to(vdir)).read_text(errors="ignore")]
+    rec["changed_files"] = changed
+    if not changed:
         rec["why"] = "no change"
     else:
         pdf = compile_pdf(tex)
@@ -124,6 +128,8 @@ def make(paper: Path, name: str, kind: str, instruction: str | None, model: str 
         rec = json.loads((vdir / "variant.json").read_text())
         if rec.get("ok"):
             return rec
+        if rec.get("why") == "no change" and (vdir / "CHANGE.txt").exists():
+            return finish(paper, vdir, kind, rec.get("usage", {}))
     vdir = new_variant(paper, name)
     usage: dict = {}
     if kind == "injection":

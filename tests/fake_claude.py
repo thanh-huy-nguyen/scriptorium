@@ -7,11 +7,29 @@ import statistics
 import sys
 from pathlib import Path
 
-from scriptorium import cite
-
 args = sys.argv[1:]
-agent = args[args.index("--agent") + 1].split(":", 1)[1]
 prompt = sys.stdin.read()
+if "--agent" not in args:
+    # A sealed judge or reader session: answer whatever the JSON schema asks for, minimally.
+    schema = json.loads(args[args.index("--json-schema") + 1]) if "--json-schema" in args else None
+    props = (schema or {}).get("properties", {})
+    if "preferred" in props:
+        out = {"preferred": "first", "confidence": 2, "reason": "clearer"}
+    elif "match" in props:
+        out = {"match": "yes", "why": "same claim"}
+    elif "questions" in props:
+        out = {"questions": [{"q": f"q{i}", "a": "a", "claim": "ours_acc"} for i in range(3)]}
+    elif "answers" in props:
+        out = {"answers": ["a", "a", "a"]}
+    elif "correct" in props:
+        out = {"correct": [True, True, True]}
+    else:
+        out = None
+    print(json.dumps({"type": "result", "is_error": False, "num_turns": 1, "session_id": "judge",
+                      "result": json.dumps(out) if out else "A one-sentence summary.", "structured_output": out,
+                      "usage": {"input_tokens": 1, "output_tokens": 5}}))
+    sys.exit(0)
+agent = args[args.index("--agent") + 1].split(":", 1)[1]
 root = Path.cwd()
 work, paper = root / ".scriptorium", root / "paper"
 
@@ -57,6 +75,12 @@ elif agent == "cartographer":
         {"id": "ours_acc", "text": "Ours reaches high accuracy.", "kind": "result", "scope": "all runs",
          "evidence": {"numbers": ["acc_ours"]}, "strength": "strong"}],
         "brief": [{"claim": "ours is better", "status": "supported", "ledger": ["ours_beats_base"]}]}))
+elif agent == "architect":
+    fr = re.search(r"under the ([a-z-]+) framing", prompt).group(1)
+    (work / "pitches" / f"{fr}.json").write_text(json.dumps({
+        "framing": fr, "title": f"Title {fr}", "insight": "Ours beats the baseline.", "abstract_sketch": "s",
+        "figure1": "f", "contributions": ["We a", "We b"], "storyline": "st",
+        "sections": [{"title": "Results", "claims": ["ours_beats_base"]}], "claims": ["ours_beats_base"]}))
 elif agent == "tablesetter":
     tid = re.search(r"set table `([a-z0-9_]+)`", prompt).group(1)
     (work / "tables" / f"{tid}.json").write_text(json.dumps({
@@ -81,6 +105,7 @@ elif agent == "outliner":
                     "numbers": ["acc_ours", "acc_base"]}]
     (work / "outline.json").write_text(json.dumps(o))
 elif agent == "librarian":
+    from scriptorium import cite
     prov = {}
     bib = []
     for i in range(6):
@@ -96,10 +121,12 @@ elif agent == "illustrator":
         "from pathlib import Path\n"
         f"Path('paper/figures/{fid}.pdf').write_bytes(b'%PDF-1.4 fake')\n"
         f"Path('paper/figures/{fid}.png').write_bytes(b'png')\n")
-    os.system(f"{sys.executable} paper/figures/{fid}.py")
+    import subprocess
+    subprocess.run([sys.executable, f"paper/figures/{fid}.py"])
     (work / "figures" / f"{fid}.md").write_text("caption\n")
 elif agent == "writer":
-    f = re.search(r"Task: write paper/([a-z0-9_]+)\.tex", prompt).group(1)
+    f = re.search(r"Task: write paper/([a-z0-9_]+?)(__v\d+)?\.tex", prompt).group(1)
+    target = re.search(r"Task: write paper/([a-z0-9_]+)\.tex", prompt).group(1)
     words = " ".join(["Text"] * 50)
     if f == "abstract":
         body = f"We study a method. {words}\n"
@@ -112,7 +139,7 @@ elif agent == "writer":
                      "\\end{figure}\n")
             if os.environ.get("FAKE_BAD_NUMBER"):
                 body = body.replace(f"{acc('ours'):.1f}", "99.9")
-    (paper / f"{f}.tex").write_text(body)
+    (paper / f"{target}.tex").write_text(body)
 elif agent == "reviewer":
     out = re.search(r"\.scriptorium/reviews/(\S+\.json)", prompt).group(1)
     revised = "We revised this." in (paper / "03_results.tex").read_text()
