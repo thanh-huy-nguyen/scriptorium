@@ -33,6 +33,27 @@ What to cover, using .scriptorium/inventory.md as the map:
 - The differences the story will rest on (ours minus the best baseline), and the ablations.
 - Dataset sizes and split sizes, number of seeds, and the settings the setup section will state (from configs).
 
+Statistics. You are also the paper's statistician. Wherever the paper may say one thing beats another, or that a
+trend holds, add recipes for the test behind it, computed over the paired runs (same seeds, folds or subjects):
+
+```python
+from scriptorium_stats import paired_t_p, diff_ci95_low, diff_ci95_high, cohens_dz
+
+@source("p_dg40_filter_vs_ce", means="p-value, paired t-test over 5 seeds, filter vs cross-entropy test accuracy, digits, noise 0.4")
+def p_dg40_filter_vs_ce():
+    return paired_t_p(_accs("dg", 40, "filter"), _accs("dg", 40, "ce"))
+```
+
+- A recipe that returns a p-value says "p-value" in its `means=` and names the test and the pairing. The claim ledger
+  accepts "better" only with such a recipe below 0.05.
+- Use `paired_t_p` for a handful of seeds (the sign-flip `paired_p` cannot go below 0.0625 with 5 seeds). Add the
+  95% interval of the difference (`diff_ci95_low/high`) for the headline comparisons, and `cohens_dz` where the
+  effect size matters.
+- Test every comparison the brief or the results could suggest, including the ones you expect to fail: a
+  difference that is not significant is a finding the ledger must know about.
+- Helper functions shared by recipes start with an underscore and are not recipes.
+- To look inside a data file, use `scriptorium peek PATH` (first rows of CSV, JSON, JSONL, NPZ or text).
+
 Run `scriptorium numbers` after writing. Every recipe must return a value; fix the ones that fail. Typical size: 20 to
 80 recipes.
 

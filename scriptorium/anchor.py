@@ -38,7 +38,8 @@ def env(cfg: Config) -> dict[str, str]:
     """Recipes are agent-written code, so they run inside the jail (see sealing.py)."""
     from .sealing import jail_env
     e = os.environ.copy()
-    e["PYTHONPATH"] = os.pathsep.join(p for p in [package_path(), e.get("PYTHONPATH", "")] if p)
+    lib = str(Path(__file__).resolve().parent / "recipelib")
+    e["PYTHONPATH"] = os.pathsep.join(p for p in [package_path(), lib, e.get("PYTHONPATH", "")] if p)
     return jail_env(cfg, e)
 
 

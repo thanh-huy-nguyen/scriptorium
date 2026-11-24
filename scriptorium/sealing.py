@@ -31,6 +31,14 @@ def jail_env(cfg: Config, base: dict | None = None) -> dict[str, str]:
     env = dict(base if base is not None else os.environ)
     env["SCRIPTORIUM_JAIL_ROOT"] = str(cfg.root)
     env["PYTHONPATH"] = os.pathsep.join(p for p in [str(JAIL_DIR), env.get("PYTHONPATH", "")] if p)
+    return recipe_env(env)
+
+
+def recipe_env(env: dict) -> dict:
+    """PaperAnchor runs recipes isolated (python -I), so the statistics library and the jail reach it through its own
+    variables."""
+    env["PAPERANCHOR_EXTRA_PATH"] = os.pathsep.join([str(PKG / "recipelib"), str(JAIL_DIR)])
+    env["PAPERANCHOR_PRELOAD"] = "scriptorium_jail"
     return env
 
 

@@ -85,9 +85,10 @@ class VoteTest(unittest.TestCase):
         return [J.Vote("p", "m", "AB", i, name if i < wins else "old") for i in range(n)]
 
     def test_keep_rule(self):
-        self.assertTrue(J.keep(self.votes(10), "new"))
-        self.assertFalse(J.keep(self.votes(9), "new"))
-        vs = self.votes(10)
+        self.assertTrue(J.keep(self.votes(6, 6), "new"))
+        self.assertFalse(J.keep(self.votes(5, 6), "new"))
+        self.assertTrue(J.keep(self.votes(10), "new", need=10 / 12))
+        vs = self.votes(6, 6)
         vs[0].winner = "tie"
         self.assertFalse(J.keep(vs, "new"))
 
@@ -119,7 +120,7 @@ class VoteTest(unittest.TestCase):
         cfg = Config(root=Path("."))
         self.assertIsNone(runner.limit_wait("all good", 0, cfg))
         self.assertIsNotNone(runner.limit_wait("Claude AI usage limit reached|1900000000", 0, cfg))
-        self.assertEqual(runner.limit_wait("You've hit your limit", 1, cfg), 120)
+        self.assertEqual(runner.limit_wait("You have hit your limit", 1, cfg), 120)
 
 
 if __name__ == "__main__":

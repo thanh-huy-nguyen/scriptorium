@@ -14,7 +14,8 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import anchor, cite, latex, lint, lock, state
+from . import anchor, cite, consistency, latex, ledger, lint, lock, state
+from . import tables as T
 from .config import TEMPLATES, Config
 from .runner import Task
 
@@ -30,8 +31,9 @@ def context(cfg: Config) -> str:
     return (
         f'Paper: "{cfg.title}" for {cfg.venue}, at most {cfg.page_limit} pages of main text (references excluded).\n'
         "The authors' brief is brief.md at the repository root. Shared notes live in .scriptorium/: inventory.md (what "
-        "the repository holds), numbers.md (every number the paper may print, with its recipe key), outline.json "
-        "(the plan), related.md (verified related work), style.md (how to write). Read the ones your task needs.\n"
+        "the repository holds), numbers.md (every number the paper may print, with its recipe key), ledger.md (every "
+        "claim the paper may make, with its scope and strength), outline.json (the plan), related.md (verified "
+        "related work), style.md (how to write). Read the ones your task needs.\n"
         "You may create or edit files only in paper/ and .scriptorium/. Everything else in the repository is "
         "read-only data and code: never modify, create or delete files there.\n"
     )
@@ -87,6 +89,10 @@ def val_problems(cfg: Config, files: list[str] | None = None) -> list[str]:
 def checks(cfg: Config, files: list[str] | None = None, build: bool = True, page_limit: bool = False) -> list[str]:
     """The code-side checks shared by every writing stage."""
     errs: list[str] = val_problems(cfg, files)
+    if (cfg.work / "tables").exists():
+        errs += T.build(cfg, read_json(cfg.work / "numbers.json") or {})
+    cerrs, _ = consistency.check(cfg, read_json(cfg.work / "numbers.json") or {})
+    errs += [f"consistency: {e}" for e in cerrs]
     ok, out = anchor.check(cfg, *(files or []))
     if not ok:
         errs.append("numbers that do not recompute (PaperAnchor):\n" + out[-3000:])
@@ -192,6 +198,26 @@ class Evidence(Stage):
         return errs
 
 
+class Ledger(Stage):
+    max_fix = 2
+
+    def tasks(self, cfg):
+        return [Task("cartographer", "ledger", context(cfg) + (
+            "Task: build the claim ledger, .scriptorium/ledger.json: every claim a paper about this work could make, "
+            "with its scope, evidence keys and strength, and the status of every claim in brief.md. Run `scriptorium "
+            "ledger` until it reports no problems. If a comparison needs a statistical test that has no recipe yet, "
+            "add the recipe to paper/sources.py (see the statistics rules there) and run `scriptorium numbers`."))]
+
+    def collect(self, cfg):
+        refresh_numbers(cfg)
+
+    def validate(self, cfg):
+        return ledger.validate(cfg, read_json(cfg.work / "numbers.json") or {}, [], [])
+
+    def after(self, cfg):
+        ledger.render_md(cfg)
+
+
 class Outline(Stage):
     max_fix = 2
 
@@ -206,7 +232,9 @@ class Outline(Stage):
         if o is None:
             return [".scriptorium/outline.json is missing or is not valid JSON"]
         errs, nums = [], good_numbers(cfg)
-        secs, figs = o.get("sections") or [], o.get("figures") or []
+        secs, figs, tabs = o.get("sections") or [], o.get("figures") or [], o.get("tables") or []
+        claims = set(ledger.claim_ids(cfg))
+        tab_ids = [t.get("id") for t in tabs]
         if not isinstance(o.get("storyline"), str) or len(o.get("storyline", "")) < 40:
             errs.append("`storyline` must state the problem, the key idea, why it works and what it changes")
         files, ids = [s.get("file", "") for s in secs], [s.get("id", "") for s in secs]
@@ -226,6 +254,27 @@ class Outline(Stage):
             for f in s.get("figures", []):
                 if f not in [x.get("id") for x in figs]:
                     errs.append(f"section {sid}: figure {f!r} is not defined in `figures`")
+            for t in s.get("tables", []):
+                if not isinstance(t, str) or t not in tab_ids:
+                    errs.append(f"section {sid}: table {t!r} is not defined in the top-level `tables`")
+            for c in s.get("claims", []):
+                if claims and c not in claims:
+                    errs.append(f"section {sid}: claim {c!r} is not a usable claim in the ledger")
+        for t in tabs:
+            if not ID_RE.match(str(t.get("id", ""))):
+                errs.append(f"table id {t.get('id')!r} must be lowercase letters, digits and _")
+            if claims and t.get("claim") not in claims:
+                errs.append(f"table {t.get('id')}: `claim` must be a usable ledger claim id")
+            for k in t.get("numbers", []):
+                if k not in nums:
+                    errs.append(f"table {t.get('id')}: number key {k!r} is not a working recipe")
+        for f in figs:
+            if claims and f.get("claim") not in claims:
+                errs.append(f"figure {f.get('id')}: `claim` must be a usable ledger claim id")
+        strong = {c["id"] for c in ledger.load(cfg).get("claims", []) if c.get("strength") == "strong"}
+        covered = {c for s in secs for c in s.get("claims", [])}
+        if strong - covered:
+            errs.append("strong ledger claims no section states: " + ", ".join(sorted(strong - covered)))
         if len(set(files)) != len(files) or len(set(ids)) != len(ids):
             errs.append("section ids and files must be unique")
         for f in figs:
@@ -281,6 +330,30 @@ class Figures(Stage):
         for f in outline(cfg).get("figures", []):
             if not (cfg.paper / "figures" / f"{f['id']}.pdf").exists():
                 errs.append(f"paper/figures/{f['id']}.pdf was not produced")
+        return errs
+
+
+class Tables(Stage):
+    def tables(self, cfg):
+        return outline(cfg).get("tables", [])
+
+    def before(self, cfg):
+        (cfg.work / "tables").mkdir(exist_ok=True)
+
+    def tasks(self, cfg):
+        return [Task("tablesetter", f"table-{t['id']}", context(cfg) + (
+            f"Task: set table `{t['id']}` as planned in .scriptorium/outline.json:\n{json.dumps(t, indent=1)}\n"
+            f"Write .scriptorium/tables/{t['id']}.json and run `scriptorium table {t['id']}` until it reports no "
+            "problems.")) for t in self.tables(cfg)]
+
+    def collect(self, cfg):
+        self.errors = T.build(cfg, read_json(cfg.work / "numbers.json") or {}, [t["id"] for t in self.tables(cfg)])
+
+    def validate(self, cfg):
+        errs = list(getattr(self, "errors", []))
+        for t in self.tables(cfg):
+            if not T.out_path(cfg, t["id"]).exists():
+                errs.append(f"paper/table_{t['id']}.tex was not rendered")
         return errs
 
 
@@ -343,7 +416,9 @@ class Edit(Stage):
             "storyline in .scriptorium/outline.json carry through, remove repetition, make terms and names "
             "consistent, check that every figure and table is referenced and every claim matches the results. Then "
             f"run `scriptorium build` and fix every problem it reports, including a main text over {cfg.page_limit} "
-            "pages. Finish with `scriptorium lint` and fix the flagged prose."))]
+            "pages. Run `scriptorium consistency`: fix every error, and check each warning against .scriptorium/ledger.md "
+            "(narrow any sentence that claims more than its ledger claim). Finish with `scriptorium lint` and fix the "
+            "flagged prose."))]
 
     def validate(self, cfg):
         return checks(cfg, page_limit=True)
@@ -513,8 +588,9 @@ def report(cfg: Config, errs: list[str]) -> Path:
 
 
 def pipeline(cfg: Config) -> list[Stage]:
-    st: list[Stage] = [Scout("scout"), Evidence("evidence"), Outline("outline"), Library("library"),
-                       Figures("figures"), Draft("draft", 1), Draft("frame", 2), Edit("edit"), Review("review0", 0)]
+    st: list[Stage] = [Scout("scout"), Evidence("evidence"), Ledger("ledger"), Outline("outline"), Library("library"),
+                       Figures("figures"), Tables("tables"), Draft("draft", 1), Draft("frame", 2), Edit("edit"),
+                       Review("review0", 0)]
     for r in range(1, cfg.review_rounds + 1):
         st += [Revise(f"revise{r}", r), Review(f"review{r}", r)]
     st.append(Final("final"))

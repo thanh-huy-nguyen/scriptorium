@@ -39,8 +39,30 @@ def acc_base():
 @source("n_runs", means="number of runs per method")
 def n_runs():
     return len([r for r in load("results/runs.jsonl") if r["method"] == "ours"])
+
+from scriptorium_stats import paired_t_p
+
+@source("p_ours_vs_base", means="p-value, paired t-test over seeds, ours vs baseline accuracy")
+def p_ours_vs_base():
+    rows = load("results/runs.jsonl")
+    a = [r["acc"] for r in sorted(rows, key=lambda r: r["seed"]) if r["method"] == "ours"]
+    b = [r["acc"] for r in sorted(rows, key=lambda r: r["seed"]) if r["method"] == "base"]
+    return paired_t_p(a, b)
 ''')
     (work / "evidence_notes.md").write_text("Supported: ours beats base.\n")
+elif agent == "cartographer":
+    (work / "ledger.json").write_text(json.dumps({"claims": [
+        {"id": "ours_beats_base", "text": "Ours beats the baseline.", "kind": "comparison", "scope": "all runs",
+         "evidence": {"numbers": ["acc_ours", "acc_base"], "tests": ["p_ours_vs_base"]}, "strength": "strong"},
+        {"id": "ours_acc", "text": "Ours reaches high accuracy.", "kind": "result", "scope": "all runs",
+         "evidence": {"numbers": ["acc_ours"]}, "strength": "strong"}],
+        "brief": [{"claim": "ours is better", "status": "supported", "ledger": ["ours_beats_base"]}]}))
+elif agent == "tablesetter":
+    tid = re.search(r"set table `([a-z0-9_]+)`", prompt).group(1)
+    (work / "tables" / f"{tid}.json").write_text(json.dumps({
+        "caption": "Accuracy.", "label": f"tab:{tid}", "columns": ["Method", "Accuracy"],
+        "rows": [{"cells": [{"text": "Baseline"}, {"key": "acc_base"}]}, {"cells": [{"text": "Ours"}, {"key": "acc_ours"}]}],
+        "best": {"1": "max"}}))
 elif agent == "outliner":
     sec = lambda i, f, t, w, nums: {"id": i, "file": f, "title": t, "wave": w, "words": 200, "goal": "g",
                                     "points": ["p"], "numbers": nums, "figures": [], "tables": [], "cites": ["t"]}
@@ -52,6 +74,11 @@ elif agent == "outliner":
                       "caption": "c"}],
          "related": [{"id": "t", "topic": "t", "why": "w", "queries": ["q"]}]}
     o["sections"][3]["figures"] = ["fig_acc"]
+    o["sections"][3]["tables"] = ["main"]
+    o["sections"][3]["claims"] = ["ours_beats_base", "ours_acc"]
+    o["figures"][0]["claim"] = "ours_beats_base"
+    o["tables"] = [{"id": "main", "section": "results", "claim": "ours_beats_base", "content": "c",
+                    "numbers": ["acc_ours", "acc_base"]}]
     (work / "outline.json").write_text(json.dumps(o))
 elif agent == "librarian":
     prov = {}
@@ -80,7 +107,8 @@ elif agent == "writer":
         body = f"\\section{{{f}}}\\label{{sec:{f}}}\n{words} \\citep{{ref0a,ref1a,ref2a,ref3a,ref4a,ref5a}}.\n"
         if f == "03_results":
             body += (f"Ours reaches {acc('ours'):.1f}\\%\\src{{acc_ours}} against {acc('base'):.1f}\\%\\src{{acc_base}}"
-                     ".\n\\begin{figure}[t]\\includegraphics{figures/fig_acc.pdf}\\caption{c}\\label{fig:fig_acc}"
+                     ". See Figure~\\ref{fig:fig_acc} and Table~\\ref{tab:main}.\n\\input{table_main}\n"
+                     "\\begin{figure}[t]\\includegraphics{figures/fig_acc.pdf}\\caption{c}\\label{fig:fig_acc}"
                      "\\end{figure}\n")
             if os.environ.get("FAKE_BAD_NUMBER"):
                 body = body.replace(f"{acc('ours'):.1f}", "99.9")

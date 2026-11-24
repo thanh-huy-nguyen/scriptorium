@@ -67,6 +67,8 @@ def session_env(cfg: Config, stage: str, role: str = "") -> dict[str, str]:
     })
     env["PATH"] = os.pathsep.join([str(Path(sys.executable).parent), env.get("PATH", "")])
     env["PYTHONPATH"] = os.pathsep.join(p for p in [str(JAIL_DIR), env.get("PYTHONPATH", "")] if p)
+    env["PAPERANCHOR_EXTRA_PATH"] = os.pathsep.join([str(PKG / "recipelib"), str(JAIL_DIR)])
+    env["PAPERANCHOR_PRELOAD"] = "scriptorium_jail"
     if cfg.unset_api_key:
         env.pop("ANTHROPIC_API_KEY", None)
     for k in [k for k in env if k.startswith("SCRIPTORIUM_SEALED")]:
@@ -74,13 +76,49 @@ def session_env(cfg: Config, stage: str, role: str = "") -> dict[str, str]:
     return env
 
 
-def limit_wait(text: str, attempt: int, cfg: Config) -> float | None:
-    """Seconds to wait if `text` reports a usage or rate limit, else None."""
-    if not text or not LIMIT_RE.search(text):
+RESET_AT_RE = re.compile(r"resets\s+(?:([A-Z][a-z]{2})\s+(\d{1,2}),\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)"
+                         r"(?:\s*\(([^)]+)\))?", re.I)
+MONTHS = {m: i for i, m in enumerate(("jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov",
+                                      "dec"), 1)}
+
+
+def reset_seconds(text: str) -> float | None:
+    """Seconds until a reset time such as 'resets Nov 23, 7pm (America/New_York)' or 'resets 3:30pm'."""
+    m = RESET_AT_RE.search(text or "")
+    if not m:
         return None
-    m = RESET_EPOCH_RE.search(text)
+    from datetime import datetime, timedelta
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(m.group(6)) if m.group(6) else None
+    except Exception:  # noqa: BLE001
+        tz = None
+    now = datetime.now(tz) if tz else datetime.now()
+    hour = int(m.group(3)) % 12 + (12 if m.group(5).lower() == "pm" else 0)
+    minute = int(m.group(4) or 0)
+    if m.group(1):
+        t = now.replace(month=MONTHS.get(m.group(1).lower()[:3], now.month), day=int(m.group(2)), hour=hour,
+                        minute=minute, second=0, microsecond=0)
+        if t < now - timedelta(days=180):
+            t = t.replace(year=t.year + 1)
+    else:
+        t = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        if t < now:
+            t += timedelta(days=1)
+    return max(60.0, (t - now).total_seconds() + 120)
+
+
+def limit_wait(text: str, attempt: int, cfg: Config, status: int | None = None) -> float | None:
+    """Seconds to wait if the session hit a usage or rate limit (by its HTTP status or its message), else None. Waits
+    for the stated reset time when there is one (weekly limits can be days away), else backs off."""
+    if status not in (429, 529) and (not text or not LIMIT_RE.search(text)):
+        return None
+    m = RESET_EPOCH_RE.search(text or "")
     if m:
         return max(60.0, int(m.group(1)) - time.time() + 60)
+    r = reset_seconds(text)
+    if r is not None:
+        return r
     return min(cfg.limit_max_wait_min * 60, 60 * (2 ** min(attempt, 8)))
 
 
@@ -132,9 +170,10 @@ def _call(cfg: Config, cmd: list[str], prompt: str, cwd: Path, env: dict, echo=p
         if out:
             for k, v in _tokens(out).items():
                 tokens[k] += v
-        text = " ".join(str(x) for x in ((out or {}).get("result"), err, raw if not out else "") if x)
+        text = " ".join(str(x) for x in ((out or {}).get("result"), err, raw) if x)
         failed = (not out) or out.get("is_error")
-        w = limit_wait(text, attempt, cfg) if failed else None
+        status = (out or {}).get("api_error_status")
+        w = limit_wait(text, attempt, cfg, status) if failed else None
         if w is None or attempt >= cfg.limit_max_retries:
             return {"ok": bool(out) and not out.get("is_error"), "out": out or {}, "raw": raw, "err": err,
                     "attempts": attempt + 1, "waited_s": round(waited), "tokens": tokens}

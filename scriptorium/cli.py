@@ -16,6 +16,10 @@ Used by the agents, and handy by hand:
     scriptorium figure SCRIPT        run one figure script from the repository root
     scriptorium build                rerun the figure scripts and compile paper/main.tex
     scriptorium lint                 flag prose habits that read as machine-written
+    scriptorium ledger               check the claim ledger and write .scriptorium/ledger.md
+    scriptorium table [ID ...]       render paper/table_ID.tex from .scriptorium/tables/ID.json
+    scriptorium consistency          cross-paper checks (references, significance, scope words)
+    scriptorium peek PATH            first rows of a data file
 
 Inside a Claude Code session (the /scriptorium:write-paper skill drives these):
     scriptorium next                 start the next stage and print its agent tasks as JSON
@@ -290,6 +294,70 @@ def cmd_build(a) -> None:
     sys.exit(0 if (b.ok and not probs and ok and not cp) else 1)
 
 
+def cmd_ledger(a) -> None:
+    from . import ledger, tables as T
+    cfg = need_root()
+    nums = S.good_numbers(cfg)
+    figs = [f.get("id") for f in S.outline(cfg).get("figures", [])]
+    tabs = [p.stem for p in (cfg.work / "tables").glob("*.json")] if (cfg.work / "tables").exists() else []
+    errs = ledger.validate(cfg, S.read_json(cfg.work / "numbers.json") or {}, figs, tabs)
+    ledger.render_md(cfg)
+    print("\n".join("- " + e for e in errs) if errs else
+          f"ok: {len(ledger.load(cfg).get('claims', []))} claims; wrote .scriptorium/ledger.md")
+    sys.exit(1 if errs else 0)
+
+
+def cmd_table(a) -> None:
+    from . import tables as T
+    cfg = need_root()
+    nums = S.read_json(cfg.work / "numbers.json") or S.refresh_numbers(cfg)
+    errs = T.build(cfg, nums, a.ids or None)
+    print("\n".join("- " + e for e in errs) if errs else "ok: rendered " + ", ".join(
+        f"paper/table_{t}.tex" for t in (a.ids or sorted(p.stem for p in (cfg.work / "tables").glob("*.json")))))
+    sys.exit(1 if errs else 0)
+
+
+def cmd_consistency(a) -> None:
+    from . import consistency
+    cfg = need_root()
+    p = consistency.write_report(cfg, S.read_json(cfg.work / "numbers.json") or {})
+    print(p.read_text())
+
+
+def cmd_peek(a) -> None:
+    """First rows of a data file inside the repository (agents cannot run Python themselves)."""
+    cfg = need_root()
+    p = (cfg.root / a.path).resolve()
+    if not p.is_relative_to(cfg.root) or any(w in str(p) for w in ("sealed", "judging")):
+        sys.exit("scriptorium peek: only files inside the repository")
+    if not p.exists():
+        sys.exit(f"scriptorium peek: {a.path} does not exist")
+    if p.is_dir():
+        for q in sorted(p.iterdir())[:200]:
+            print(q.name + ("/" if q.is_dir() else f"  ({q.stat().st_size:,} bytes)"))
+        return
+    suf = p.suffix.lower()
+    if suf in (".npz", ".npy"):
+        r = subprocess.run([cfg.py(), "-c", "import sys, numpy as np\nx = np.load(sys.argv[1], allow_pickle=False)\n"
+                            "items = x.items() if hasattr(x, 'items') else [('array', x)]\n"
+                            "for k, v in items: print(k, v.shape, v.dtype, v.ravel()[:8])", str(p)],
+                           capture_output=True, text=True, env=__import__("scriptorium.sealing", fromlist=["x"]).jail_env(cfg),
+                           timeout=120)
+        print(r.stdout or r.stderr)
+        return
+    if suf in (".parquet", ".pkl", ".pickle", ".pt", ".pth", ".h5", ".hdf5"):
+        print(f"{p.name}: {p.stat().st_size:,} bytes; binary format, describe it from the code that writes or reads it")
+        return
+    with p.open(errors="replace") as f:
+        lines = [next(f, None) for _ in range(a.n)]
+    print("".join(l for l in lines if l is not None)[:20000])
+    try:
+        total = sum(1 for _ in p.open(errors="replace"))
+        print(f"... {total:,} lines in total")
+    except OSError:
+        pass
+
+
 def cmd_lint(a) -> None:
     cfg = need_root()
     flags = lint.lint(cfg.paper)
@@ -340,6 +408,15 @@ def main(argv: list[str] | None = None) -> None:
     p.add_argument("--no-figures", action="store_true")
     p.set_defaults(f=cmd_build)
     sub.add_parser("lint").set_defaults(f=cmd_lint)
+    sub.add_parser("ledger").set_defaults(f=cmd_ledger)
+    p = sub.add_parser("table")
+    p.add_argument("ids", nargs="*")
+    p.set_defaults(f=cmd_table)
+    sub.add_parser("consistency").set_defaults(f=cmd_consistency)
+    p = sub.add_parser("peek")
+    p.add_argument("path")
+    p.add_argument("-n", type=int, default=15)
+    p.set_defaults(f=cmd_peek)
     p = sub.add_parser("lock")
     p.add_argument("--verify", action="store_true")
     p.set_defaults(f=cmd_lock)

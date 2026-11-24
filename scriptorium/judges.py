@@ -61,9 +61,10 @@ def persona_text(name: str) -> str:
 
 # Text that tries to steer a judge. Removed before judging and flagged by the lint.
 INJECTION_RE = re.compile(
-    r"(ignore (all |any )?(previous|prior|above) (instructions|prompts)|(as an?|to the|dear) (ai|llm|language model|"
-    r"reviewer|judge)s?\b[^.\n]{0,80}(rate|score|accept|prefer)|give (this|the) paper (a )?(high|positive|strong)"
-    r"|rate this (paper|submission) (highly|positively)|you must (accept|prefer))", re.I)
+    r"(ignore (all |any )?(previous|prior|above) (instructions|prompts)|(as an?|to( the)?|dear|for) (ai|llm|language "
+    r"models?|reviewers?|judges?|assistants?)\b[^.\n]{0,120}(rate|score|accept|prefer)[^.\n]*|give (this|the) "
+    r"(paper|submission) (a )?(high|positive|strong)[^.\n]*|rate this (paper|submission) (highly|positively)"
+    r"|you must (accept|prefer)[^.\n]*)", re.I)
 HIDDEN_TEX_RE = re.compile(r"\\(textcolor|color)\{white\}|\\fontsize\{0|\\resizebox\{0|\\scalebox\{0(\.0+)?\}", re.I)
 
 
@@ -93,7 +94,14 @@ def _relabel(c: Candidate, slot: str) -> Candidate:
     return Candidate(c.name, c.text, files)
 
 
-def compare(cfg: Config, panel: str, task: str, a: Candidate, b: Candidate, samples: int = 2, canary: str = "",
+def pdf_text(path: Path) -> str:
+    """The text of a compiled paper, page by page. Judges read text; figures are judged by the figure critic."""
+    import pymupdf
+    doc = pymupdf.open(str(path))
+    return "\n".join(f"[page {i + 1}]\n{p.get_text()}" for i, p in enumerate(doc))
+
+
+def compare(cfg: Config, panel: str, task: str, a: Candidate, b: Candidate, samples: int = 1, canary: str = "",
             personas: list[tuple[str, str]] | None = None, echo=print, parallel: int | None = None) -> list[Vote]:
     """Every persona of the panel judges (a, b) and (b, a), `samples` times each."""
     jobs = []
@@ -130,9 +138,10 @@ def tally(votes: list[Vote], name: str) -> tuple[int, int]:
     return sum(v.winner == name for v in votes), len(votes)
 
 
-def keep(votes: list[Vote], candidate: str, need: float = 10 / 12) -> bool:
-    """The keep rule: the candidate needs at least `need` of all votes (10 of 12 by default); ties and errors count
-    against it."""
+def keep(votes: list[Vote], candidate: str, need: float = 1.0) -> bool:
+    """The keep rule: the candidate needs at least `need` of all votes (all 6 of 6 by default: 3 personas, both
+    orders); ties and errors count against it. The gate measures how often this keeps a revision that changed
+    nothing."""
     k, n = tally(votes, candidate)
     return n > 0 and k >= math.ceil(need * n - 1e-9)
 
@@ -166,7 +175,7 @@ def bradley_terry(names: list[str], votes: list[Vote], iters: int = 200) -> dict
 
 
 def tournament(cfg: Config, panel: str, task: str, cands: list[Candidate], incumbent: str | None = None,
-               samples: int = 2, canary: str = "", echo=print) -> tuple[str, dict[str, float], list[Vote]]:
+               samples: int = 1, canary: str = "", echo=print) -> tuple[str, dict[str, float], list[Vote]]:
     """Round-robin over the candidates; returns (winner, strengths, votes). The incumbent (or the first candidate)
     wins ties in strength."""
     names = [c.name for c in cands]

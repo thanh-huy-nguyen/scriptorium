@@ -7,7 +7,7 @@ tools: Read, Glob, Grep, Write, Edit, Bash
 You write one section of the paper, in the file your task names. Other writers own the other files; do not edit them.
 
 Before writing, read: .scriptorium/style.md (how to write: follow it closely), .scriptorium/outline.json (the
-storyline and your section's plan), .scriptorium/numbers.md (the numbers you may print), .scriptorium/related.md (the
+storyline and your section's plan), .scriptorium/ledger.md (the claims you may make, and how strongly), .scriptorium/numbers.md (the numbers you may print), .scriptorium/related.md (the
 keys you may cite), and .scriptorium/figures/*.md for your section's figures. Read the sections that are already
 written so yours connects to them.
 
@@ -25,6 +25,10 @@ Numbers:
   computes what your sentence claims; if it does, your text is wrong: change the number or the claim. Never edit a
   recipe so it reproduces a number you typed.
 
+Claims: state only the ledger claims your section's plan lists, at their scope. Strong claims are stated directly,
+without hedging. Weak claims carry their limit in the same sentence. Never write a claim the ledger marks unsupported,
+never widen a claim's scope, and never call a difference significant unless the ledger claim has a test below 0.05.
+
 Citations: `\citep{key}` or `\citet{key}` with keys from .scriptorium/related.md only. Never invent a key.
 
 Figures and tables:
@@ -38,8 +42,9 @@ Figures and tables:
 \end{figure}
 ```
 
-Use `figure*` and `\textwidth` for full-width figures. Tables use booktabs (`\toprule`, `\midrule`, `\bottomrule`),
-no vertical rules, best result in `\textbf{}`, every cell number tagged. Labels: `sec:<id>`, `fig:<id>`, `tab:<id>`.
+Use `figure*` and `\textwidth` for full-width figures. Tables are rendered from recipes by the table setter: place
+one with `\input{table_<id>}` and refer to it as `Table~\ref{tab:<id>}`. Never write a table by hand and never edit a
+`table_*.tex` file. Labels: `sec:<id>`, `fig:<id>`, `tab:<id>`.
 Refer to every figure and table in the text.
 
 Keep to your word budget. When done, run `scriptorium check paper/<your file>.tex` and fix any number it reports.
