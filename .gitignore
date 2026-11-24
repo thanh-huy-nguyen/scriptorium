@@ -10,3 +10,4 @@ examples/*/paper/*.out
 examples/*/paper/*.bbl
 examples/*/paper/*.blg
 .venv/
+workspace/
