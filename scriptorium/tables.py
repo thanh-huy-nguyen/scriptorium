@@ -90,9 +90,11 @@ def render(cfg: Config, tid: str, numbers: dict) -> tuple[str | None, list[str]]
             target = (max if how == "max" else min)(v for _, v in col)
             best_cells |= {(ri, ci) for ri, v in col if v == target}
     align = spec.get("align") or ("l" + "c" * (len(cols) - 1))
-    lines = ["\\begin{table}[t]", "\\centering", "\\small", f"\\caption{{{spec.get('caption', '')}}}",
-             f"\\label{{{spec.get('label', 'tab:' + tid)}}}", f"\\begin{{tabular}}{{{align}}}", "\\toprule",
-             " & ".join(cols) + " \\\\", "\\midrule"]
+    env = "table*" if spec.get("width") == "full" else "table"
+    fit = bool(spec.get("fit"))
+    lines = [f"\\begin{{{env}}}[t]", "\\centering", "\\small", f"\\caption{{{spec.get('caption', '')}}}",
+             f"\\label{{{spec.get('label', 'tab:' + tid)}}}"] + (["\\resizebox{\\linewidth}{!}{%"] if fit else []) + [
+             f"\\begin{{tabular}}{{{align}}}", "\\toprule", " & ".join(cols) + " \\\\", "\\midrule"]
     after = set(spec.get("rule_after") or [])
     for ri, r in enumerate(rows):
         out = []
@@ -110,7 +112,7 @@ def render(cfg: Config, tid: str, numbers: dict) -> tuple[str | None, list[str]]
         lines.append(" & ".join(out) + " \\\\")
         if ri in after:
             lines.append("\\midrule")
-    lines += ["\\bottomrule", "\\end{tabular}", "\\end{table}", ""]
+    lines += ["\\bottomrule", "\\end{tabular}"] + (["}"] if fit else []) + [f"\\end{{{env}}}", ""]
     return "\n".join(lines), []
 
 

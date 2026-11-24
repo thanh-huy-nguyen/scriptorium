@@ -110,7 +110,8 @@ def checks(cfg: Config, files: list[str] | None = None, build: bool = True, page
     if build:
         b = latex.build(cfg)
         (cfg.work / "build.json").write_text(json.dumps({"ok": b.ok, "pages": b.pages, "main_pages": b.main_pages,
-                                                         "summary": b.summary()}, indent=1))
+                                                         "summary": b.summary(), "overfull_in": b.overfull_in},
+                                                        indent=1))
         errs += b.problems(cfg.page_limit if page_limit else None)
     return errs
 

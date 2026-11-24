@@ -19,6 +19,7 @@ class Build:
     errors: list[str] = field(default_factory=list)
     undefined: list[str] = field(default_factory=list)
     overfull: int = 0
+    overfull_in: list[str] = field(default_factory=list)   # the source file of each overfull box, when the log says
     figure_errors: list[str] = field(default_factory=list)
 
     def problems(self, page_limit: int | None = None) -> list[str]:
@@ -98,6 +99,19 @@ def parse_log(log: str) -> tuple[list[str], list[str], int]:
     return errors[:10], undefined, overfull
 
 
+FILE_OPEN_RE = re.compile(r"\((?:\./)?([A-Za-z0-9_\-]+)(?:\.tex)?(?=[\s)]|$)")
+
+
+def overfull_sources(log: str) -> list[str]:
+    """For each overfull box, the last section or table file opened before it in the log."""
+    out = []
+    for m in re.finditer(r"^Overfull \\hbox", log, re.M):
+        opened = [x for x in FILE_OPEN_RE.findall(log[:m.start()])
+                  if x.startswith("table_") or re.match(r"\d\d_", x) or x == "abstract"]
+        out.append(opened[-1] if opened else "?")
+    return out
+
+
 def build(cfg: Config, figures: bool = True, src: Path | None = None, main: str = "main.tex") -> Build:
     """Compile paper/main.tex (or `main` in another source folder, for audits of existing papers)."""
     b = Build()
@@ -127,6 +141,7 @@ def build(cfg: Config, figures: bool = True, src: Path | None = None, main: str 
     (logdir / "build.log").write_text(out)
     log = (src / f"{stem}.log").read_text(errors="replace") if (src / f"{stem}.log").exists() else out
     b.errors, b.undefined, b.overfull = parse_log(log + ("\n" + out if "error:" in out else ""))
+    b.overfull_in = overfull_sources(log)
     if not b.errors:
         b.errors = [ln.split("error:", 1)[1].strip()[:200] for ln in out.splitlines() if "error:" in ln][:5]
     b.ok = pdf.exists() and not b.errors

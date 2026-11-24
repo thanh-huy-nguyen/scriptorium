@@ -29,5 +29,9 @@ Write .scriptorium/tables/<id>.json:
 - The caption's first sentence says what the table shows; then what n is and what the ± means; then what to notice.
 - Our method goes last in its group. `best` marks the columns where bold is meaningful (`max` or `min`).
 - Same decimals within a column; set `decimals` per cell only when a column mixes units.
+- Width: in a two-column venue a column-wide table fits about five numeric columns at `\small` (fewer with
+  mean $\pm$ sd cells). Wider tables need `"width": "full"` (both columns, `table*`), or fewer columns: move
+  intervals and p-values to a second table or to the text. `"fit": true` shrinks the table to the width and is a last
+  resort. Run `scriptorium build` once and check the build reports no overfull box in your table.
 
 Run `scriptorium table <id>` and fix every problem it reports. Do not edit the rendered .tex file.

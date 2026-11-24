@@ -295,21 +295,44 @@ class Fit(S.Stage):
     def layout(self, cfg) -> list[str]:
         errs = S.checks(cfg, page_limit=True)
         b = S.read_json(cfg.work / "build.json") or {}
-        m = re.search(r"(\d+) overfull", b.get("summary", ""))
-        if m and int(m.group(1)) > self.MAX_OVERFULL:
-            errs.append(f"{m.group(1)} overfull lines (text running into the margin); see .scriptorium/logs/build.log")
+        src = b.get("overfull_in") or []
+        tables = sorted({f for f in src if f.startswith("table_")})
+        for t in tables:
+            errs.append(f"{t}.tex runs into the margin: in .scriptorium/tables/{t[6:]}.json set \"width\": \"full\" "
+                        "(both columns), or drop or merge columns; \"fit\": true shrinks it as a last resort")
+        rest = [f for f in src if not f.startswith("table_")]
+        if len(rest) > self.MAX_OVERFULL:
+            errs.append(f"{len(rest)} overfull lines (text running into the margin) in "
+                        f"{', '.join(sorted(set(rest)))}; see .scriptorium/logs/build.log")
         return errs
 
     def tasks(self, cfg):
         errs = self.layout(cfg)
         if not errs:
             return []
-        return [Task("typesetter", "fit", S.context(cfg) + (
-            "Task: fix the layout problems the build reports, without changing what the paper says:\n- "
-            + "\n- ".join(errs) + "\nRun `scriptorium build` until it reports none."))]
+        out = []
+        tab = [e for e in errs if e.startswith("table_")]
+        other = [e for e in errs if not e.startswith("table_")]
+        for e in tab:
+            tid = e.split(".tex", 1)[0][6:]
+            out.append(Task("tablesetter", f"fit-table-{tid}", S.context(cfg) + (
+                f"Task: table `{tid}` is too wide for the page: {e}. Edit .scriptorium/tables/{tid}.json and run "
+                f"`scriptorium table {tid}`, then `scriptorium build` to check it fits. Keep every number.")))
+        if other:
+            out.append(Task("typesetter", "fit", S.context(cfg) + (
+                "Task: fix the layout problems the build reports, without changing what the paper says:\n- "
+                + "\n- ".join(other) + "\nRun `scriptorium build` until it reports none.")))
+        return out
+
+    def fix_tasks(self, cfg, errors):
+        return [Task(t.agent, t.label + "-fix", t.prompt, t.role) for t in self.tasks(cfg)]
 
     def validate(self, cfg):
         return self.layout(cfg)
+
+    def on_fail(self, cfg, errors):
+        """Layout problems left after the fixes go into the report; they never stop the paper."""
+        return "continue"
 
 
 # ---------------------------------------------------------------------------------------------------------------------

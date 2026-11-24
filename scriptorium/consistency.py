@@ -25,6 +25,20 @@ LABEL_RE = re.compile(r"\\label\{((?:fig|tab):[^}]*)\}")
 REF_RE = re.compile(r"\\(?:ref|cref|Cref|autoref)\{([^}]*)\}")
 SWEEP_RE = re.compile(r"\b(all|every|always|consistently|universally|any)\b", re.I)
 SIGNIF_RE = re.compile(r"\bsignifican(t|tly|ce)\b", re.I)
+NEG_RE = re.compile(r"(\b(not|no|nor|non|without|lacks?|fail(s|ed)? to reach|never)\b|n't\b|\bin)[\s-]*"
+                    r"(\w+[\s-]+){0,2}$", re.I)
+
+
+def significance_claims(s: str) -> tuple[int, int]:
+    """(positive, negated) uses of "significant" in a sentence: "not significant" and "non-significant" are negated."""
+    pos = neg = 0
+    for m in SIGNIF_RE.finditer(s):
+        before = s[max(0, m.start() - 40):m.start()]
+        if NEG_RE.search(before) or re.search(r"\bin$", before, re.I) or s[max(0, m.start() - 2):m.start()].lower() == "in":
+            neg += 1
+        else:
+            pos += 1
+    return pos, neg
 FIRST_RE = re.compile(r"\b(the first|first to|novel|unprecedented)\b", re.I)
 
 
@@ -69,11 +83,14 @@ def check(cfg: Config, numbers: dict) -> tuple[list[str], list[str]]:
             if k not in good:
                 errs.append(f"{name}: \\src{{{k}}} is not a working recipe")
         for s in sentences(t):
-            if SIGNIF_RE.search(s):
+            pos, neg = significance_claims(s) if SIGNIF_RE.search(s) else (0, 0)
+            if pos or neg:
                 ps = [k for k in SRC_RE.findall(s) if k in pkeys]
-                if any(float(numbers[k]["value"]) >= 0.05 for k in ps):
+                if pos and any(float(numbers[k]["value"]) >= 0.05 for k in ps):
                     errs.append(f"{name}: calls a result significant next to p >= 0.05: {s[:140]}")
-                elif not pkeys:
+                elif neg and not pos and ps and all(float(numbers[k]["value"]) < 0.05 for k in ps):
+                    warns.append(f"{name}: says not significant next to p < 0.05: {s[:120]}")
+                elif pos and not pkeys:
                     warns.append(f"{name}: says significant but the paper has no p-value recipe: {s[:120]}")
             if (front(name) or name.endswith(("conclusion.tex", "discussion.tex"))) and SWEEP_RE.search(s):
                 warns.append(f"{name}: sweeping scope word '{SWEEP_RE.search(s).group(0)}': {s[:120]}")

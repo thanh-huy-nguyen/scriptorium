@@ -106,6 +106,38 @@ class TeamTest(unittest.TestCase):
         self.assertIn("stage polish failed", out, out)
         self.assertIn("the overclaim sentence is unchanged", out)
 
+    def test_wide_table_goes_back_to_the_table_setter(self):
+        from scriptorium import latex
+        log = ("(./main.tex (./01_intro.tex) (./table_main.tex\nOverfull \\hbox (193.1pt too wide) in paragraph\n)"
+               " (./05_results.tex\nOverfull \\hbox (3.0pt too wide) in paragraph\n)")
+        self.assertEqual(latex.overfull_sources(log), ["table_main", "05_results"])
+        self.cli("run", "--pause-at", "tables")
+        spec = json.loads((self.work / "tables" / "main.json").read_text())
+        spec.update(width="full", fit=True)
+        (self.work / "tables" / "main.json").write_text(json.dumps(spec))
+        from scriptorium import tables as TB
+        TB.build(self.cfg, json.loads((self.work / "numbers.json").read_text()), ["main"])
+        tex = (self.tmp / "paper" / "table_main.tex").read_text()
+        self.assertTrue(tex.startswith("\\begin{table*}[t]") and "\\resizebox{\\linewidth}{!}{%" in tex, tex)
+        (self.work / "build.json").write_text(json.dumps({"summary": "", "overfull_in": ["table_main"]}))
+        st = team.Fit("fit")
+        st.layout = lambda cfg: ["table_main.tex runs into the margin: in .scriptorium/tables/main.json set ..."]
+        tasks = st.tasks(self.cfg)
+        self.assertEqual([(t.agent, t.label) for t in tasks], [("tablesetter", "fit-table-main")])
+        self.assertEqual(st.on_fail(self.cfg, ["x"]), "continue")
+
+    def test_not_significant_is_not_a_significance_claim(self):
+        from scriptorium import consistency
+        nums = {"p_x": {"value": 0.3, "means": "p-value, paired t-test"}, "acc": {"value": 90.0, "means": "acc"}}
+        (self.tmp / "paper").mkdir(exist_ok=True)
+        (self.tmp / "paper" / "03_results.tex").write_text(
+            "The cost at no noise is small and not significant (p = 0.30\\src{p_x}). "
+            "The gain is significant (p = 0.30\\src{p_x}).\n")
+        errs, _ = consistency.check(self.cfg, nums)
+        sig = [e for e in errs if "significant next to" in e]
+        self.assertEqual(len(sig), 1, errs)
+        self.assertIn("The gain is significant", sig[0])
+
     def test_audit_quotes_must_be_in_the_paper(self):
         self.cli("run", "--pause-at", "audit")
         d = json.loads((self.work / "audit.json").read_text())
