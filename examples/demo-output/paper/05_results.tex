@@ -1,25 +1,32 @@
 \section{Results}\label{sec:results}
 
-\subsection{Out-of-fold disagreement flags flipped labels with high precision and recall}
-
-In every noisy cell, most of the samples the out-of-fold filter drops are truly flipped, and precision is well above the flip rate that random dropping would give (Table~\ref{tab:detection}, Fig.~\ref{fig:teaser}a). Precision ranges from 64.6\%\src{prec_digits_n20} (digits, 20\%\src{noise_mid_pct} noise) to 76.4\%\src{prec_bc_n20} (breast cancer, 20\%\src{noise_mid_pct}), against sampled flip rates of 19.7\%\src{actual_noise_digits_n20} and 39.4\%\src{actual_noise_digits_n40} on digits and 19.2\%\src{actual_noise_bc_n20} and 38.6\%\src{actual_noise_bc_n40} on breast cancer. The worst single run still reaches 61.1\%\src{prec_min_any}. The filter also catches most flipped labels: recall is 98.5\%\src{rec_digits_n20} and 97.5\%\src{rec_digits_n40} on digits at the two noise rates, and 92.5\%\src{rec_bc_n20} and 78.9\%\src{rec_bc_n40} on breast cancer. The cost is that between a quarter and a third of the dropped samples are clean (Table~\ref{tab:detection}). Digits has ten classes, so a flipped label rarely coincides with the model's wrong class; precision may therefore depend partly on class count, which our two datasets confound.
-
-\input{table_detection}
-
-\subsection{Refitting on the kept samples recovers most of the mean accuracy gap on digits, less on breast cancer}
-
-Noise hurts logistic regression on both datasets: at the highest noise rate, 40\%\src{noise_max_pct}, it loses 13.2\src{loss_digits_n40} points on digits and 16.4\src{loss_bc_n40} points on breast cancer (Table~\ref{tab:main}). The filter beats it on digits at both noise rates and on breast cancer at 40\%\src{noise_max_pct}, and both the confidence intervals and the paired tests exclude zero in these three cells. On breast cancer at 20\%\src{noise_mid_pct} the interval also excludes zero (0.4\src{bc20_logreg_diff_ci_low} to 5.5\src{bc20_logreg_diff_ci_high} points), but the paired test gives $p=0.12$\src{p_bc20_filter_vs_logreg}. With 5\src{n_seeds} seeds the two can disagree, so we treat that gain of 2.9\src{gain_bc_n20_vs_logreg} points as suggestive only. On digits the filter wins back 77.9\%\src{recovery_digits_n20} of the mean gap at 20\%\src{noise_mid_pct} noise and 68.3\%\src{recovery_digits_n40} at 40\%\src{noise_max_pct}.
-
-The limits are clear on breast cancer. The filter recovers 65.8\%\src{recovery_bc_n20} of the mean gap at 20\%\src{noise_mid_pct} noise but only 22.1\%\src{recovery_bc_n40} at 40\%\src{noise_max_pct}, where the seed sd is large (9.0\src{sd_bc_n40_filter} points). The 20\%\src{noise_mid_pct} figure rests on a loss of only 4.4\src{loss_bc_n20} points with a seed sd of 3.7\src{sd_bc_n20_logreg} points, so the ratio is ill-conditioned. At 40\%\src{noise_max_pct} noise the filter stays below clean-label accuracy on both datasets (paired tests against clean logistic regression: $p=0.016$\src{p_dg40_filter_vs_clean} on digits, $p=0.028$\src{p_bc40_filter_vs_clean} on breast cancer). Recovered shares are ratios of means, because per-seed ratios are unstable when the loss is small.
+Out-of-fold disagreement finds most of the flipped labels, and the refit model gains accuracy over plain logistic regression in three of the four noisy cells; the fourth (breast cancer at the lower noise rate) is not significant. Table~\ref{tab:main} reports the accuracies, Table~\ref{tab:drops} the drop statistics, and Figure~\ref{fig:gains} the paired gains.
 
 \input{table_main}
 
-\subsection{On clean labels the filter costs little}
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.5\linewidth]{figures/gains.pdf}
+  \caption{The filter's accuracy gain grows with label noise on digits. Bars show the paired test-accuracy difference between the filter (purple) and each baseline (logistic regression, untuned multilayer perceptron, MLP) on digits (left) and breast cancer (right). Bars are means over 5\src{n_seeds} seeds, error bars are confidence intervals of the paired difference, and dots are individual seeds. Values below zero mean the baseline is better.}
+  \label{fig:gains}
+\end{figure}
 
-Against logistic regression on clean labels, the filter changes test accuracy by $-0.2$\src{gain_digits_n0_vs_logreg} points on digits and $-0.1$\src{gain_bc_n0_vs_logreg} points on breast cancer (Table~\ref{tab:main}, Fig.~\ref{fig:teaser}c). Neither change is significant, and both intervals include zero (digits $-0.9$\src{dg0_logreg_diff_ci_low} to 0.3\src{dg0_logreg_diff_ci_high}, breast cancer $-0.4$\src{bc0_logreg_diff_ci_low} to 0.0\src{bc0_logreg_diff_ci_high} points). With 5 seeds this rules out a cost of about a point at most on digits, not a zero cost. The filter still drops 3.5\%\src{dropped_frac_digits_n0} (digits) and 1.9\%\src{dropped_frac_bc_n0} (breast cancer) of the clean training samples.
+\subsection{The filter drops mostly flipped labels and finds most of them}
 
-\subsection{Sanity check: an untuned MLP degrades faster than the filter}
+\input{table_drops}
 
-At both noisy rates the filter beats the MLP in all 5\src{n_seeds_filter_wins_mlp_digits_n20} seeds of every cell, by 11.0\src{gain_bc_n20_vs_mlp} to 27.7\src{gain_digits_n40_vs_mlp} points (Table~\ref{tab:mlp}, Fig.~\ref{fig:teaser}b). This is a check on memorization, not a headline. The MLP is untuned, unregularized and has no early stopping, so it fits the flipped labels. An early-stopped MLP, or an MLP trained on the filtered set, would be the fair comparison, and we did not run either. On clean digits the MLP is ahead of the filter (filter minus MLP $-0.7$\src{gain_digits_n0_vs_mlp} points, paired $p=0.03$\src{p_dg0_filter_vs_mlp}, uncorrected); on clean breast cancer the two are level, with no difference detected ($p=0.70$\src{p_bc0_filter_vs_mlp}).
+Dropped samples are flipped far more often than the noise rate. A random drop would have a precision equal to the realized noise rate, so Table~\ref{tab:drops} reports precision next to that rate and the lift over it. The lift is large at the lower rate and smaller at the higher rate, and on breast cancer it is smallest, with the lowest recall. Recall is highest on digits. A quarter to a third of dropped samples are clean.
 
-\input{table_mlp}
+\subsection{Filtering beats logistic regression on digits, with partial support on breast cancer}
+
+Noise costs logistic regression many points, and the cost grows with the noise rate on both datasets (Table~\ref{tab:drops}, loss column). On digits the filter wins at both noise rates in every seed, and its gain grows from the lower to the higher rate (trend test $p$ = 0.0025\src{p_trend_dg_gain_lr}; Figure~\ref{fig:gains}). At the higher rate the gain is 9.0\src{diff_filter_logreg_digits_n40} points.
+
+Breast cancer gives weaker evidence. At the higher rate the filter wins significantly in all seeds, but the seed-to-seed sd in this cell is about 9.0\src{sd_filter_breast_cancer_n40} points. At the lower rate the gain is positive on average but not significant ($p$ = 0.12\src{p_bc20_filter_vs_lr}, one seed does not gain). At the higher rate the filter regains only about a fifth (22\%\src{recovered_breast_cancer_n40}) of the accuracy that noise costs logistic regression (loss column of Table~\ref{tab:drops}), so we make no firm claim for that cell.
+
+\subsection{An untuned MLP reference is hurt more by noisy labels}
+
+The untuned MLP falls much further than either linear model as noise grows, and the filter beats it in all four noisy cells (Table~\ref{tab:main}, Figure~\ref{fig:gains}). The gap reaches 28\src{diff_filter_mlp_digits_n40} points on digits at the higher rate, consistent with flexible models fitting wrong labels \citep{zhang2021understanding}. It does not show that filtering beats a well-trained network: the MLP was neither tuned nor stopped early.
+
+\subsection{With clean labels the filter costs less than the test sets can resolve}
+
+With clean labels the filter loses a fraction of a point to logistic regression on both datasets, and neither difference is significant (Table~\ref{tab:main}). One test sample is worth 0.58\src{one_sample_pts_breast_cancer} points on breast cancer, so the cost there is below a single sample and five seeds cannot show equivalence. The cost presumably comes from correctly labeled samples that the filter still discards, about 3.5\%\src{dropped_pct_digits_n0} of the digits training set. The filter takes about five times (5.0\src{time_filter_over_logreg_digits_n0}$\times$) the fit time of logistic regression on digits.

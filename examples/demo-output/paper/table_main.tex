@@ -1,19 +1,17 @@
 \begin{table*}[t]
 \centering
 \small
-\caption{Test accuracy (\%) on the clean test set for logistic regression and an MLP trained on the noisy labels, and for the out-of-fold filter, at three symmetric noise rates. Accuracy is mean $\pm$ sd over 5 seeds; the last four columns give the paired difference filter minus logistic regression in points (mean, confidence interval, paired $t$-test $p$, n = 5 paired seeds). Test sets hold 540\src{n_test_digits} digits and 171\src{n_test_bc} breast cancer samples. The filter gains most at high noise, and the clean-label rows (noise 0) measure its cost, which is small (intervals include zero).}
+\caption{Test accuracy (\%) under symmetric label noise (none, low, high), mean $\pm$ sd over 5\src{n_seeds} seeds. The test split has 540\src{n_test_digits} samples for Digits and 171\src{n_test_breast_cancer} for Breast cancer. Best mean per column in bold; logistic regression and MLP tie on clean Breast cancer. The filter loses little on clean data and gains most as noise grows.}
 \label{tab:main}
-\begin{tabular}{lcccccccc}
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lcccccc}
 \toprule
-Dataset & Noise (\%) & Logistic regression & MLP & Filter (ours) & Diff. & CI low & CI high & $p$ \\
+Method & Digits, none & Digits, low & Digits, high & Breast cancer, none & Breast cancer, low & Breast cancer, high \\
 \midrule
-Digits & 0 & 96.8\src{acc_digits_n0_logreg} $\pm$ 0.8\src{sd_digits_n0_logreg} & 97.3\src{acc_digits_n0_mlp} $\pm$ 0.5\src{sd_digits_n0_mlp} & 96.6\src{acc_digits_n0_filter} $\pm$ 0.4\src{sd_digits_n0_filter} & -0.2\src{gain_digits_n0_vs_logreg} & -0.9\src{dg0_logreg_diff_ci_low} & 0.3\src{dg0_logreg_diff_ci_high} & 0.5529\src{p_dg0_filter_vs_logreg} \\
-Digits & 20\src{noise_mid_pct} & 89.1\src{acc_digits_n20_logreg} $\pm$ 1.0\src{sd_digits_n20_logreg} & 82.4\src{acc_digits_n20_mlp} $\pm$ 1.6\src{sd_digits_n20_mlp} & 95.1\src{acc_digits_n20_filter} $\pm$ 0.9\src{sd_digits_n20_filter} & 6.0\src{gain_digits_n20_vs_logreg} & 4.8\src{dg20_logreg_diff_ci_low} & 7.0\src{dg20_logreg_diff_ci_high} & 0.0007\src{p_dg20_filter_vs_logreg} \\
-Digits & 40\src{noise_max_pct} & 83.6\src{acc_digits_n40_logreg} $\pm$ 1.3\src{sd_digits_n40_logreg} & 64.9\src{acc_digits_n40_mlp} $\pm$ 3.1\src{sd_digits_n40_mlp} & 92.6\src{acc_digits_n40_filter} $\pm$ 1.6\src{sd_digits_n40_filter} & 9.0\src{gain_digits_n40_vs_logreg} & 7.0\src{dg40_logreg_diff_ci_low} & 10.8\src{dg40_logreg_diff_ci_high} & 0.0009\src{p_dg40_filter_vs_logreg} \\
-\midrule
-Breast cancer & 0 & 96.7\src{acc_bc_n0_logreg} $\pm$ 1.2\src{sd_bc_n0_logreg} & 96.7\src{acc_bc_n0_mlp} $\pm$ 1.2\src{sd_bc_n0_mlp} & 96.6\src{acc_bc_n0_filter} $\pm$ 1.0\src{sd_bc_n0_filter} & -0.1\src{gain_bc_n0_vs_logreg} & -0.4\src{bc0_logreg_diff_ci_low} & 0.0\src{bc0_logreg_diff_ci_high} & 0.3739\src{p_bc0_filter_vs_logreg} \\
-Breast cancer & 20\src{noise_mid_pct} & 92.3\src{acc_bc_n20_logreg} $\pm$ 3.7\src{sd_bc_n20_logreg} & 84.2\src{acc_bc_n20_mlp} $\pm$ 4.0\src{sd_bc_n20_mlp} & 95.2\src{acc_bc_n20_filter} $\pm$ 0.8\src{sd_bc_n20_filter} & 2.9\src{gain_bc_n20_vs_logreg} & 0.4\src{bc20_logreg_diff_ci_low} & 5.5\src{bc20_logreg_diff_ci_high} & 0.1172\src{p_bc20_filter_vs_logreg} \\
-Breast cancer & 40\src{noise_max_pct} & 80.4\src{acc_bc_n40_logreg} $\pm$ 9.4\src{sd_bc_n40_logreg} & 65.4\src{acc_bc_n40_mlp} $\pm$ 5.4\src{sd_bc_n40_mlp} & 84.0\src{acc_bc_n40_filter} $\pm$ 9.0\src{sd_bc_n40_filter} & 3.6\src{gain_bc_n40_vs_logreg} & 2.8\src{bc40_logreg_diff_ci_low} & 4.8\src{bc40_logreg_diff_ci_high} & 0.0037\src{p_bc40_filter_vs_logreg} \\
+Logistic regression & 96.8\src{acc_logreg_digits_n0} $\pm$ 0.8\src{sd_logreg_digits_n0} & 89.1\src{acc_logreg_digits_n20} $\pm$ 1.0\src{sd_logreg_digits_n20} & 83.6\src{acc_logreg_digits_n40} $\pm$ 1.3\src{sd_logreg_digits_n40} & \textbf{96.7}\src{acc_logreg_breast_cancer_n0} $\pm$ 1.2\src{sd_logreg_breast_cancer_n0} & 92.3\src{acc_logreg_breast_cancer_n20} $\pm$ 3.7\src{sd_logreg_breast_cancer_n20} & 80.4\src{acc_logreg_breast_cancer_n40} $\pm$ 9.4\src{sd_logreg_breast_cancer_n40} \\
+MLP & \textbf{97.3}\src{acc_mlp_digits_n0} $\pm$ 0.5\src{sd_mlp_digits_n0} & 82.4\src{acc_mlp_digits_n20} $\pm$ 1.6\src{sd_mlp_digits_n20} & 64.9\src{acc_mlp_digits_n40} $\pm$ 3.1\src{sd_mlp_digits_n40} & \textbf{96.7}\src{acc_mlp_breast_cancer_n0} $\pm$ 1.2\src{sd_mlp_breast_cancer_n0} & 84.2\src{acc_mlp_breast_cancer_n20} $\pm$ 4.0\src{sd_mlp_breast_cancer_n20} & 65.4\src{acc_mlp_breast_cancer_n40} $\pm$ 5.4\src{sd_mlp_breast_cancer_n40} \\
+Filter (ours) & 96.6\src{acc_filter_digits_n0} $\pm$ 0.4\src{sd_filter_digits_n0} & \textbf{95.1}\src{acc_filter_digits_n20} $\pm$ 0.9\src{sd_filter_digits_n20} & \textbf{92.6}\src{acc_filter_digits_n40} $\pm$ 1.6\src{sd_filter_digits_n40} & 96.6\src{acc_filter_breast_cancer_n0} $\pm$ 1.0\src{sd_filter_breast_cancer_n0} & \textbf{95.2}\src{acc_filter_breast_cancer_n20} $\pm$ 0.8\src{sd_filter_breast_cancer_n20} & \textbf{84.0}\src{acc_filter_breast_cancer_n40} $\pm$ 9.0\src{sd_filter_breast_cancer_n40} \\
 \bottomrule
 \end{tabular}
+}
 \end{table*}

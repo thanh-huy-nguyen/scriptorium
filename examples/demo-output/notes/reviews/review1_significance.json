@@ -1,0 +1,60 @@
+{
+  "summary": "The paper measures the 1999 single-algorithm cross-validated filter of Brodley and Friedl: fit logistic regression out of fold, drop samples whose prediction disagrees with their label, and refit. It runs this on two small scikit-learn datasets (digits, breast cancer) under symmetric label noise of 20% and 40%, with 5 seeds. Dropped samples are flipped far more often than the base rate. The refit model beats plain logistic regression clearly on digits and partially on breast cancer, and the clean-label cost is below test-set resolution. The paper states plainly that it is a measurement study, not a new method.",
+  "strengths": [
+    "Honest framing. The title, abstract and intro say the method is old and the study is small, and the limitations (symmetric noise only, no comparison with other filters, no ablations) are stated up front.",
+    "The precision of the dropped set is compared with the realized noise rate, which is the right control for 'is this better than a random drop'. Precision, recall and lift are reported per cell.",
+    "Statistics are handled carefully for the sample size: paired seeds, confidence intervals, an explicit remark that the p-values are descriptive, and the weak breast cancer cells are reported as weak. The clean-label cost is put in units of test samples.",
+    "The paper is short, readable and consistent in naming. The paired-gain figure shows the individual seeds, so the instability of the breast cancer 40% cell is visible."
+  ],
+  "weaknesses": [
+    {
+      "issue": "The contribution is thin for the venue. The method is from 1999, the setting is symmetric noise on two tiny, nearly linearly separable tabular datasets (digits, breast cancer), and the outcome (a linear model's out-of-fold disagreements are enriched for flips under symmetric noise) is close to what the theory and prior work already predict. Nothing in the paper involves vision-scale data, deep features, or realistic annotation noise. A reader gains little that they could not predict.",
+      "where": "Abstract; Sec. 1 contributions; Sec. 6",
+      "severity": "major",
+      "suggestion": "Say what a reader would do differently after reading this. Either add one setting where the answer is not obvious (class-dependent or instance-dependent noise, which the method section itself names as the failure case; or linear probes on frozen features of a real image dataset such as CIFAR-10N or CIFAR-10 with synthetic noise), or reframe the claim around a falsifiable question such as 'when does this rule fail'. The data on hand do not support more than the current modest claim, so the paper should state the stakes and stop there."
+    },
+    {
+      "issue": "The baselines do not support the practical message. The only comparisons are plain logistic regression and an untuned MLP. The MLP is a straw man: the paper itself says it overfits noise because it has no regularization or early stopping, so the 'filter beats MLP by 28 points' result says little. Missing are a random-drop control at the same drop rate (the paper concedes this), a regularized logistic regression (tuned C, which could absorb much of the noise), and confident learning or a noise-aware logistic regression. Without these, 'a simple first thing to try' (Sec. 6) is not shown to beat the other simple things to try.",
+      "where": "Sec. 4 (Models); Sec. 5.3; Sec. 6 first paragraph",
+      "severity": "major",
+      "suggestion": "Add the cheap controls that need no new method: random drop at the same count (separates targeting from dropping), logistic regression with C chosen by cross-validation on noisy labels, and cleanlab's find_label_issues on the same out-of-fold probabilities. If these cannot be run, remove the MLP as a headline contribution and drop the 'first thing to try' recommendation, since that is a comparison the data do not show."
+    },
+    {
+      "issue": "Only two datasets and 5 seeds, with strongly different outcomes in the two. Digits carries every clear claim. On breast cancer, 2 of 4 comparisons are weak or unstable (p = 0.12 at 20%, sd about 9 points and 22% recovery at 40%). The summary 'gains in three of four noisy cells' pools cells that are not independent evidence. Several test statements (e.g. 'the filter wins in every seed') rest on n = 5.",
+      "where": "Sec. 5.2, Table 1, Fig. 2",
+      "severity": "major",
+      "suggestion": "Add a few more datasets or many more seeds or splits (repeated splits are cheap for these models) so that the breast cancer cell can be resolved. Also check the realized-noise confound the paper itself speculates about in the breast cancer 40% cell: report per-seed realized noise and recall for that cell, since this analysis needs no new runs."
+    },
+    {
+      "issue": "The explanation for why the filter works is argued but not tested, and the paper's own caveats weaken it. On clean labels it drops 3.5% of digits samples; at 40% noise 24-32% of dropped samples are clean. Precision at the higher rate on breast cancer is only moderately above the noise rate. The paper does not show what fraction of the accuracy gain comes from removing flips versus removing hard clean samples, nor whether the gain follows precision across seeds.",
+      "where": "Sec. 3 'Why disagreement may mark a flipped label'; Sec. 5.1; Sec. 5.4",
+      "severity": "minor",
+      "suggestion": "Report per-seed correlation of accuracy gain with precision or recall, and break clean-sample drops down by class or by margin for digits. Use the existing runs."
+    },
+    {
+      "issue": "The 'clean-label cost is below resolution' claim is presented as a positive finding but is an absence of evidence with 5 seeds. The MLP is slightly better than the filter on clean digits (significant, p = 0.03), and the cost in time is about 5x. The practical trade-off (should a practitioner who does not know the noise rate apply the filter?) is therefore under-evidenced.",
+      "where": "Sec. 5.4; abstract",
+      "severity": "minor",
+      "suggestion": "Report an equivalence-style bound (the CI upper limit on the cost, which is already in the data) in the text, and phrase the claim as 'we cannot exclude a cost of up to X points'."
+    },
+    {
+      "issue": "Figure and layout choices reduce the value of the paper to a skimming reader. The teaser mixes three panels and the gains figure repeats Table 1; the table of drops and the main table are both heavy for a 4-page paper. The contributions list is mostly descriptions of caveats ('Costs and an unstable cell') rather than findings. The bold run-in contribution titles and the sentence about the Scriptorium pipeline in the setup section do not help a reader assess the science.",
+      "where": "Sec. 1 contribution list; Sec. 4 last sentence; Fig. 1 and Fig. 2",
+      "severity": "minor",
+      "suggestion": "Rewrite the contributions as three verb-first findings. Move the pipeline sentence to the acknowledgments or the code note. Consider merging Fig. 2 into the teaser or dropping one of the two."
+    }
+  ],
+  "questions": [
+    "Does the filter still help when noise is class-dependent (for example, a pairwise flip such as 3 to 8 on digits)? Section 3 says this is the obvious failure case; a single experiment would settle whether the method is safe to recommend.",
+    "How does the filter compare with the same logistic regression trained with a random drop of equal size? How much of the gain is due to targeting flips?",
+    "What is the realized noise and recall in the breast cancer 40% seeds with the lowest accuracy? Is the large sd a few seeds in which recall collapses?",
+    "Would an MLP or a linear probe on the filtered set show the same gains? This is the practically relevant use of a data filter."
+  ],
+  "scores": {
+    "soundness": 3,
+    "presentation": 3,
+    "contribution": 2
+  },
+  "overall": 4,
+  "confidence": 4
+}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Scriptorium: Agents That Write Your Paper</title>
-<meta name="description" content="25 Claude Code agents in eight teams write a research paper from your repository. Every number recomputes from your data, every citation is fetched and checked, every hand-off is checked in code.">
+<meta name="description" content="30 Claude Code agents in nine teams write a research paper from your repository. Every number recomputes from your data, every citation is fetched and checked, every hand-off is checked in code.">
 <meta property="og:title" content="Scriptorium: a team of agents writes your paper from your repository">
 <meta property="og:description" content="Every number recomputes from your data. Every citation is fetched, never typed. Your data stays read-only.">
 <meta property="og:image" content="https://thanh-huy-nguyen.github.io/scriptorium/assets/social_preview.png">
@@ -142,7 +142,7 @@ footer img{height:22px;width:auto}
     <div class="kicker">Claude Code plugin &middot; open source</div>
     <h1>Scriptorium</h1>
     <p class="tagline">A team of agents writes your paper from your research repository.</p>
-    <p class="lede">25 agents in eight teams split the work the way a lab would, and independent teams work at the
+    <p class="lede">30 agents in nine teams split the work the way a lab would, and independent teams work at the
     same time: survey the results and the literature, plan the story, draw the figures, write, audit and review. Code
     checks every hand-off. Each number recomputes from your raw data, each citation is fetched and checked against the
     paper it cites, and your data stays read-only.</p>
@@ -160,12 +160,12 @@ footer img{height:22px;width:auto}
   <h2>One run of the example</h2>
   <p class="sub">What Scriptorium produced from the small label-noise study in <code>examples/demo</code>, start to finish, with no human edits.</p>
   <div class="stats">
-    <div class="stat"><div class="num">221</div><div class="what">numbers in the paper</div>
+    <div class="stat"><div class="num">85</div><div class="what">numbers in the paper</div>
       <p>Every one carries a recipe and recomputes from <code>results/runs.jsonl</code>.</p></div>
-    <div class="stat"><div class="num">17</div><div class="what">citations</div>
+    <div class="stat"><div class="num">15</div><div class="what">citations</div>
       <p>Every entry fetched from a bibliographic database; none typed by a model.</p></div>
-    <div class="stat"><div class="num">76</div><div class="what">agent sessions</div>
-      <p>4 pages of main text and about 486k output tokens. Every check passes on the final paper.</p></div>
+    <div class="stat"><div class="num">102</div><div class="what">agent sessions</div>
+      <p>4 pages of main text and about 602k output tokens. Every check passes on the final paper.</p></div>
   </div>
 </div></section>
 
@@ -180,7 +180,8 @@ footer img{height:22px;width:auto}
 <div class="agent"><span class="no">5</span><h3>Writing</h3><p>Writers draft sections in parallel, with contests for the abstract and introduction; an editor makes one paper; line editors polish each section.</p><span class="chk">&#10003; every number recomputes at each edit</span></div>
 <div class="agent"><span class="no">6</span><h3>Checking</h3><p>A claim auditor checks every claim sentence; a citation auditor checks every citing sentence against the cited paper; a typesetter fixes layout.</p><span class="chk">&#10003; flagged sentences must change</span></div>
 <div class="agent"><span class="no">7</span><h3>Review</h3><p>Reviewers for your venue score the paper; an area chair ranks the changes; a reviser makes them.</p><span class="chk">&#10003; kept only if the score holds, else rolled back</span></div>
-<div class="agent"><span class="no">8</span><h3>Release</h3><p>Packages the arXiv bundle and writes an HTML report that links every number, citation and figure to its source.</p><span class="chk">&#10003; every accepted stage in git history</span></div>
+<div class="agent"><span class="no">8</span><h3>Venue study</h3><p>Reads the target venue's recent papers on the same topic and writes a playbook for framing, Figure 1, contributions and emphasis.</p><span class="chk">&#10003; every quote occurs in the exemplar's PDF</span></div>
+<div class="agent"><span class="no">9</span><h3>Finish</h3><p>A compliance agent meets the venue's requirements, proofreaders polish each section, and a layout inspector reads every rendered page and routes each flaw to its owner.</p><span class="chk">&#10003; pages inspected; nothing rewritten</span></div>
   </div>
 </div></section>
 

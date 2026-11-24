@@ -1,0 +1,14 @@
+{"verdict": "pass",
+ "issues": [
+  {"issue": "Legend title 'Filter (ours) compared with' plus entries 'vs. logistic regression' / 'vs. MLP' repeat the comparison twice and the legend is wider than needed.", "fix": "Drop the 'vs.' prefix (entries 'Logistic regression', 'MLP') and keep the title, or keep 'vs.' and drop the title; the y label already says 'gain of filter'.", "severity": "minor"},
+  {"issue": "Per-seed dots sit on top of the error bars and caps (e.g. breast cancer 20% and digits 40%), which makes the CI lines slightly hard to read.", "fix": "Narrow the dot jitter to about 0.02, or offset the dots a little to the right of the bar center, or lighten the error bar color so the dots stay on top.", "severity": "minor"},
+  {"issue": "The breast cancer 0% bars are almost invisible and the dots of the two baselines nearly merge, so the 'near zero' point is carried by the zero line only.", "fix": "Acceptable as is. Optionally add a faint horizontal gridline at 0 or a tick label '0' emphasis; no change needed.", "severity": "minor"},
+  {"issue": "The caption draft in the spec omits which panel is which and that the y axis spans below zero; gains.md already includes both.", "fix": "Use the gains.md caption, which names digits (left) and breast cancer (right) and says values below zero favor the baseline.", "severity": "minor"}
+ ],
+ "strengths": [
+  "The message reads in five seconds: bars are flat at 0%, then grow with noise, and digits against the MLP is visibly largest.",
+  "Grouped bars with 95% CI error bars and per-seed dots are the right form; the zero reference line is gray and the baseline colors (blue, orange) leave purple free for our method.",
+  "Shared y axis across panels makes digits and breast cancer directly comparable; panel labels are small and inside the axes with no titles.",
+  "The legend sits above the plot, off the data, and names the baseline being compared with.",
+  "The y axis starts below zero because it shows differences, so it does not exaggerate the gain, and the caption says so."
+ ]}

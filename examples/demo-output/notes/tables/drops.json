@@ -1,0 +1,12 @@
+{"caption": "What the out-of-fold filter drops at 20\\% and 40\\% label noise. Precision is the share of dropped samples that were flipped, recall the share of flipped samples that were dropped, and $p$ tests precision against 50\\% (two-sided one-sample $t$-test). Recovered is the share of logistic regression's accuracy loss that the filter regains (our definition). Means over 5\\src{n_seeds} seeds; clean-label rows are omitted because precision and recall are undefined there. The filter removes mostly flipped samples in every setting.",
+ "label": "tab:drops",
+ "columns": ["Setting", "Dropped", "Precision (\\%)", "$p$ vs 50\\%", "Recall (\\%)", "Recovered (\\%)"],
+ "rows": [
+  {"cells": [{"text": "Digits, 20\\%"}, {"key": "dropped_digits_n20"}, {"key": "precision_digits_n20"}, {"key": "p_prec_dg20_gt50"}, {"key": "recall_digits_n20"}, {"key": "recovered_digits_n20"}]},
+  {"cells": [{"text": "Digits, 40\\%"}, {"key": "dropped_digits_n40"}, {"key": "precision_digits_n40"}, {"key": "p_prec_dg40_gt50"}, {"key": "recall_digits_n40"}, {"key": "recovered_digits_n40"}]},
+  {"cells": [{"text": "Breast cancer, 20\\%"}, {"key": "dropped_breast_cancer_n20"}, {"key": "precision_breast_cancer_n20"}, {"key": "p_prec_bc20_gt50"}, {"key": "recall_breast_cancer_n20"}, {"key": "recovered_breast_cancer_n20"}]},
+  {"cells": [{"text": "Breast cancer, 40\\%"}, {"key": "dropped_breast_cancer_n40"}, {"key": "precision_breast_cancer_n40"}, {"key": "p_prec_bc40_gt50"}, {"key": "recall_breast_cancer_n40"}, {"key": "recovered_breast_cancer_n40"}]}
+ ],
+ "decimals": 1,
+ "width": "full",
+ "rule_after": []}

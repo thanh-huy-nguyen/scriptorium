@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://github.com/thanh-huy-nguyen/scriptorium/actions/workflows/tests.yml"><img alt="tests" src="https://github.com/thanh-huy-nguyen/scriptorium/actions/workflows/tests.yml/badge.svg"></a>
   <img alt="Python 3.11+" src="https://img.shields.io/badge/python-3.11%2B-2D4B73">
-  <img alt="Agents" src="https://img.shields.io/badge/agents-25-4E2A84">
+  <img alt="Agents" src="https://img.shields.io/badge/agents-30-4E2A84">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-4E2A84"></a>
 </p>
 
@@ -32,7 +32,7 @@ exist.**
 
 Language models can now draft a whole paper. The hard part is trusting it: a number that drifted by a few points, a
 reference that was never published, a citation that says something else, a claim the experiments do not support.
-Reviewers rarely catch these, human or model. Scriptorium splits the work across 25 specialist agents in eight teams,
+Reviewers rarely catch these, human or model. Scriptorium splits the work across 30 specialist agents in nine teams,
 the way a lab would, runs independent teams at the same time, and checks every hand-off in code before the next agent
 starts. Each number in the paper carries a recipe that recomputes it from your raw results
 ([PaperAnchor](https://github.com/thanh-huy-nguyen/paperanchor)), each citation is fetched from a bibliographic
@@ -88,25 +88,27 @@ subagents, and has `scriptorium done` check their work. You watch every stage an
 
 ## The team
 
-Stages form a graph; a stage starts as soon as the stages it needs are done, so the literature search runs while the
-results are analyzed, and figures, tables, notation and the bibliography are made at the same time:
+Stages form a graph; a stage starts as soon as the stages it needs are done, so the venue study and the literature
+search run while the results are analyzed, and figures, tables, notation and the bibliography are made at the same time:
 
 ```text
-scout -> { experiments | evidence -> stats | search -> read } -> ledger -> story -> outline
+scout -> { venue study | experiments | evidence -> stats | search -> read } -> ledger -> story -> outline
       -> { notation | library | figplan -> figures -> critique | tables } -> draft -> frame -> edit
-      -> { audit | citecheck } -> polish -> fit -> review -> (chair -> revise -> review)* -> final -> package
+      -> { audit | citecheck } -> polish -> fit -> review -> (chair -> revise -> review)*
+      -> requirements -> proofread -> page inspection -> final -> package
 ```
 
 | Team | Agents | What the code checks before anyone uses their work |
 |:--|:--|:--|
 | Discovery | scout, experimentalist, results analyst, statistician | every setup fact quotes its source file word for word; every recipe runs on raw data; every test verdict matches its p-value |
+| Venue study | venue readers (in parallel), venue analyst | every quote occurs in the exemplar's PDF; the playbook names the exemplars behind each rule |
 | Literature | searcher, readers (in parallel), librarian | only papers a search returned are shortlisted; each reading card quotes the abstract code fetched; every entry was fetched, not typed |
-| Story | cartographer, three storyline architects, a selection panel, outliner, terminologist | every claim has evidence keys and a strength; the outline names only working recipes and ledger claims; one teaser figure |
+| Story | cartographer, three storyline architects, a selection panel, outliner, terminologist | every claim has evidence keys and a strength; the outline names only working recipes and ledger claims; one framework figure |
 | Visuals | figure planner, plot maker, diagram artist, figure critic, table setter | every figure is drawn from recipes at print size and passes the figure lint (text size, overlaps, contrast, colours); the critic sends weak figures back |
-| Writing | section writers (in parallel), contests for the abstract and introduction, editor, line editors (one per section) | every tagged number recomputes at each edit; names follow the notation; a sentence the auditors flagged must change |
+| Writing | section writers (in parallel), contests for the abstract and introduction, editor, line editors (one per section) | every tagged number recomputes at each edit; names follow the notation; few numbers in the prose; bold lead-ins and run-in heads; a sentence the auditors flagged must change |
 | Checking | claim auditor, citation auditor, typesetter | every claim sentence is checked against the ledger and every citing sentence against the cited abstract; page limit and overfull lines |
 | Review | venue reviewers, area chair, reviser | each review and the meta-review are valid; a revision is kept only if every check passes and the score does not drop |
-| Release | packager (code) | the arXiv bundle and the HTML report linking every number, citation and figure to its source |
+| Finish | compliance agent, proofreaders (one per section), layout inspector, packager (code) | the venue's required sections and checklist are answered; proofreading changes no section by more than a quarter; every rendered page is inspected and each flaw goes to its owner; the arXiv bundle and the HTML report |
 
 The orchestrator is plain Python. It decides the stages, writes each agent's task, caps how many agents run at once,
 waits out usage limits, keeps a git history of every accepted stage, and writes every event to `.scriptorium/`.
@@ -190,34 +192,34 @@ regression with out-of-fold label filtering, under 0%, 20% and 40% label noise o
   <a href="examples/demo-output/paper.pdf"><img src="assets/example_pages.png" width="100%" alt="The first three pages of the paper Scriptorium wrote from the demo study"></a>
 </p>
 
-Scriptorium wrote [this 4-page paper](examples/demo-output/paper.pdf) with no human edits to the text, using the
-`standard` preset (Sonnet agents, an Opus outliner). All 25 agents took part. Everything they produced is in
-[`examples/demo-output`](examples/demo-output): the LaTeX, the recipes, the figure scripts and table specs, the setup
-facts, the statistical tests, the claim ledger, the literature cards, both audits, the figure critiques, the reviews,
-and the [HTML report](examples/demo-output/notes/report.html).
+Scriptorium wrote [this 4-page CVPR-format paper](examples/demo-output/paper.pdf) with no human edits to the text,
+using the `standard` preset (Sonnet agents, an Opus outliner), the official CVPR author kit in anonymous review mode,
+and a four-page limit, as for a CVPR workshop short paper. All 30 agents took part. Everything they produced is in
+[`examples/demo-output`](examples/demo-output): the LaTeX, the recipes, the figure scripts and table specs, the venue
+playbook, the setup facts, the statistical tests, the claim ledger, the literature cards, both audits, the figure
+critiques, the reviews, and the [HTML report](examples/demo-output/notes/report.html).
 
 | What the final checks found | |
 |:--|:--|
-| Numbers in the text | 221 tagged, from 154 recipes, all recompute from `results/runs.jsonl` |
-| Citations | 17, all fetched; every citing sentence checked against the cited abstract |
-| Build | 4 pages of main text, no undefined references, no overfull lines |
-| Reviews | 4.5 before the revision, 5.0 after; the revision was kept |
-| Cost | 76 agent sessions, about 486k output tokens |
+| Numbers | 85 tagged, from 169 recipes, all recompute from `results/runs.jsonl`; only 23 of them sit in running text, the rest in tables |
+| Citations | 15, all fetched; every citing sentence checked against the cited abstract |
+| Build | 4 pages of main text in the CVPR kit, no undefined references, no overfull lines |
+| Reviews | 4.25 before and after the revision: the LLM reviewers call the study too narrow for CVPR (two datasets, weak baselines) and find places where the text describes table content the tables do not show |
+| Cost | 102 agent sessions, about 600k output tokens, 40 minutes of wall time |
 
-What the run shows about the checks:
+What the run shows:
 
-- **The paper reports what did not work.** The statistician found 5 of 24 comparisons not significant (and 2 untestable),
-  and the paper says so where it matters (for example the gain on breast cancer at 20% noise) instead of rounding it into a win.
-- **The paper is honest about novelty.** The literature team found that the filter is the classical noise filter of
-  Brodley and Friedl, and the paper credits it and presents the work as a measurement of a known idea, not a new
-  method.
-- **Figures were sent back.** The critics returned both figures with specific complaints (a gap marker too faint to
-  read, a step that did not show the disagreement), and the lint caught a data series that was not the method drawn in the method's colour.
-- **Layout problems went to the agent that owns them.** Three tables were too wide for a column; the build traced
-  each overflow to its table, and the table setter rebuilt them at full width.
-- **The audit works on papers Scriptorium did not write this way.** Run on the 0.1 example paper,
-  `scriptorium audit` found a reference with the wrong year, two citations that misdescribe the cited work, and 13
-  claims stronger than the evidence.
+- **The venue study shaped the paper.** It read six recent CVPR papers on learning with noisy labels and wrote a
+  playbook; one of its rules made Figure 1 the method overview, since four pages leave no room for two diagrams.
+- **The paper reports what did not work.** The statistician found 6 of 21 comparisons not significant, and the paper
+  says so where it matters instead of rounding them into wins; it credits the filter to Brodley and Friedl and presents
+  the work as a measurement of a known idea.
+- **Figures and pages were sent back.** A critic returned Figure 1 because its y axis started at 50 and exaggerated a
+  drop; the page inspector found tables printed pages from their first mention and a caption promising bold entries
+  the table did not have. Each problem went to the agent that owned it.
+- **What is left is listed, not hidden.** The final report lists two paragraphs that still print three numbers, a name
+  variant inside a table spec, and a figure caption that still calls the method's bars purple; the last one led to a
+  fix in how the inspector routes caption problems.
 
 ## Venues, presets and configuration
 
@@ -322,7 +324,7 @@ experiment, the reviser narrows the claim or lists it as a limitation.
 <details>
 <summary><b>Which agents and models?</b></summary>
 
-The 25 agents are Claude Code subagents (`scriptorium/plugin/agents/*.md`), so you can read and edit their
+The 30 agents are Claude Code subagents (`scriptorium/plugin/agents/*.md`), so you can read and edit their
 instructions. The preset sets each role's model; `[models]` overrides any of them.
 </details>
 
@@ -331,7 +333,7 @@ instructions. The preset sets each role's model; `[models]` overrides any of the
 | Path | What it holds |
 |:--|:--|
 | `scriptorium/` | The orchestrator: stages, checks, citation lookup, LaTeX build, data lock |
-| `scriptorium/plugin/` | The Claude Code plugin: 25 agents, hooks (PaperAnchor and the edit guard), the write-paper skill |
+| `scriptorium/plugin/` | The Claude Code plugin: 30 agents, hooks (PaperAnchor and the edit guard), the write-paper skill |
 | `scriptorium/templates/` | The default template, one skeleton per venue, and the style guide |
 | `scriptorium/recipelib/` | What recipes and figure scripts import: statistics, the figure house style, the diagram kit |
 | `examples/demo/` | A small study to try it on (real scikit-learn runs in `results/runs.jsonl`) |

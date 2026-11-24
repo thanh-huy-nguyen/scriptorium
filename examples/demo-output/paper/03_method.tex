@@ -1,16 +1,13 @@
-\section{Out-of-fold filtering for label noise}\label{sec:method}
+\section{Out-of-Fold Disagreement Filter}\label{sec:method}
 
-We are given $n$ training samples with standardized features $x_i$ and observed labels $\tilde{y}_i$, a share of which are flipped. The classifier $f$ is logistic regression with inverse L2 strength $C$ set to 1\src{logreg_c}. The out-of-fold filter maps this noisy training set to a refit copy of $f$ (Fig.~\ref{fig:method}).
+The out-of-fold filter takes a training set $\mathcal{D}=\{(x_i,\tilde{y}_i)\}_{i=1}^{n}$ with observed, possibly flipped labels $\tilde{y}_i$ and returns a classifier trained on a subset $\mathcal{S}\subseteq\mathcal{D}$. The classifier $f$ is a standardized logistic regression that maps a feature vector $x$ to a predicted class. The true label $y_i$ is never seen.
 
-\begin{figure}[t]
-  \centering
-  \includegraphics[width=\linewidth]{figures/method.pdf}
-  \caption{Out-of-fold filtering in four steps. Colors are classes, the bar on a tile is the given label $\tilde{y}_i$, the dot is the out-of-fold predicted label $\hat{y}_i$, a corner flag marks a flipped label, and a cross marks a dropped sample. (1) Labels contain flips. (2) Fit with $K$-fold cross-validation ($K=5$\src{filter_folds}): train on four folds, predict the fifth. (3) Drop samples whose dot differs from the bar; one flip goes unnoticed and one clean sample is dropped. (4) Refit on the kept set $S$. The tile grid is illustrative.}
-  \label{fig:method}
-\end{figure}
+\paragraph{Procedure.}
+First, split $\mathcal{D}$ into $K$ stratified folds and let $k(i)$ be the fold that contains sample $i$. The out-of-fold prediction of sample $i$ is the class predicted by $f$ fit on all folds except $k(i)$:
+\begin{equation}
+  \hat{y}_i = f_{-k(i)}(x_i).
+\end{equation}
+Second, keep the samples whose out-of-fold prediction agrees with their label, $\mathcal{S}=\{i:\hat{y}_i=\tilde{y}_i\}$, and drop every sample where the two disagree. Third, refit $f$ on $\mathcal{S}$ with the given labels. We use $K=5$\src{filter_folds}. The folds are stratified on the noisy labels, and the feature standardization is fit inside each training fold, as part of $f$. For digits, the predicted class is the argmax of the model's class scores, and a sample is dropped whenever it differs from the given label. The rule has no threshold, uses no noise rate and holds out no clean data. It costs $K+1$ fits.
 
-The rule has four steps. We split the training set into 5\src{filter_folds} stratified folds ($K$). For each sample $i$, we compute the out-of-fold prediction $\hat{y}_i$ with a model fit on the other $K-1$ folds. We keep the set $S = \{\, i : \hat{y}_i = \tilde{y}_i \,\}$ and drop the rest. We then refit $f$ on $S$ and use it at test time.
-
-Out-of-fold prediction is what makes the disagreement informative. Most labels are correct, so the other folds define a decision boundary that follows the true classes. A flipped label lies on the wrong side of that boundary, and a model that never saw the sample tends to predict its true class. A model fit on the sample itself could bend toward the flipped label and agree with it, which hides the flip.
-
-The out-of-fold filter uses no clean validation set, no estimate of the noise rate, and no confidence threshold. Besides the classifier's own $C$, the only setting is $K$. The cost is $K+1$ fits of a linear model.
+\paragraph{Why disagreement may mark a flipped label.}
+Under symmetric noise, most labels in the other folds are correct, so a model fit on them can learn the class structure of the data. A flipped label contradicts that structure, so the out-of-fold model should often predict the true class and the sample is dropped. This is an argument for small, nearly linearly separable problems with symmetric noise, not a guarantee. Class-dependent noise, where a linear model's errors follow the flips, is the obvious case where it can fail, and we did not test it. The measured evidence is the precision and recall in Section~\ref{sec:results}. The filter also drops clean samples that the model gets wrong, and Section~\ref{sec:results} measures what these drops cost. The rule is the single-algorithm filter of \citet{brodley1999identifying} with logistic regression and out-of-fold predictions.

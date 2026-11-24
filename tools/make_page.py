@@ -46,8 +46,10 @@ TEAM = [
      "the cited paper; a typesetter fixes layout.", "flagged sentences must change"),
     ("Review", "Reviewers for your venue score the paper; an area chair ranks the changes; a reviser makes them.",
      "kept only if the score holds, else rolled back"),
-    ("Release", "Packages the arXiv bundle and writes an HTML report that links every number, citation and figure to "
-     "its source.", "every accepted stage in git history"),
+    ("Venue study", "Reads the target venue's recent papers on the same topic and writes a playbook for framing, "
+     "Figure 1, contributions and emphasis.", "every quote occurs in the exemplar's PDF"),
+    ("Finish", "A compliance agent meets the venue's requirements, proofreaders polish each section, and a layout "
+     "inspector reads every rendered page and routes each flaw to its owner.", "pages inspected; nothing rewritten"),
 ]
 
 
@@ -70,7 +72,7 @@ def build():
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Scriptorium: Agents That Write Your Paper</title>
-<meta name="description" content="25 Claude Code agents in eight teams write a research paper from your repository. Every number recomputes from your data, every citation is fetched and checked, every hand-off is checked in code.">
+<meta name="description" content="30 Claude Code agents in nine teams write a research paper from your repository. Every number recomputes from your data, every citation is fetched and checked, every hand-off is checked in code.">
 <meta property="og:title" content="Scriptorium: a team of agents writes your paper from your repository">
 <meta property="og:description" content="Every number recomputes from your data. Every citation is fetched, never typed. Your data stays read-only.">
 <meta property="og:image" content="{URL}assets/social_preview.png">
@@ -96,7 +98,7 @@ def build():
     <div class="kicker">Claude Code plugin &middot; open source</div>
     <h1>Scriptorium</h1>
     <p class="tagline">A team of agents writes your paper from your research repository.</p>
-    <p class="lede">25 agents in eight teams split the work the way a lab would, and independent teams work at the
+    <p class="lede">30 agents in nine teams split the work the way a lab would, and independent teams work at the
     same time: survey the results and the literature, plan the story, draw the figures, write, audit and review. Code
     checks every hand-off. Each number recomputes from your raw data, each citation is fetched and checked against the
     paper it cites, and your data stays read-only.</p>

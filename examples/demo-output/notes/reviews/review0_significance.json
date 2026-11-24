@@ -1,0 +1,50 @@
+{
+  "summary": "The paper studies a single rule, the single-algorithm cross-validated filter of Brodley and Friedl: fit logistic regression out-of-fold on noisy labels, drop disagreements, refit. On digits and breast cancer with symmetric noise (5 seeds) it reports about 71% pooled precision for dropped samples, accuracy gains over logistic regression and an untuned MLP, and a small clean-label cost. It states openly that it makes no claim beyond this scope.",
+  "strengths": [
+    "Candid framing: the paper says the idea is not new (Brodley and Friedl) and that its contribution is a measurement. The limitations are specific.",
+    "The rule needs no clean set and no noise rate, so it is easy for a practitioner to adopt. The precision and recall analysis tests the mechanism and does not only report accuracy.",
+    "Paired seeds, explicit tests, and honest reporting of non-significant cells (breast cancer at low noise, unstable breast cancer at high noise) and of the clean-label cost.",
+    "Short and readable, and a good fit for a 4-page workshop format."
+  ],
+  "weaknesses": [
+    {
+      "issue": "The novelty is close to zero and the paper concedes this. The rule is the 1999 single-algorithm filter, and confident learning (which the paper cites as the closest relative) is not compared. The reader cannot tell whether the simple rule gives anything that the established methods do not.",
+      "where": "Sec. 2 (Cross-validated filtering), Sec. 6 limitations, contribution 1",
+      "severity": "major",
+      "suggestion": "Run cleanlab's find_label_issues, or at least a per-class-threshold variant, on the same splits and same seeds. Report precision, recall and accuracy beside the plain rule. Without that, state in the contribution list that this is a replication-style measurement and drop the framing of a new filter."
+    },
+    {
+      "issue": "The headline comparison with the MLP is weak evidence of significance. The MLP is untuned, has no early stopping and no regularization, and it is trained on noisy labels while the filter has the extra benefit of cleaning. A 28-point gap says the MLP overfits noise, not that a filtered linear model is better than neural nets. The abstract and the third contribution lean on this comparison.",
+      "where": "Abstract, Sec. 5.3, Table 1",
+      "severity": "major",
+      "suggestion": "Add the same filter applied to the MLP (filter then train the MLP), and an early-stopped or weight-decayed MLP. This shows whether the filter helps any model. Otherwise play down the MLP result in the abstract and the contribution list."
+    },
+    {
+      "issue": "The evidence base is too narrow to support a broad takeaway. There are two small scikit-learn datasets (digits, breast cancer), one symmetric noise type, 5 seeds, and no ablation over folds or C. Real label noise is class- or instance-dependent, and symmetric noise is the easy case for out-of-fold disagreement. The advice 'a simple first thing to try' is not backed by a setting that matters to practitioners.",
+      "where": "Sec. 4, Sec. 6",
+      "severity": "major",
+      "suggestion": "Add class-dependent (pair-flip) noise, which is a few lines of code, and at least one real-feature benchmark with noisy labels (for example CIFAR-10N features from a frozen encoder). Increase the seeds to 20 or more since runs are cheap. If this is not possible, say in the abstract that the result is for symmetric noise on tabular-scale data."
+    },
+    {
+      "issue": "Several claims are stronger than the data allow. 'Beats plain logistic regression in all but one paired noisy run' and 'in every noisy setting' sit beside a breast cancer cell whose sd is about 9 points and a non-significant low-noise cell, and the recovered share there is only about a fifth. With 5 seeds and 6 cells and no multiple-comparison correction, the p-values are indicative at best.",
+      "where": "Abstract, Sec. 1, Sec. 5.2, Table 2",
+      "severity": "minor",
+      "suggestion": "Report the number of seeds with a gain per cell in the main text, state the number of tests, and use more seeds. Soften 'in every noisy setting' to match the breast cancer cells."
+    },
+    {
+      "issue": "Practical significance is not shown. The filter costs about five times the fit time and drops 2 to 4% of clean samples on clean data. The paper does not compare with cheaper alternatives such as a noise-tolerant loss or strong L2 regularization, which are the obvious competitors for a linear model.",
+      "where": "Sec. 5.4, Sec. 2 (noise-robust logistic regression)",
+      "severity": "minor",
+      "suggestion": "Add a tuned-C logistic regression and one noise-aware logistic regression baseline (for example Bootkrajang and Kaban) to show whether the filter's gain survives a stronger linear baseline."
+    }
+  ],
+  "questions": [
+    "Does the filter's gain over logistic regression persist when C is tuned by cross-validation on the noisy labels?",
+    "How does the rule compare with confident learning on the same splits in precision and in accuracy?",
+    "Does the precision stay above chance under class-dependent noise, where flipped labels can agree with a plausible second class?",
+    "Would repeating the filter for several rounds change precision or the clean-label cost?"
+  ],
+  "scores": {"soundness": 3, "presentation": 3, "contribution": 2},
+  "overall": 4,
+  "confidence": 4
+}

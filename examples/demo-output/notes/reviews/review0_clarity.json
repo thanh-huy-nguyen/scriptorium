@@ -1,79 +1,61 @@
 {
-  "summary": "The paper revisits classical cross-validated noise filtering: fit logistic regression with 5-fold cross-validation, drop every training sample whose out-of-fold prediction disagrees with its label, and refit. On digits and breast cancer with symmetric noise up to 40% and 5 paired seeds, it reports that the drop set has high precision and recall for flipped labels, that refitting recovers much of the lost accuracy (most clearly on digits), that the filter beats an untuned MLP trained on the same noisy labels, and that it costs little on clean labels. The scope and the missing comparisons with other methods are stated openly.",
+  "summary": "The paper studies a simple rule for label noise: fit logistic regression with 5-fold cross-validation, drop every training sample whose out-of-fold prediction disagrees with its label, and refit. On digits and breast cancer with symmetric noise at 20% and 40%, it reports about 71% pooled precision and high recall for flipped labels, and higher test accuracy than plain logistic regression and an untuned MLP. It reports a small cost on clean labels and states its scope openly (two small datasets, 5 seeds, one noise type).",
   "strengths": [
-    "The method is easy to follow. Section 3 gives the rule in four plain steps, and the method figure shows the same four steps with a clear toy example, including one missed flip and one wrongly dropped clean sample.",
-    "The scope is stated honestly and repeatedly: two small datasets, symmetric noise, no comparison with co-teaching or confident learning, and a clear note that 'we make no claim' against them. Weak cells are reported too (breast cancer at 40% recovers 22%, breast cancer at 20% is not significant).",
-    "The teaser carries the story well: detector quality in (a), accuracy against noise in (b), and the cost on clean labels in (c). The tables have captions that say what to take from them, and the setup defines precision, recall and 'recovered share' explicitly.",
-    "The setup is compact and sufficient to reproduce: split sizes, noise definition, the measured flip rate at nominal 40%, the MLP configuration, and the pairing of seeds."
+    "The method is easy to state and to follow: one rule, three steps, K+1 fits. Section 3 describes it as a function with inputs and outputs before the details.",
+    "The teaser shows the pipeline (noisy labels, out-of-fold drop, refit) next to the result and the precision bar. A reader gets the idea without the text.",
+    "The text is candid about scope and limits. It says where the filter does not help (clean labels, the unstable breast cancer cell, 5x fit time) and that the mechanism is an argument, not a tested explanation.",
+    "Table 2 defines precision, recall, recovered share and the test in its caption. Fig. 2 plots paired gains with seed dots, so the spread is visible.",
+    "Related work ends each paragraph by saying how the filter differs, and it states plainly that the idea is Brodley and Friedl's single-algorithm filter."
   ],
   "weaknesses": [
     {
-      "issue": "The confidence intervals and p-values in Table 1 appear to contradict each other, and the text does not explain why. For breast cancer at 20% the interval is 0.4 to 5.5 (excludes zero) but p = 0.1172. In the same table, breast cancer at 40% has a narrow interval (2.8 to 4.8) and p = 0.0037 while the per-method sd is about 9 points. The text says the intervals 'exclude zero in these three cells', which silently skips the fourth cell whose interval also excludes zero. The clean breast cancer interval ends at 0.0 with p = 0.37.",
-      "where": "Sec. 5.2, Table 1 (last four columns), Fig. 1c",
+      "issue": "The headline claims are stronger than the results beneath them, and the paper contradicts itself on this. The abstract and intro say the filter beats LR 'in all but one paired noisy run' and 'in nearly every' run, and the intro says the evidence supports the claim 'in every noisy setting'. Yet breast cancer at 20% is not significant, breast cancer at 40% has sd of about 9 points, and only a fifth of the loss is recovered there. A reader cannot tell which cells the claim covers.",
+      "where": "Abstract; Sec. 1 paragraph 4 and contributions; Sec. 4.2; Table 2",
       "severity": "major",
-      "suggestion": "State in the setup how the interval is computed (t-interval or bootstrap, confidence level) and why it can disagree with the t-test p-value. If the interval is a bootstrap over 5 seeds, say so and that it is too narrow to trust at n=5. Then fix the sentence in Sec. 5.2 so it matches every row of the table. Prefer one inference tool (the t-interval) in the table and the text."
+      "suggestion": "State the same scoped claim in the abstract, the intro and the contribution bullets: the filter clearly helps on digits at both rates, helps on breast cancer at 40% but with high variance, and is not significant at 20%. Replace 'every noisy setting' with that sentence, and drop 'all but one run' unless the abstract also names which run."
     },
     {
-      "issue": "The title and the headline sentences claim more than the evidence supports. The title says refitting 'recovers much of the lost accuracy' and the intro says it 'wins back most of the accuracy', but this holds on digits only; on breast cancer at 40% it is 22% with an sd of 9 points. The title and abstract also generalize to 'a linear model's' disagreement while the study covers one linear model (logistic regression, one C, one K) on two sklearn datasets. The title is a long sentence, not a name or a short finding.",
-      "where": "Title; abstract; Sec. 1 first paragraph",
+      "issue": "The opening claim of Sec. 4, 'finds most of the flipped labels', is carried by the pooled 71% precision, which mixes cells with different sizes and noise rates. The teaser presents 71% as one number. Recall is 79% in one cell and 98% in another, and a quarter to a third of the dropped samples are clean. The text says 'mostly' and 'most' without saying that precision at 20% on digits (64.6%) is only modestly above what the dropped fraction would suggest.",
+      "where": "Sec. 4.1; Fig. 1 panel 2; Table 2",
       "severity": "major",
-      "suggestion": "Shorten the title to the finding as the workshop reader will use it, for example 'Out-of-fold disagreement finds flipped labels in logistic regression' or the short title in the brief. Put 'on digits' next to every 'most of the lost accuracy' claim in the abstract and in the first intro paragraph, and keep the breast cancer caveat in the same sentence."
+      "suggestion": "Label the 71% in Fig. 1 as 'pooled over four noisy cells and 5 seeds'. Report the per-cell range of precision in the Sec. 4.1 text, and say what the pooled number weights. Add one sentence on what precision a random drop would give (the noise rate, 20% or 40%), so a reader sees how far above chance 65 to 76% is. The test against 50% does not show this."
     },
     {
-      "issue": "The novelty framing is inconsistent. The intro says 'we revisit' the Brodley and Friedl filter and calls it a baseline, but the contribution list says 'We propose a filter' and the figures label it 'Filter (ours)'. The method is the classical rule with logistic regression. A reader cannot tell what is new: the measurement of precision and recall, the comparison with an MLP, or the filter itself.",
-      "where": "Sec. 1 contributions, Sec. 2 last paragraph, Table 1 header, Fig. 1b legend",
+      "issue": "The comparison with the MLP is hard to read as a finding. The MLP is untuned, has no early stopping and no regularization, and it is the only nonlinear baseline. The paper's central story (a linear filter 'beats' the MLP by up to 28 points) rests on the weakest baseline, and the MLP is also not given the filtered data. The title and contribution bullet 2 lean on this win.",
+      "where": "Sec. 4.3; Contribution 2; Fig. 2 orange bars; Sec. 5",
       "severity": "major",
-      "suggestion": "Reword the second contribution to 'We evaluate the classical cross-validated filter with a single linear model and no side information', drop '(ours)' from the table and legend (use 'Out-of-fold filter'), and say in one sentence in the intro what is new relative to Brodley and Friedl (measured precision/recall against known flips, the recovered-share metric, the MLP comparison)."
+      "suggestion": "Say in the Fig. 2 caption and the Sec. 4.3 heading that the baseline is an untuned MLP. Reword the heading, e.g. 'An untuned MLP is hurt more by noisy labels than the filtered linear model'. Move the MLP win below the LR comparison in the contribution list. If the MLP trained on the filtered subset has been run, add it as one row in Table 1."
     },
     {
-      "issue": "The MLP comparison is the most prominent result in the abstract and the intro, but the reader is not given enough to judge it. The MLP is untuned, has no early stopping or regularization, and is run for 500 iterations, so it is a weak noisy-label baseline that memorizes flips. The paper also does not say that the proper comparison is MLP plus the same filter. The abstract also reports the MLP as ahead only on clean digits, a difference (-0.7) that no test in the tables supports.",
-      "where": "Abstract; Sec. 5.3; Table 2",
-      "severity": "major",
-      "suggestion": "Say plainly in Sec. 5.3 what the MLP result shows: an unregularized network trained on noisy labels degrades faster than a linear model, which is a statement about memorization, not about the filter's merit. Move the MLP below the logistic regression result in the abstract, or give it one clause. Mark the clean-digits MLP lead as an untested difference, or add its paired test."
-    },
-    {
-      "issue": "The 'recovered share' relies on a reference that the paper itself says is not a true oracle: logistic regression on clean labels. It is a ratio of 5-seed means, and for breast cancer at 20% the loss is small (about 4.4 points, sd 3.7), so the 65.8% figure has no uncertainty attached. The intro and teaser quote 68% and 22% as if they were firm.",
-      "where": "Sec. 4 'Metrics and statistics'; Sec. 5.2; Fig. 1b annotations",
+      "issue": "Several terms and cell names change between places, which costs the reader effort. Table 1 uses 'none/low/high', Fig. 1 and Fig. 2 use 0/20/40, and Table 2 uses 20%/40%. The Fig. 1 dashed line 'clean-label accuracy of filter' is drawn once across two datasets. 'Recovered share' is defined only in the Table 2 caption but is used in the text. The panel 2 icon of the model looks like a neural network although the model is logistic regression.",
+      "where": "Table 1 header; Fig. 1 panels 2 and 3; Table 2 caption; Sec. 4.2",
       "severity": "minor",
-      "suggestion": "Add a seed-bootstrap interval for the recovered share, or at least write 'of the mean gap' in the figure annotation and caption. Fix one definition of the term in the text before first use in the intro, since the intro uses 'recovers X% of the lost accuracy' before it is defined in Sec. 4."
+      "suggestion": "Use '0/20/40%' labels in all tables and figures. Draw the dashed line per dataset or drop it. Define 'recovered share' in one sentence in Sec. 4.2 or Sec. 3. Replace the network icon in Fig. 1 with a plain linear-classifier icon."
     },
     {
-      "issue": "Several terms drift between sections. Table 2 uses 'Low'/'High' noise while every other table uses 20/40, and the caption does not map them. 'Precision' is reported as 76% in the intro for digits at 40% and the range text cites 76.4% for breast cancer at 20%, which are different cells, so a reader may think the two numbers disagree. 'A quarter to a third of dropped samples are clean' is stated twice, while the table implies 23.6% to 35.4%.",
-      "where": "Table 2 column 'Noise level'; Sec. 5.1; Sec. 1 paragraph 4; Sec. 6",
+      "issue": "The method section does not give what a reader needs to reproduce or judge the filter: how disagreement is computed for multiclass digits (argmax of the multiclass softmax?), whether the folds are drawn before or after the noise, the solver, and what 'standardized' fits on (each fold or all of the training set). The recovered-share formula divides by a quantity that is near zero when noise costs little, which makes the cell comparison unstable.",
+      "where": "Sec. 3 Procedure; Sec. 3 Setup; Table 2 caption",
       "severity": "minor",
-      "suggestion": "Use '20' and '40' in Table 2. Name the cell in every quoted number in Sec. 5.1 (for example 'digits at 20%: 64.6%; breast cancer at 20%: 76.4%'). Write 'about a quarter to a third' once and point to the table."
+      "suggestion": "Add two lines to Sec. 3 on argmax disagreement, and on whether scaling is fit inside each fold. Give 'recovered' for each cell with the raw accuracy loss it divides by, or drop the column."
     },
     {
-      "issue": "Figure 1 has legibility problems. The legend of (b) sits above the panels and overlaps the '(b)' label; the 'gap won' boxes and the labels run into the right edge of the panels and the next panel; the dashed '50%' label in (a) is clipped by the bars; panel (c) has two plots under one letter, with a shared 'accuracy change' title that is hard to tell apart from 'samples dropped'. Panel (a) uses blue bars, which are not tied to any color used for the methods in (b). The panel (b) y-axes differ in tick labels, and the breast cancer panel has no y labels, so the comparison of scales is left to the reader.",
-      "where": "Fig. 1 (teaser), panels a-c",
+      "issue": "The text is hard to follow in places because of repetition and misplaced material. Sec. 4 opens with a sentence that repeats the subsection headings. The clean-label paragraph has a one-sentence orphan for breast cancer. The sentence about recomputing numbers 'with the Scriptorium pipeline' sits in the method section and is not part of the method. The contribution 'An honest account of cost and scope' describes a virtue instead of a result. Section 5 repeats the limitations and the contributions almost line by line.",
+      "where": "Sec. 3 last paragraph; Sec. 4 opening and clean-label subsection; Sec. 1 bullet 3; Sec. 5",
       "severity": "minor",
-      "suggestion": "Move the legend of (b) to its own row or below the plot, give both subpanels of (c) a common title or label them (c1)/(c2), place the '50%' label outside the bars, widen the margin to the right of the 'gap won' boxes, and add shared y tick labels in (b). Explain in the caption what the shaded box means ('gap won' = share of the logistic regression to clean gap)."
+      "suggestion": "Cut the pipeline sentence from Sec. 3 or move it to the acknowledgments. Merge the two breast cancer sentences into the clean-label paragraph. Rewrite bullet 3 as 'We measure the clean-label cost, the fit time and the failure cell'. Shorten Sec. 5 to the take-away and the limits not already stated in Sec. 2 and 4."
     },
     {
-      "issue": "The method figure's caption is long and encodes the whole example in text, and the figure has small labels ('dot = predicted', 'train on 4', 'predict 5th'). The method text does not define the symbol K in the figure ('4 folds' vs K=5), and the figure shows the toy case as one fold held out only. Step 3 shows the predicted class as a dot color but the dot and label-bar colors are close in hue, so disagreement is hard to see.",
-      "where": "Fig. 2 and caption; Sec. 3",
+      "issue": "Length and layout: the paper has two full-width tables, two figures and a dense Sec. 4 in a 4-page limit. Table 1 is shrunk with resizebox, which risks tiny type. Sec. 4 depends on three artifacts (Table 1, Table 2, Fig. 2), and Fig. 2 and Table 1 show largely the same differences.",
+      "where": "Table 1; Table 2; Fig. 2",
       "severity": "minor",
-      "suggestion": "Cut the caption to the reading instruction (colors mean classes, bar = given label, dot = predicted label, cross = dropped) and move the 'filter is not perfect' remark to one short sentence. Add '(K=5)' to step 2. Consider a bolder outline on the tiles where the dot and bar disagree."
-    },
-    {
-      "issue": "The 4-page body spends space on three wide tables and a two-page-width figure while the setup leaves open what a reader needs to interpret the result: why the noise levels are 20 and 40 only, why 5 seeds, and whether the 'dropped 50% of the training set at 40% noise' regime leaves enough samples per class on breast cancer. The discussion mentions the cost in seconds, which is a side detail, and the single timing is not in any table.",
-      "where": "Sec. 4; Sec. 5; Sec. 6 paragraph 2; Tables 1-3",
-      "severity": "minor",
-      "suggestion": "Merge Table 3 into Table 1 (one extra column pair) or move it to the supplement, and use the space to state the number of samples kept at 40% noise and a one-line reason for n=5. Drop the timing sentence or put it in a small table."
-    },
-    {
-      "issue": "Prose style: results section headings mix finding and claim well, but several sentences are hard to parse, for example the title, 'where the seed sd is large (9.0 points)', and 'This is an observed trend for one untuned MLP, and we run no test on it', which hedges in the middle of the results. The citation of Zhang et al. as a 'may explain' is speculation placed inside the results.",
-      "where": "Sec. 5.2 paragraph 2; Sec. 5.3 last sentences",
-      "severity": "minor",
-      "suggestion": "Move the memorization remark to the discussion, keep Sec. 5.3 to what was measured, and split the long sentences."
+      "suggestion": "Check the compiled page count with references excluded and check Table 1 type size. If space is short, drop Fig. 2 and put the paired differences with CIs as one row block in Table 1, or keep Fig. 2 and drop the corresponding text numbers."
     }
   ],
   "questions": [
-    "How are the confidence intervals in Table 1 and Table 3 computed, and why does breast cancer at 20% have an interval that excludes zero while the paired t-test gives p = 0.12?",
-    "What is new compared with the Brodley and Friedl filter with a linear model: only the measurement of precision and recall and the MLP comparison?",
-    "How many samples per class remain after dropping 44-50% of the training set at 40% noise, and is the breast cancer sd of 9 points driven by one or two seeds?",
-    "Would the same filter applied to the MLP, or an MLP with early stopping or weight decay, change the conclusion of Sec. 5.3?",
-    "Does the high precision persist under class-dependent noise, where flips are not uniform and the other folds may agree with the flipped label?"
+    "Is the 71% precision in Fig. 1 pooled by samples or by runs, and how does it compare with a random drop at the same rate?",
+    "Which noisy run does the abstract's 'all but one' refer to, and is it breast cancer at 20%?",
+    "How does disagreement work for the 10-class digits problem: is it the argmax of the softmax, and does the folding respect the noise draw?",
+    "Does an MLP trained on the filtered subset close the gap on clean data, or is the clean-data tie a property of the model?"
   ],
   "scores": {
     "soundness": 3,

@@ -1,92 +1,75 @@
 {
-  "summary": "The paper measures the classical out-of-fold noise filter (5-fold logistic regression, drop samples whose out-of-fold prediction disagrees with the label, refit) on digits and breast cancer under symmetric label noise. It reports high precision and recall for flipped labels, a recovered share of the accuracy gap that is large on digits and smaller on breast cancer, a small cost on clean labels, and a sanity-check comparison against an untuned MLP. It states throughout that this is a measurement in one setting and not a ranking.",
+  "summary": "The paper measures the 1999 single-algorithm cross-validated filter (5-fold out-of-fold logistic regression, drop disagreements, refit) on digits and breast cancer under 20% and 40% symmetric noise, with 5 seeds. It reports that dropped samples are flipped much more often than the noise rate, that the refit beats logistic regression in three of four noisy cells, and that an untuned MLP degrades much more. Clean-label cost is below test resolution.",
   "strengths": [
-    "The scope is stated plainly and repeatedly: two datasets, symmetric noise, untuned C and K, no comparison with other noise-robust methods. A reader never has to guess what is not claimed.",
-    "The method is described in four steps with a clear schematic (Fig. 2). The legend in the caption (bar = given label, dot = out-of-fold prediction, flag = flipped, cross = dropped) lets the figure be read without the text.",
-    "Terms are defined where first used: recovered share, precision and recall of the drop set, and the fact that the share is a ratio of means with no interval. Table captions say what the columns are and what n is.",
-    "Negative and weak results are reported in the same voice as the positive ones: 22% recovery on breast cancer at 40% noise, p = 0.12 at 20% noise, and the dropped clean samples.",
-    "The paper is short and its section order follows the argument: detector, then refit, then clean-label cost, then sanity check."
+    "The scope is stated plainly: the paper says the rule is not new, lists what was not run, and the abstract and discussion carry the same caveats.",
+    "The central question (are out-of-fold disagreements flipped more often than a random drop would be?) is clear and is answered directly by precision against the realized noise rate.",
+    "The method section is short and complete: input, output, three steps, cost of K+1 fits, and no hidden thresholds. A reader could reimplement it from one page.",
+    "The teaser shows the pipeline and the headline result in one figure, and Fig. 2 shows paired gains with seed dots, which makes the spread visible.",
+    "Results subsection headings state the finding, and the MLP comparison is explicitly kept from being read as 'filtering beats deep nets'."
   ],
   "weaknesses": [
     {
-      "issue": "The abstract is one dense block of about 12 sentences. It mixes headline findings with p-value details, confidence-interval endpoints and caveats, so the main message is hard to find. The first sentence names the problem, but the contribution (a measurement of a known filter) only appears midway.",
-      "where": "Abstract",
+      "issue": "The text refers to table content that is not in the tables. Sec. 5.1 says Table 2 reports 'precision next to [the realized noise rate] and the lift over it', and Sec. 5.2 points to a 'loss column' in Table 2. Table 2 has neither (columns: Dropped, Precision, p, Recall, Recovered). The reader cannot check the paper's main claim (precision vs. base rate) from the table.",
+      "where": "Sec. 5.1 and 5.2; Table 2 (table_drops.tex)",
       "severity": "major",
-      "suggestion": "Cut to about 6 sentences: problem, the rule in one sentence, the three findings (high precision and recall, large recovery on digits and small on breast cancer, small cost on clean labels), and one scope sentence. Move the interval endpoints (-0.9 to 0.3, 22%, the 20% non-significance) to the results. Avoid separate sentences that restate the same caveat twice."
+      "suggestion": "Add columns 'Realized noise (%)', 'Lift' (precision/noise), and 'LR loss (points)' to Table 2, or rewrite the text to match the table. Drop 'Dropped' count or convert it to a percent of training set."
     },
     {
-      "issue": "Numbers are repeated heavily across the abstract, introduction, figure caption, results and discussion (22%, -0.2/-0.1, 3.5%/1.9%, 13.2, 68%). The intro's fourth paragraph and the results subsections read as a second copy of the table. This costs space in a 4-page paper and buries the one-sentence takeaway of each section.",
-      "where": "Sec. 1 paragraphs 1 and 4; Sec. 4.1 to 4.3; Sec. 5",
+      "issue": "Inconsistent statistical framing. The setup says 'we report no test against a fixed level', yet Table 2 reports one-sample t-tests of precision against 50%. A 50% reference is also not the right null: the stated null is the realized noise rate (20 or 40%), and 50% is below the 64.6% precision at 20% only in a way that is irrelevant to the claim. The 'p vs 50%' column therefore confuses the message.",
+      "where": "Sec. 4 'Metrics and statistics'; Table 2 caption and p column",
       "severity": "major",
-      "suggestion": "Keep one headline number per claim in the intro (68% on digits, 22% on breast cancer) and point to Table 1 and Fig. 1 for the rest. In the results, open each subsection with the finding and cite the table. Delete number lists that the tables already show (for example the precision range, the sd values and the per-cell recall in Sec. 4.1)."
+      "suggestion": "Either test precision against the per-seed realized noise rate (paired) and say so, or remove the 50% test and the contradictory sentence. State once what null each p-value tests."
     },
     {
-      "issue": "The introduction opens with the finding before it says what the task is or why current fixes fail, and it refers to 'the recovered share' (defined in a parenthesis in the first paragraph) before the rule is described. The caveats (small, near-linear data; symmetric flips are the most favorable case) are placed in the middle of the motivation paragraph, which breaks the flow from problem to idea. The contribution list repeats the previous paragraph, and bullets 1 and 2 overlap.",
-      "where": "Sec. 1, paragraphs 1 to 5 and the contribution list",
+      "issue": "The prose is hard to follow in the results because it is vague where numbers are available, and in places contradicts itself. 'Recovers a minor share' (intro) vs 'about a fifth' (results); breast cancer 40% is called a win 'significantly in all seeds' yet 'unstable' and 'partial'; 'precision only moderately above the noise rate' is not quantified; 'a quarter to a third of dropped samples are clean' is not directly visible in the table. Readers must reconcile these themselves.",
+      "where": "Sec. 1 para 4; Sec. 5.1 and 5.2",
       "severity": "major",
-      "suggestion": "Order the intro as: label noise hurts and the usual fixes need side information; the rule in one sentence; the finding; the scope caveat. Define the recovered share once, in Sec. 3 or 4, and keep the intro parenthesis short. Merge bullets 1 and 2 into one 'we measure' bullet, so that two or three bullets remain, each starting with a verb."
+      "suggestion": "Give one consistent phrasing per cell and cite the exact table column. Add a one-line per-cell summary (e.g., a small table or caption sentence: gain, p, recovered, precision lift) so the four-cell story reads at once. Replace 'minor share' with the number."
     },
     {
-      "issue": "The recovered share is the central metric, but it is explained in the intro in a long parenthesis and its formula never appears as an equation. Its denominator (clean minus noisy logistic regression) makes it unstable on breast cancer at 20% noise, which the text admits, yet the 65.8% figure is still quoted in the main results and the figure box shows 22% and 68% without an interval. Whether a reader should compare 68% and 22% is unclear, since the ratio has no uncertainty.",
-      "where": "Sec. 1 para 1; Sec. 4.2 para 2; Fig. 1b boxes",
+      "issue": "Hedging and negation dominate the prose (abstract, Sec. 5, Sec. 6). Roughly half of the abstract is limitations ('no comparison with other filters', 'not significant', 'below resolution'), and Sec. 6 spends its second paragraph on a long list of things not run. The main insight gets lost, and the abstract is a dense single block of about 200 words.",
+      "where": "Abstract; Sec. 6 paragraph 2",
       "severity": "major",
-      "suggestion": "Add one displayed equation for the recovered share in Sec. 3 or 4. Add a column for it to Table 1 (with a bootstrap interval over seeds if it can be computed from the existing runs), or state in the Fig. 1 caption that it has no interval. Say clearly that the 20% breast cancer share is ill-conditioned when you first quote it."
+      "suggestion": "Cut the abstract to problem, rule, finding, one honest caveat. Move the list of untested items into a short limitations paragraph framed as next steps (class-dependent noise, confident learning, random-drop control)."
     },
     {
-      "issue": "Fig. 1 is crowded and has layout flaws. The panel (a) legend sits above panel (b) and overlaps its label area. The x-axis group labels 'digits' and 'breast cancer' in (a) are not clearly aligned with the bar pairs. In (b) the '22% of mean gap' annotation overlaps the end of the lines and the band. In (c) the y-label 'points' collides with the preceding panel, and the second sub-panel (% dropped) has no panel letter of its own. Panel (c) mixes two quantities that have different axes. The y-axes of the breast cancer panel in (b) have no tick labels.",
-      "where": "Fig. 1 (teaser)",
-      "severity": "major",
-      "suggestion": "Move the legend of (a) inside the plot or above its own axes, label the dataset groups under the bars with a bracket, shift the annotations in (b) away from the data, put tick labels on both sub-panels of (b), and label the two sub-panels of (c) as (c) and (d) or add a shared title. Say in the caption that the dashed line in (b) is the clean-label accuracy of logistic regression (it currently says only that it is 50% in (a))."
-    },
-    {
-      "issue": "The 'MLP sanity check' has an unclear purpose. The paper calls it a check on memorization and 'not a headline', yet it has its own results subsection, its own table, one third of the teaser (panel b) and a line in the abstract and the contributions. A reader cannot tell what the MLP comparison is supposed to show, given that the authors themselves say the fair comparison (early stopping, MLP on filtered data) was not run. The subsection heading also states a result that the text then undermines.",
-      "where": "Sec. 4.4, Table 3, Fig. 1b, abstract, contribution 3",
-      "severity": "major",
-      "suggestion": "Either state in one sentence at the start of Sec. 4.4 what hypothesis the MLP tests (the memorization of flipped labels by an unregularized network) and drop the claim from the abstract and the contribution list, or move Table 3 to an appendix and keep a two-sentence mention in the main text. Rename the subsection so that the heading matches the caveat, for example 'An untuned MLP is hurt more by noise'."
-    },
-    {
-      "issue": "Several statements make the reader work to check them. 'Between a quarter and a third of the dropped samples are clean' is derived from precision (64.6 to 76.4 percent), which is not shown as a clean share in any table. 'Precision is well above the flip rate that random dropping would give' is compared with the flip rate in the prose, but Table 2 tests against 50%, a different baseline. The detection table uses 'Low' and 'High' for noise levels, while the other tables use 20 and 40. Also, the claim that high precision depends on class count (digits with ten classes) is offered, but breast cancer at 20% has higher precision than digits at 20%, which contradicts it.",
-      "where": "Sec. 4.1; Table 2 caption and rows; Sec. 5 para 2",
+      "issue": "Teaser (Fig. 1) problems. In panel 2 the 'clean 24%' label is clipped/overlapping the bar edge. Panel 1 shows 'flipped tag' boxes that are only schematic, and the panel 3 legend says 'Filter (ours)' while the text says it is a 1999 method, not ours. The dashed 'clean-label accuracy of filter' line is a weaker reference than the logistic regression clean accuracy.",
+      "where": "Fig. 1, panels 1-3; Table 1 'Filter (ours)'",
       "severity": "minor",
-      "suggestion": "Use 20 and 40 in Table 2 and add the flip rate as a column, so that the correct chance level (the flip rate) sits next to precision. Replace the test against 50% by the flip rate or explain why 50% is used. Either remove the class-count remark or show why it fits the numbers."
+      "suggestion": "Widen the bar label or move 'clean 24%' outside. Rename the method 'Out-of-fold filter' in the figure, Table 1 and caption to match the text. State in the caption how the shown digit examples were chosen."
     },
     {
-      "issue": "The setup section reads as a list of caveats rather than a compact protocol. The Methods paragraph mixes what was run with a long list of what was not run, and the Metrics paragraph packs in seven statistical points in one block. The fact that the filter refits on only about half of the data at 40% noise is an important confound for the 'recovery' claim, but is hidden in the middle of this paragraph.",
-      "where": "Sec. 4 'Methods' and 'Metrics and statistics' paragraphs",
+      "issue": "The tables are placed at the end of Sec. 5 as full-width floats after all the text, and Fig. 2 appears before the section's claims it supports. Table 1 caption includes interpretation ('The filter loses little on clean data and gains most...') and bolds ties inconsistently (LR and MLP bold on clean breast cancer, filter not, with no tie rule for 96.6 vs 96.7).",
+      "where": "Table 1 caption; Sec. 5 layout",
       "severity": "minor",
-      "suggestion": "Keep to what was run in Sec. 4, and move the list of missing baselines to the discussion where it already appears. Give the kept-set size confound its own sentence, or a column in Table 2, next to the dropped share. Split the statistics paragraph into 'what is reported' and 'caveats about the tests'."
+      "suggestion": "Put Table 1 near the first results subsection, shorten captions to what is shown and how to read it, and state the bolding rule or bold only significant best."
     },
     {
-      "issue": "The text defines 'suggestive' for gains where the interval excludes zero but the t-test does not, but the same paragraph uses that for one cell (breast cancer at 20%) and elsewhere reports that interval excludes zero in 'these three cells' without defining the interval method (percentile bootstrap over five differences). A bootstrap over five values is hard to interpret, and the reader is not told which of CI and p to trust.",
-      "where": "Sec. 4 'Metrics and statistics'; Sec. 4.2 para 1",
+      "issue": "Notation and naming drift. The method is called 'out-of-fold filter', 'single-algorithm filter', 'out-of-fold disagreement filter' and 'Filter (ours)'. 'Recovered' is defined only in a table caption and is called 'our own definition', yet it is central. 'Realized noise rate' appears in the setup without a definition of how it differs from 20/40%. Eq. (1) is the only equation, and the sets S and D are not used again.",
+      "where": "Secs. 1, 3, 4; Table 2 caption",
       "severity": "minor",
-      "suggestion": "State the interval method in one clause in Sec. 4 (percentile bootstrap, 95%) and use the t-based p-value as the primary decision rule in all sections. Put a marker on the cells in Table 1 that are not significant."
+      "suggestion": "Pick one name and use it everywhere. Define 'recovered share' and 'realized noise rate' in Sec. 4 with a formula, not in a caption."
     },
     {
-      "issue": "Small presentation inconsistencies. The title in main.tex says 'in logistic regression', which is narrower than the filter's role as a baseline for data cleaning. The method figure is Fig. 2 but the text refers to the teaser first, and the figure order is not obvious in the text. Precision at digits 40% is 76% in the intro and 76.1% in the table, and the 'Drop what the model disagrees with' framing is not present in the paper. Several sentences use em-dash-like constructions and phrases such as 'The limits are clear'. Table 1 shows p-values to four decimals but CIs to one decimal. The 'Scriptorium example' tag in the title block should be removed.",
-      "where": "Title block; Sec. 1; Table 1",
+      "issue": "Odd or misplaced sentences hurt the reading: the Setup ends with an advertisement for the Scriptorium pipeline, the title ('...A Small Measurement Study') is not the catchy finding, and the intro's last paragraph before the figure repeats the abstract's results. The related work paragraphs each end with 'we do not compare against X', which repeats Sec. 6.",
+      "where": "Sec. 4 last sentence; title; Sec. 1 para 4; Sec. 2",
       "severity": "minor",
-      "suggestion": "Align the title with the paper's claim, round p-values consistently (for example p < 0.001), reference Fig. 2 once near the first mention of the rule, and remove the placeholder tag."
+      "suggestion": "Move the tooling statement to a footnote or acknowledgment. Make the title state the finding. State non-comparisons once, in Sec. 6."
     },
     {
-      "issue": "Related work is three short paragraphs, mostly a list of method families. It does not say how the earlier filtering work (Brodley and Friedl) differs in its setting from this measurement, or why measuring this rule with logistic regression is useful to a reader who knows confident learning.",
-      "where": "Sec. 2",
+      "issue": "Fig. 2 mixes two baselines with very different ranges, so the MLP bars (up to about 28 points) squash the logistic regression gaps that carry the paper's real claim. The caption does not say what the confidence level of the intervals is, and the 5-seed CIs are asymmetric in appearance.",
+      "where": "Fig. 2 and caption",
       "severity": "minor",
-      "suggestion": "Open the third paragraph with the relation to confident learning (a threshold-based generalization of the same out-of-fold idea) and end each paragraph with a single 'unlike ours' sentence. Shorten the first paragraph."
+      "suggestion": "State the CI level and method in the caption. Consider showing only the logistic regression gap in the main figure, and the MLP gap in a table, or use a shared y-axis break."
     }
   ],
   "questions": [
-    "How should a reader compare the recovered shares of 68% and 22% when they have no interval and the breast cancer denominator has a seed sd of 9 to 10 points?",
-    "At 40% noise the filter refits on about half of the data. Would logistic regression trained on a random half of the noisy data, or with a smaller C, give a similar gain?",
-    "Why is the chance level for precision 50% in Table 2 and not the flip rate?",
-    "Does the MLP comparison add to the claim about the filter, or is it only meant to show that memorization hurts?",
-    "Which part of the abstract is meant to be the single takeaway for a workshop reader?"
+    "What is the exact null for the precision test in Table 2, and why 50% rather than the realized noise rate?",
+    "Is 'recovered share' computed per seed and then averaged, or from mean accuracies? Does it explode when the loss is small?",
+    "How does the filter's gain on breast cancer at 20% noise compare to dropping the same number of random samples?",
+    "Why is precision lower at 40% than at 20% on breast cancer but higher on digits? A sentence of explanation would help the reader."
   ],
-  "scores": {
-    "soundness": 3,
-    "presentation": 3,
-    "contribution": 2
-  },
+  "scores": {"soundness": 3, "presentation": 3, "contribution": 2},
   "overall": 5,
   "confidence": 4
 }

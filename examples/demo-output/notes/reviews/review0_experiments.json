@@ -1,0 +1,79 @@
+{
+  "summary": "The paper studies one rule: fit a cross-validated logistic regression on noisy labels, drop training samples whose out-of-fold prediction disagrees with the given label, and refit. On digits and breast cancer with 20% and 40% symmetric noise (5 seeds), it reports that dropped samples are mostly flipped (about 71% precision, 79-98% recall), that the refit model beats plain logistic regression and an untuned MLP, and that it costs a fraction of a point on clean labels. The authors state the scope is small and make no claim about deep networks or large data.",
+  "strengths": [
+    "The claims are scoped honestly. The abstract, Sec. 4 and Sec. 6 say what was not run (no confident learning, no ablations, no tuned MLP), so a reader knows how far to trust the result.",
+    "Seeds fix the split, noise draw and folds for all methods, so comparisons are paired. The paper reports paired CIs, per-seed dots (Fig. 2), and sd in Table 1, which suits a 5-seed study.",
+    "The paper measures the mechanism directly with precision and recall of the dropped set against the known flips (Table 2), rather than inferring it from accuracy alone.",
+    "Unfavorable cells are reported, not hidden: the unstable breast cancer 40% cell, the non-significant breast cancer 20% gain, the clean-label cost, the MLP win on clean data, and the 5x fit time."
+  ],
+  "weaknesses": [
+    {
+      "issue": "The precision test uses the wrong null. Precision is tested against 50% as 'chance', but a random drop would have precision equal to the noise rate (20% or 40%). The 50% null is also arbitrary for 10-class digits. The test therefore says little about whether disagreement is informative. At 20% noise on digits, 65% precision against a 20% base rate is a much stronger statement than the paper makes. At 40% on breast cancer, the lift is smaller than the raw percentages suggest.",
+      "where": "Sec. 5.1, Table 2 (p vs 50% column), Sec. 4 'Metrics and statistics'",
+      "severity": "major",
+      "suggestion": "Test or report precision against the realized flip rate in each cell (lift over base rate). Or add a random-drop control that drops the same number of samples. Replace 'chance' with the correct baseline and drop the 50% column or explain it."
+    },
+    {
+      "issue": "The baseline set cannot support the headline of a useful filter. Beating plain logistic regression is expected for any filter. Beating an untuned MLP (one hidden layer, no weight decay, no early stopping) is a weak comparison, and the abstract and Fig. 1 give it equal prominence with logistic regression. The natural controls are missing: the MLP trained on the filtered set, logistic regression with stronger regularization (C swept), and confident learning or a simple small-loss filter. All of these are cheap on sklearn datasets of this size.",
+      "where": "Sec. 4 'Models', Sec. 5.3, Abstract, Fig. 1, Sec. 6 limitations",
+      "severity": "major",
+      "suggestion": "Add at least (i) a C sweep for plain logistic regression, (ii) the MLP trained on the filter's kept set, and (iii) a cleanlab-style confident-learning baseline with the same folds. If time prevents this, say in the abstract and Sec. 5.3 that the MLP is a deliberately untuned reference, and shrink its prominence in the claims."
+    },
+    {
+      "issue": "The filter's gain may come from the cross-validation and the extra regularization effect of subsampling rather than from finding flipped labels. No ablation separates these. The mechanism ('why disagreement marks a flipped label') is untested, as the paper admits. An oracle control (drop exactly the true flips, then refit) and a random-drop control (drop the same count at random) would show how much of the gain is attributable to targeting, and how much headroom is left.",
+      "where": "Sec. 3 'Why disagreement marks a flipped label', Sec. 5.2, contribution 1",
+      "severity": "major",
+      "suggestion": "Add oracle-clean and random-drop rows to Table 1. Then 'recovered share' has a ceiling and the claim 'finds the flipped labels' has a control."
+    },
+    {
+      "issue": "Only two small, easy datasets and one noise type are used, and both are low-dimensional, near-linearly separable tabular or 8x8 digit data. This is the setting where a linear model's out-of-fold predictions are most reliable. The title and Sec. 3 ('A linear model's out-of-fold disagreements find the flipped labels') state a general result. A workshop paper on experiments is expected to show at least some variation in difficulty. Class-dependent noise, where a linear model's disagreements follow the confusable pairs, is the obvious case where the rule could fail, and it is only listed as future work.",
+      "where": "Sec. 4, Sec. 6, title, abstract",
+      "severity": "major",
+      "suggestion": "Add one or two datasets with harder, less linearly separable structure (e.g., another sklearn or OpenML tabular set, or fashion-MNIST features) and an asymmetric or class-dependent noise setting, using the same code. If not possible, narrow the title and the Sec. 3 claim to 'on two near-linearly separable datasets under symmetric noise'."
+    },
+    {
+      "issue": "Statistical support is thin and inconsistently reported. With n=5 seeds and 6 cells x 2 baselines, there are many t-tests and no multiple-comparison correction. The breast cancer 40% cell has sd about 9 points (the filter's mean of 84.0 has about the same spread as logistic regression's 80.4), and the t-test relies on normality of 5 samples. The 'trend' tests compare gains across noise levels using the same seeds, which are not independent of the main tests. The cited win counts (19 of 20, 20 of 20) pool dataset and seed in a way that treats the 10 runs per dataset as independent. The text also cites Table 2 for the non-significant trend (Sec. 5.2) although that table has no such test.",
+      "where": "Sec. 4 'Metrics and statistics', Sec. 5.2, Fig. 2, Table 2",
+      "severity": "minor",
+      "suggestion": "Increase seeds to 20 or more (the cost is tiny at this scale), which would also resolve the breast cancer 40% instability. Report adjusted p-values or note that p-values are descriptive. Fix the table cross-reference."
+    },
+    {
+      "issue": "The accuracy gains are presented at the level of means over seeds, but the test splits are tiny for breast cancer (171 samples, so one sample is 0.58 points). Differences of 0.1 to 0.35 points on clean data are below a single test sample. The 'costs a fraction of a point' claim and the clean-data CI rows are close to meaningless at this resolution. Both datasets also reuse one 70/30 split protocol with only 5 resamples.",
+      "where": "Sec. 5.4, Table 1, abstract",
+      "severity": "minor",
+      "suggestion": "Report the clean-label cost with a CI and state it is within one test sample on breast cancer. Use repeated splits or more seeds to tighten it."
+    },
+    {
+      "issue": "The 'recovered share' metric is the authors' own definition and is unstable when the denominator is small (logistic regression loses only 4.4 points on breast cancer at 20%). Its reading ('regains most of the loss') varies from 22% to 78% across cells, and the wording ('in three of four noisy cells') glosses over a cell where it fails. It is reported from means only, with no uncertainty.",
+      "where": "Sec. 5.2, Table 2 (Recovered column)",
+      "severity": "minor",
+      "suggestion": "Add per-seed uncertainty or drop the metric in favor of the paired accuracy difference already in Fig. 2."
+    },
+    {
+      "issue": "Key setup details are missing for a reader to reproduce or interpret the results. Not stated: the noise model for the multiclass case (flip to a uniform other class?), how folds treat the flipped labels (stratified on noisy labels), whether the filter ever drops a whole class, the MLP's solver and regularization, whether features are standardized for the MLP, and how time was measured. The class counts after dropping, and what happens to classes with few samples in the breast cancer 40% case, would explain the instability.",
+      "where": "Sec. 4 'Data and noise' and 'Models', Sec. 3",
+      "severity": "minor",
+      "suggestion": "Add two or three sentences with these details. Report class balance of the kept set for the unstable cell and a per-seed breakdown of it, since this cell drives the largest variance."
+    },
+    {
+      "issue": "Presentation of the evidence is uneven: Fig. 2 duplicates the information in Table 1 (the gains are the table's differences), while the quantity the paper claims to study, precision and recall per seed, has no figure. The sentence about the Scriptorium pipeline in Sec. 3 does not belong in the method. Several phrases ('every test against chance level is significant', 'in every noisy setting we ran') overstate what 20 runs on two datasets show. The final one-line paragraph of Sec. 6 (dropped set passed to a reviewer) is untested speculation.",
+      "where": "Sec. 3 last paragraph, Sec. 5.1, Sec. 6, Fig. 2",
+      "severity": "minor",
+      "suggestion": "Replace Fig. 2 or fold it into Table 1, and use the space for a precision/recall-vs-noise plot with per-seed points. Move the pipeline note to a footnote or acknowledgments, and cut the untested speculation."
+    }
+  ],
+  "questions": [
+    "What is the precision of a random drop of the same size in each cell, and how much of the accuracy gain survives a random-drop control?",
+    "How does the filter compare to confident learning and to logistic regression with a tuned C on the same splits?",
+    "Does the MLP trained on the filtered set also recover, and is the gap to the filtered linear model then small?",
+    "On breast cancer at 40% noise, what drives the 9-point sd: a few seeds where the realized noise exceeds 40%, or where the filter drops a large share of one class?",
+    "What happens under class-dependent noise, where flipped labels follow a structure that a linear model might itself learn?"
+  ],
+  "scores": {
+    "soundness": 2,
+    "presentation": 3,
+    "contribution": 2
+  },
+  "overall": 4,
+  "confidence": 4
+}

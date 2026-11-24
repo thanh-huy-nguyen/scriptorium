@@ -98,21 +98,21 @@ def banner(w=10.0, h=3.2, dpi=200, name="banner.png", tagline=True):
     ax.text(0.58, h - 1.72, "A team of agents writes your paper from your repository.", fontfamily=SERIF,
             fontsize=13.5, color=BRASS, va="center", style="italic")
     lines = ["Every number recomputes from your data.", "Every citation is fetched and checked.",
-             "Every hand-off between 25 agents is checked in code."]
+             "Every hand-off between 30 agents is checked in code."]
     for i, s in enumerate(lines):
         yy = h - 2.15 - 0.3 * i
         ax.add_patch(Circle((0.66, yy), 0.05, fc=BRASS, ec="none", zorder=4))
         ax.text(0.82, yy, s, fontfamily=SERIF, fontsize=11.5, color=LILAC, va="center")
     # the team, as a row of numbered seals feeding the paper card
-    names = ["discovery", "literature", "story", "visuals", "writing", "checking", "review", "release"]
-    x0, y0, dx = 6.71, h - 0.38, 0.34
+    names = ["discovery", "literature", "venue", "story", "visuals", "writing", "checking", "review", "finish"]
+    x0, y0, dx = 6.37, h - 0.38, 0.34
     for i, nm in enumerate(names):
         cx = x0 + i * dx
-        ax.add_patch(Circle((cx, y0), 0.1, fc=PURPLE if i < 6 else OXBLOOD, ec=BRASS, lw=0.9, zorder=5))
+        ax.add_patch(Circle((cx, y0), 0.1, fc=PURPLE if i < 7 else OXBLOOD, ec=BRASS, lw=0.9, zorder=5))
         ax.text(cx, y0, str(i + 1), fontfamily=SERIF, fontsize=7, color=PARCH, ha="center", va="center", zorder=6)
         if i:
             ax.plot([cx - dx + 0.1, cx - 0.1], [y0, y0], color=BRASS_DK, lw=0.9, zorder=4)
-    ax.text(x0 - 0.18, y0, "eight teams", fontfamily=SERIF, fontsize=9, color=LILAC, ha="right", va="center",
+    ax.text(x0 - 0.18, y0, "nine teams", fontfamily=SERIF, fontsize=9, color=LILAC, ha="right", va="center",
             style="italic")
     paper_card(ax, 5.55, 0.34, 3.95, 2.3)
     fig.savefig(OUT / name, dpi=dpi, facecolor=NIGHT)
@@ -128,7 +128,7 @@ def pipeline(dpi=200):
     fig, ax = canvas(w, h, dpi, "white")
     phases = [
         ("1", "Understand", [("Discovery", "scout, experimentalist, results analyst, statistician"),
-                             ("Literature", "searcher, readers in parallel, librarian")],
+                             ("Literature and venue", "searcher, readers, librarian, venue readers, analyst")],
          ["setup quotes its source file", "verdicts match their p-values", "only papers a search returned"]),
         ("2", "Plan", [("Story", "cartographer, architects, outliner, terminologist"),
                        ("Visuals", "figure planner, plot maker, diagram artist, critic, tables")],
@@ -137,7 +137,7 @@ def pipeline(dpi=200):
                         ("Checking", "claim auditor, citation auditor, typesetter")],
          ["PaperAnchor at every edit", "flagged lines must change", "citations match the paper"]),
         ("4", "Review", [("Review", "venue reviewers, area chair, reviser"),
-                         ("Release", "arXiv bundle, HTML report")],
+                         ("Finish", "compliance, proofreaders, layout inspector")],
          ["kept only if the score holds", "else rolled back", "every stage in git history"]),
     ]
     pw, gap, x = 2.16, 0.3, 0.19
@@ -186,7 +186,7 @@ def social():
             va="center", style="italic")
     ax.text(0.58, 1.25, "from your research repository.", fontfamily=SERIF, fontsize=15, color=BRASS, va="center",
             style="italic")
-    ax.text(0.58, 0.72, "25 agents  ·  Numbers recompute  ·  Citations checked", fontfamily=SERIF,
+    ax.text(0.58, 0.72, "30 agents  ·  Numbers recompute  ·  Citations checked", fontfamily=SERIF,
             fontsize=11, color=LILAC, va="center")
     fig.savefig(OUT / "social_preview.png", dpi=200, facecolor=NIGHT)
     plt.close(fig)
