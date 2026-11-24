@@ -212,6 +212,17 @@ class Inspect(S.Stage):
                            + "\n- ".join(items))
             t.label += "-layout"
             out.append(t)
+            # a figure's caption, printed width and placement live in the section that includes it, not the script
+            sec = next((p for p in sorted(cfg.paper.glob("*.tex"))
+                        if re.search(r"\\includegraphics(\[[^\]]*\])?\{figures/" + re.escape(fid) + r"(\.\w+)?\}",
+                                     p.read_text())), None)
+            if sec is not None:
+                out.append(Task("line_editor", f"layout-caption-{fid}", S.context(cfg) + (
+                    f"Task: line-edit paper/{sec.name} for figure `{fid}`, whose image its maker is redrawing now. The "
+                    "layout inspector found these problems on the printed page:\n- " + "\n- ".join(items) +
+                    f"\nFix the parts that live in paper/{sec.name}: the caption (it must describe the figure as drawn: "
+                    f"read paper/figures/{fid}.py and .scriptorium/figures/{fid}.md), the \\includegraphics width, and "
+                    "where the figure sits relative to its first mention. Edit only that file.")))
         for tid, items in by_tab.items():
             out.append(Task("tablesetter", f"layout-table-{tid}", S.context(cfg) + (
                 f"Task: the layout inspector found problems with table `{tid}` on the printed page:\n- "

@@ -63,6 +63,7 @@ class ProofTest(unittest.TestCase):
                          "pass")
         logs = {p.name for p in (self.tmp / ".scriptorium" / "logs" / "inspect").glob("*.json")}
         self.assertIn("figure-fig_acc-layout.json", logs, "the figure went back to its maker")
+        self.assertIn("layout-caption-fig_acc.json", logs, "and its caption to the section's line editor")
 
     def test_a_rewrite_is_refused_and_rolled_back(self):
         os.environ["FAKE_REWRITE"] = "1"
