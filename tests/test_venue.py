@@ -89,6 +89,14 @@ class VenueTest(unittest.TestCase):
                                                      "outline.json").read_text())["prompt"]
                       if (self.tmp / ".scriptorium" / "logs" / "outline").exists() else "venue_style.md")
 
+    def test_playbook_may_name_exemplars_by_number(self):
+        cfg = self.init("--venue", "iccv")
+        self.run_cli("run", "--pause-at", "venuestyle")
+        heads = ("Framing", "Figure 1", "Contributions", "Emphasis", "Structure", "Results", "Tone")
+        (self.tmp / ".scriptorium" / "venue_style.md").write_text(
+            "".join(f"## {h}\n\nAs exemplars 01, 02 and 03 do.\n\n" for h in heads))
+        self.assertEqual(V.VenueStyle("venuestyle").validate(cfg), [])
+
     def test_invented_quotes_are_rejected(self):
         cfg = self.init("--venue", "iccv")
         self.run_cli("run", "--pause-at", "venueread")
@@ -98,6 +106,11 @@ class VenueTest(unittest.TestCase):
         d["quotes"].append("A sentence this paper never wrote.")
         p.write_text(json.dumps(d))
         self.assertTrue(any("not in the paper" in e for e in V.note_problems(cfg, ex)))
+
+    def test_quotes_match_despite_pdf_ligatures_and_hyphens(self):
+        text = "Both MU- and NL-based modules serve as plug-and-play regu-\nlarizers for e\ufb03cient training."
+        self.assertIn(V._norm("serve as plug-and-play regularizers for efficient training"), V._norm(text))
+        self.assertIn(V._norm("Both MU- and NL-based modules"), V._norm(text))
 
     def test_no_study_for_other_venues(self):
         cfg = self.init()
