@@ -140,7 +140,7 @@ After editing, an auditor checks every claim sentence against the ledger, and th
 sentence it flags.
 
 **Figures come from code.** Each figure is a script that reads recipe values, drawn at its print width in the house
-style (`scriptorium themes` shows the three themes). The figure lint checks text size, overlaps, contrast, colour-blind
+style (`scriptorium themes` shows the six themes: harmonized pairs such as teal and rose, navy and amber, forest and coral, where your method takes the first colour and the strongest comparison its partner). The figure lint checks text size, overlaps, contrast, colour-blind
 safety and that your method is always the accent colour; a vision critic then sends weak figures back to their maker.
 
 **Your data stays read-only.** Pipeline agents can edit only `paper/` and `.scriptorium/`; a hook refuses any other

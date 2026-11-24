@@ -42,7 +42,7 @@ python = ""                   # interpreter for recipes and figure scripts; the 
 # default = "sonnet"
 
 [figures]
-theme = "academia"            # academia | nature | minimal; compare them with `scriptorium themes`
+theme = "harbor"              # harbor | ink-amber | forest-coral | academia | nature | minimal; see `scriptorium themes`
 # critic_rounds = 2           # times a figure critic may send a figure back to its maker
 
 [lock]
@@ -101,7 +101,7 @@ class Config:
     contest_n: int = 3                    # candidates for the abstract and the introduction (1 turns contests off)
     comprehension: bool = True            # quiz a reader on the compiled paper after editing
     comprehension_min: float = 0.8        # share of discriminative questions the reader must get right
-    theme: str = "academia"               # figure theme (scriptorium_fig.THEMES)
+    theme: str = "harbor"                 # figure theme (scriptorium_fig.THEMES)
     mode: str = "review"                  # review (anonymous) or final (camera-ready)
     preset: str = "standard"              # lite | standard | max
     words_per_page: int = 480             # prose budget per page of main text (set by the venue)

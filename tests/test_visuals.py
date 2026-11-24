@@ -123,11 +123,26 @@ class VisualsTest(unittest.TestCase):
         errs, _ = consistency.check(self.cfg, {})
         self.assertTrue(any("figure fig_acc is planned but never included" in e for e in errs), errs)
 
+    def test_every_theme_is_colour_blind_safe_and_readable(self):
+        import itertools
+        import sys
+        sys.path.insert(0, str(RECIPELIB))
+        import scriptorium_fig as sf
+        from scriptorium.figlint import CVD, _rgb, _simulate, contrast, delta_e
+        for name, t in sf.THEMES.items():
+            cols = [t["ours"], t["partner"]] + t["base"]
+            for a, b in itertools.combinations(cols, 2):
+                for k in CVD:
+                    self.assertGreaterEqual(delta_e(_simulate(_rgb(a), k), _simulate(_rgb(b), k)), 9.5,
+                                            f"{name}: {a} vs {b} under {k}")
+            for c in cols[:2]:
+                self.assertGreaterEqual(contrast(c), 3.0, f"{name}: {c}")
+
     def test_theme_gallery(self):
         out = self.cli("themes", "--out", str(self.tmp / "gal"))
         self.assertIn("wrote", out, out)
         page = (self.tmp / "gal" / "index.html").read_text()
-        for theme in ("academia", "nature", "minimal"):
+        for theme in ("harbor", "ink-amber", "forest-coral", "academia", "nature", "minimal"):
             self.assertIn(f"plot_{theme}.png", page)
             self.assertTrue((self.tmp / "gal" / "paper" / "figures" / f"diagram_{theme}.png").exists())
 

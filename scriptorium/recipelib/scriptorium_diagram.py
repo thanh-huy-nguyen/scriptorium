@@ -18,12 +18,13 @@ import math
 
 import scriptorium_fig as sf
 
-SOFT = {"academia": {"soft": "#F1EEF7", "mid": "#B6ACD1", "fills": ["#F5F0E6", "#EAF0F6", "#EEF4EC", "#F7ECEC"],
-                     "ink": "#2B2530"},
-        "nature": {"soft": "#F1EEF7", "mid": "#B6ACD1", "fills": ["#EEF5FB", "#FDF3E3", "#EAF6F1", "#FBEDE5"],
-                   "ink": "#222222"},
-        "minimal": {"soft": "#F1EEF7", "mid": "#B6ACD1", "fills": ["#F4F4F4", "#EDEDED", "#F7F7F7", "#EAEAEA"],
-                    "ink": "#222222"}}
+def soft(theme: str) -> dict:
+    """Diagram fills harmonized with the theme: pale tints of the method colour and its partner, two neutrals."""
+    t = sf.THEMES.get(theme, sf.THEMES[sf.DEFAULT_THEME])
+    return {"soft": sf.tint(t["ours"], 0.88), "mid": sf.tint(t["ours"], 0.55), "ink": "#2B2F36",
+            "fills": [sf.tint(t["ours"], 0.9), sf.tint(t["partner"], 0.9), "#F3F1EC", "#EEF1F4"]}
+
+
 ICONS = ("person", "network", "monitor", "images", "document", "database", "chart", "check", "cross", "magnifier",
          "gear", "cursor")
 
@@ -52,7 +53,7 @@ class Canvas:
     def __init__(self, width="full", height: float = 2.2, theme: str | None = None):
         import matplotlib.pyplot as plt
         self.pal = sf.use(theme)
-        self.soft = SOFT.get(sf.theme_name() if theme is None else theme, SOFT["academia"])
+        self.soft = soft(theme or sf.theme_name())
         w = sf.WIDTHS.get(width, width) if isinstance(width, str) else float(width)
         self.W, self.H = float(w), float(height)
         self.fig = plt.figure(figsize=(self.W, self.H))

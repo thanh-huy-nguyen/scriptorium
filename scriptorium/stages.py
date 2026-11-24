@@ -23,7 +23,7 @@ from pathlib import Path
 
 from . import anchor, cite, consistency, contest, events, history, latex, ledger, lint, lock, state
 from . import tables as T
-from .config import TEMPLATES, Config
+from .config import PKG, TEMPLATES, Config
 from .runner import Task
 
 FILE_RE = re.compile(r"^(abstract|\d{2}_[a-z0-9_]+)$")
@@ -143,6 +143,14 @@ def render_main(cfg: Config) -> None:
     tex = (tpl.replace("%%TITLE%%", outline(cfg).get("title") or cfg.title).replace("%%AUTHORS%%", authors)
            .replace("%%AFFILIATION%%", affiliation).replace("%%ABSTRACT%%", "\\input{abstract}")
            .replace("%%MODE%%", mode).replace("%%BODY%%", body))
+    m = re.search(r"\\definecolor\{accent\}\{HTML\}\{([0-9A-Fa-f]{6})\}", tex)
+    if m:                         # the default template's accent follows the figure theme
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("_sf", PKG / "recipelib" / "scriptorium_fig.py")
+        sfm = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(sfm)
+        ours = sfm.THEMES.get(cfg.theme, sfm.THEMES[sfm.DEFAULT_THEME])["ours"].lstrip("#")
+        tex = tex[:m.start(1)] + ours + tex[m.end(1):]
     if "\\providecommand{\\src}" not in tex:
         tex = re.sub(r"(\\documentclass[^\n]*\n)", r"\1\\providecommand{\\src}[1]{}\n\\providecommand{\\val}[2][1]{}\n",
                      tex, count=1)

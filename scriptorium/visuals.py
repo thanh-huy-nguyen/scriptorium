@@ -237,13 +237,13 @@ import scriptorium_fig as sf
 sf.use({theme!r})
 fig, ax = sf.figure("column", aspect=0.7)
 groups = ["digits", "wine", "cancer"]
-data = {{"Cross-entropy": ([81.2, 88.0, 90.1], [1.4, 2.0, 1.1]), "MLP": ([83.5, 89.2, 91.0], [1.2, 1.8, 1.3]),
-        "Ours": ([88.9, 93.1, 94.0], [0.9, 1.2, 0.8])}}
+data = {{"Cross-entropy": ([81.2, 88.0, 90.1], [1.4, 2.0, 1.1]), "Co-teaching": ([84.0, 89.9, 91.6], [1.1, 1.5, 1.0]),
+        "MLP": ([83.5, 89.2, 91.0], [1.2, 1.8, 1.3]), "Ours": ([88.9, 93.1, 94.0], [0.9, 1.2, 0.8])}}
 pts = {{m: [[v - 1.1, v, v + 0.9] for v in d[0]] for m, d in data.items()}}
-sf.grouped_bars(ax, groups, data, ours="Ours", points=pts)
+sf.grouped_bars(ax, groups, data, ours="Ours", partner="Co-teaching", points=pts)
 ax.set_ylabel("Test accuracy (%)")
 ax.set_ylim(70, 100)
-sf.legend_above(ax, ncol=3)
+sf.legend_above(ax, ncol=4)
 sf.save(fig, "plot_{theme}")
 '''
 
@@ -287,8 +287,9 @@ def gallery(out: Path, python: str | None = None) -> Path:
     (out / "index.html").write_text(
         "<!doctype html><meta charset=utf-8><title>Scriptorium figure themes</title><style>body{font:15px/1.5 "
         "system-ui,sans-serif;max-width:1150px;margin:30px auto;padding:0 20px;color:#1f1b24}h2{font-weight:600;"
-        "border-bottom:2px solid #4E2A84}.row{display:flex;gap:24px;align-items:flex-start}.plot{width:340px}"
+        "border-bottom:2px solid #3A3F45}.row{display:flex;gap:24px;align-items:flex-start}.plot{width:340px}"
         ".diagram{width:720px}img{border:1px solid #e4e0ea;border-radius:8px;padding:8px;background:#fff}</style>"
-        "<h1>Figure themes</h1><p>Set one in scriptorium.toml: <code>[figures] theme = \"academia\"</code>.</p>"
+        "<h1>Figure themes</h1><p>Set one in scriptorium.toml: <code>[figures] theme = \"harbor\"</code>. "
+        "Your method takes the first colour, the strongest comparison its partner.</p>"
         + "".join(rows))
     return out / "index.html"

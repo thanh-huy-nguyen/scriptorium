@@ -26,15 +26,32 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 WIDTHS = {"column": 3.25, "full": 6.75, "half": 3.25}   # inches; two-column venue defaults
 
+# Each theme: the paper's method ("ours") and its complementary partner (the strongest comparison), muted companions
+# for other baselines, gray for references. Every pair of series colours stays apart under deuteranopia and protanopia
+# and in normal vision, and every colour has at least 3:1 contrast on white (checked in tests/test_visuals.py).
+_NEUTRAL = {"ref": "#8A8F96", "text": "#1B1F24", "grid": "#E6E8EB", "panel": "#FFFFFF", "edge": "#3A3F45"}
 THEMES = {
-    "academia": {"ours": "#4E2A84", "base": ["#2F5D8A", "#B07D2B", "#3F7D4E", "#8E3B46", "#7A5638", "#1F7F78"],
-                 "ref": "#8A8A8A", "text": "#231F20", "grid": "#E6E1D8", "panel": "#FBF8F2", "edge": "#5B4E3F"},
-    "nature": {"ours": "#4E2A84", "base": ["#0072B2", "#E69F00", "#009E73", "#D55E00", "#56B4E9", "#CC79A7"],
+    "harbor": {"ours": "#0B6E79", "partner": "#D1495B", "base": ["#C08A1E", "#8E7DBE", "#B5838D", "#7D8CA3"],
+               **_NEUTRAL},
+    "ink-amber": {"ours": "#1D3557", "partner": "#E07A1F", "base": ["#5B8C5A", "#A05195", "#B5838D", "#8E7DBE"],
+                  **_NEUTRAL},
+    "forest-coral": {"ours": "#2D6A4F", "partner": "#E76F51", "base": ["#3D5A80", "#B5838D", "#8E7DBE", "#7D8CA3"],
+                     **_NEUTRAL},
+    "academia": {"ours": "#4E2A84", "partner": "#B07D2B", "base": ["#4D908E", "#8E7DBE", "#3A7D44", "#355070"],
+                 **_NEUTRAL},
+    "nature": {"ours": "#0072B2", "partner": "#D55E00", "base": ["#009E73", "#E69F00", "#CC79A7", "#56B4E9"],
                "ref": "#999999", "text": "#1A1A1A", "grid": "#EBEBEB", "panel": "#FFFFFF", "edge": "#4D4D4D"},
-    "minimal": {"ours": "#4E2A84", "base": ["#4D4D4D", "#8C8C8C", "#2F5D8A", "#B3B3B3", "#666666", "#A6A6A6"],
+    "minimal": {"ours": "#0B6E79", "partner": "#3A3A3A", "base": ["#6E6E6E", "#9A9A9A", "#C4C4C4"],
                 "ref": "#BFBFBF", "text": "#111111", "grid": "#EEEEEE", "panel": "#FFFFFF", "edge": "#333333"},
 }
-_state = {"theme": "academia", "assigned": {}}
+DEFAULT_THEME = "harbor"
+
+
+def tint(hex_color: str, t: float) -> str:
+    """Mix a colour with white: t=0 keeps it, t=1 gives white."""
+    r, g, b = (int(hex_color[i:i + 2], 16) for i in (1, 3, 5))
+    return "#{:02X}{:02X}{:02X}".format(*(round(c + (255 - c) * t) for c in (r, g, b)))
+_state = {"theme": DEFAULT_THEME, "assigned": {}}
 
 
 def _root() -> Path:
@@ -49,9 +66,9 @@ def theme_name() -> str:
     try:
         import tomllib
         t = tomllib.loads((_root() / "scriptorium.toml").read_text())
-        return t.get("figures", {}).get("theme", "academia")
+        return t.get("figures", {}).get("theme", DEFAULT_THEME)
     except Exception:  # noqa: BLE001
-        return "academia"
+        return DEFAULT_THEME
 
 
 def palette() -> dict:
@@ -66,7 +83,7 @@ def use(theme: str | None = None, base_size: float = 7.5) -> dict:
     from matplotlib import font_manager
     _state["theme"] = theme or theme_name()
     if _state["theme"] not in THEMES:
-        _state["theme"] = "academia"
+        _state["theme"] = DEFAULT_THEME
     for f in (HERE / "fonts").glob("*.ttf"):
         try:
             font_manager.fontManager.addfont(str(f))
@@ -74,7 +91,7 @@ def use(theme: str | None = None, base_size: float = 7.5) -> dict:
             pass
     p = palette()
     plt.rcParams.update({
-        "font.family": "serif", "font.serif": ["Source Serif 4", "DejaVu Serif"], "font.size": base_size,
+        "font.family": "sans-serif", "font.sans-serif": ["Inter", "DejaVu Sans"], "font.size": base_size,
         "axes.titlesize": base_size, "axes.labelsize": base_size, "xtick.labelsize": base_size - 0.5,
         "ytick.labelsize": base_size - 0.5, "legend.fontsize": base_size - 0.5, "legend.frameon": False,
         "axes.edgecolor": p["edge"], "axes.labelcolor": p["text"], "text.color": p["text"],
@@ -87,13 +104,15 @@ def use(theme: str | None = None, base_size: float = 7.5) -> dict:
     return p
 
 
-def color(name: str, ours: bool = False, reference: bool = False) -> str:
-    """The method's colour, the same in every figure of the paper: ours gets the accent, the untrained or trivial
-    reference gets gray, each baseline gets the next ink in the order first seen (stored in paper/figures/.colors.json
-    so all figures agree)."""
+def color(name: str, ours: bool = False, reference: bool = False, partner: bool = False) -> str:
+    """The method's colour, the same in every figure of the paper: ours gets the accent, the strongest comparison its
+    complementary partner (partner=True), the untrained or trivial reference gray, and each other baseline the next
+    muted ink in the order first seen (stored in paper/figures/.colors.json so all figures agree)."""
     p = palette()
     if ours:
         return p["ours"]
+    if partner:
+        return p["partner"]
     if reference:
         return p["ref"]
     store = _root() / "paper" / "figures" / ".colors.json"
@@ -113,7 +132,7 @@ def color(name: str, ours: bool = False, reference: bool = False) -> str:
 def figure(width: str | float = "column", aspect: float = 0.62, **kw):
     """A figure at its final print width (column, full, or inches), so every font size is a real point size."""
     import matplotlib.pyplot as plt
-    if not plt.rcParams.get("font.family") == ["serif"]:
+    if "Inter" not in plt.rcParams.get("font.sans-serif", []):
         use()
     w = WIDTHS.get(width, width) if isinstance(width, str) else float(width)
     kw.setdefault("layout", "constrained")       # keeps labels and an outside legend inside the figure
@@ -134,7 +153,7 @@ def recipe(key: str) -> float:
 
 
 def grouped_bars(ax, groups: list[str], data: dict, ours: str | None = None, reference: str | None = None,
-                 points: dict | None = None, width: float = 0.8, err_label: str = "sd"):
+                 points: dict | None = None, width: float = 0.8, err_label: str = "sd", partner: str | None = None):
     """The house form for aggregate comparisons: one bar per method in each group, error bars, and the individual
     seeds as small dots. `data` maps method -> (means, errors), one value per group, each from sf.recipe();
     `points` maps method -> one list of per-seed values per group (optional)."""
@@ -146,7 +165,7 @@ def grouped_bars(ax, groups: list[str], data: dict, ours: str | None = None, ref
     rng = np.random.default_rng(0)
     for i, name in enumerate(names):
         means, errs = data[name]
-        c = color(name, ours=(name == ours), reference=(name == reference))
+        c = color(name, ours=(name == ours), reference=(name == reference), partner=(name == partner))
         pos = x - width / 2 + w * (i + 0.5)
         ax.bar(pos, means, w * 0.9, color=c, label=name, zorder=2, linewidth=0)
         ax.errorbar(pos, means, yerr=errs, fmt="none", ecolor=palette()["text"], elinewidth=0.7, capsize=2,
