@@ -126,6 +126,23 @@ class TeamTest(unittest.TestCase):
         self.assertEqual([(t.agent, t.label) for t in tasks], [("tablesetter", "fit-table-main")])
         self.assertEqual(st.on_fail(self.cfg, ["x"]), "continue")
 
+    def test_small_p_values_print_in_scientific_notation_and_recompute(self):
+        from scriptorium import anchor
+        from scriptorium import tables as TB
+        self.assertEqual(TB.fmt_p(0.0123), "0.012")
+        self.assertEqual(TB.fmt_p(2.37e-7), "$2.4\\times 10^{-7}$")
+        self.cli("run", "--pause-at", "stats")
+        src = self.tmp / "paper" / "sources.py"
+        (self.tmp / "results" / "p.json").write_text('{"p": 2.37e-7}')
+        src.write_text(src.read_text() + '\n@source("p_tiny", means="p-value, paired t-test, a toy")\n'
+                       'def p_tiny():\n    return load("results/p.json")["p"]\n')
+        (self.tmp / "paper" / "09_x.tex").write_text("The test gives $p = 2.4\\times 10^{-7}$\\src{p_tiny}.\n")
+        ok, out = anchor.check(self.cfg, str(self.tmp / "paper" / "09_x.tex"))
+        self.assertTrue(ok, out)
+        (self.tmp / "paper" / "09_x.tex").write_text("The test gives $p = 9.9\\times 10^{-7}$\\src{p_tiny}.\n")
+        ok, out = anchor.check(self.cfg, str(self.tmp / "paper" / "09_x.tex"))
+        self.assertFalse(ok, "a wrong small p-value must fail the check")
+
     def test_not_significant_is_not_a_significance_claim(self):
         from scriptorium import consistency
         nums = {"p_x": {"value": 0.3, "means": "p-value, paired t-test"}, "acc": {"value": 90.0, "means": "acc"}}

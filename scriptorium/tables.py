@@ -41,6 +41,19 @@ def _fmt(v: float, dec: int) -> str:
     return f"{v:,.{dec}f}"
 
 
+def is_p(rec: dict) -> bool:
+    return "p-value" in str(rec.get("means", "")).lower()
+
+
+def fmt_p(v: float) -> str:
+    """p-values: three decimals down to 0.001, then scientific notation (PaperAnchor parses both)."""
+    import math
+    if v >= 0.001 or v == 0:
+        return f"{v:.3f}"
+    e = math.floor(math.log10(v))
+    return f"${v / 10 ** e:.1f}\\times 10^{{{e}}}$"
+
+
 def render(cfg: Config, tid: str, numbers: dict) -> tuple[str | None, list[str]]:
     errs: list[str] = []
     if not ID_RE.match(tid):
@@ -102,7 +115,7 @@ def render(cfg: Config, tid: str, numbers: dict) -> tuple[str | None, list[str]]
             if "key" in c:
                 dec = int(c.get("decimals", dec_default))
                 v = numbers[c["key"]]["value"]
-                s = _fmt(float(v), dec)
+                s = fmt_p(float(v)) if is_p(numbers[c["key"]]) and "decimals" not in c else _fmt(float(v), dec)
                 cell = (f"\\textbf{{{s}}}" if (ri, ci) in best_cells else s) + f"\\src{{{c['key']}}}"
                 if c.get("sd"):
                     cell += f" $\\pm$ {_fmt(float(numbers[c['sd']]['value']), dec)}\\src{{{c['sd']}}}"

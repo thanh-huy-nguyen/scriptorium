@@ -79,7 +79,7 @@ def check(cfg: Config, numbers: dict) -> tuple[list[str], list[str]]:
         if not front(name):
             body_keys |= set(SRC_RE.findall(t))
     for name, t in fs.items():
-        for k in SRC_RE.findall(t):
+        for k in SRC_RE.findall(t) if numbers else []:      # an audited paper has tags but no recipes here
             if k not in good:
                 errs.append(f"{name}: \\src{{{k}}} is not a working recipe")
         for s in sentences(t):
