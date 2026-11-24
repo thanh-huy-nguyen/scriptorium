@@ -104,6 +104,9 @@ def validate(cfg: Config, path: str | Path) -> list[str]:
         from . import venuestudy
         ex = next((e for e in venuestudy.exemplars(cfg) if e["id"] == p.stem), None)
         return venuestudy.note_problems(cfg, ex) if ex else [f"{p.stem} is not one of the exemplars"]
+    if parts == ("proof", "layout.json"):
+        from . import proof
+        return proof.layout_problems(p)
     if parts == ("inventory.md",):
         return stages.Scout("scout").validate(cfg)
     if parts == ("ledger.json",):

@@ -785,7 +785,10 @@ def pipeline(cfg: Config) -> list[Stage]:
                _after(Revise(f"revise{r}", r), f"chair{r - 1}"),
                _after(Review(f"review{r}", r), f"revise{r}")]
         prev = f"review{r}"
-    st += [_after(VS.Comply("comply"), prev), _after(Final("final"), "comply"), _after(T.Package("package"), "final")]
+    from . import proof as P
+    st += [_after(VS.Comply("comply"), prev), _after(P.Proofread("proofread"), "comply"),
+           _after(P.Inspect("inspect", cfg.critic_rounds), "proofread"), _after(Final("final"), "inspect"),
+           _after(T.Package("package"), "final")]
     return st
 
 

@@ -78,7 +78,7 @@ PRESETS = {
 
 
 ROLES = ("scout", "experimentalist", "evidence", "statistician", "cartographer", "architect", "outliner",
-         "terminologist", "searcher", "reader", "librarian", "figure_planner", "plotter", "diagrammer", "figure_critic", "venue_reader", "venue_analyst", "compliance", "tablesetter", "writer", "editor", "auditor", "cite_auditor", "line_editor",
+         "terminologist", "searcher", "reader", "librarian", "figure_planner", "plotter", "diagrammer", "figure_critic", "venue_reader", "venue_analyst", "compliance", "proofreader", "layout_inspector", "tablesetter", "writer", "editor", "auditor", "cite_auditor", "line_editor",
          "typesetter", "reviewer", "chair", "reviser")
 
 

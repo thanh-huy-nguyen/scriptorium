@@ -12,4 +12,16 @@ if missing:
     Path("main.log").write_text("".join(f"! LaTeX Error: File `{m}' not found.\n" for m in missing))
     sys.exit(1)
 Path("main.log").write_text("Output written\n")
-Path("main.pdf").write_bytes(b"%PDF-1.4\n1 0 obj << /Type /Page >>\n2 0 obj << /Type /Page >>\n%%EOF\n")
+import os
+import subprocess
+try:                                   # a real two-page PDF when PyMuPDF is there, so pages can be rendered
+    import pymupdf
+    doc = pymupdf.open()
+    for i in range(2):
+        doc.new_page().insert_text((72, 72), f"Page {i + 1} of a test paper. Figure 1: a figure.")
+    doc.save("main.pdf")
+except ImportError:
+    py = os.environ.get("FAKE_LATEX_PYTHON")
+    if py and not os.environ.get("FAKE_LATEX_REEXEC"):
+        sys.exit(subprocess.run([py, __file__], env={**os.environ, "FAKE_LATEX_REEXEC": "1"}).returncode)
+    Path("main.pdf").write_bytes(b"%PDF-1.4\n1 0 obj << /Type /Page >>\n2 0 obj << /Type /Page >>\n%%EOF\n")

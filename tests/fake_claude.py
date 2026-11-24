@@ -258,6 +258,21 @@ elif agent == "compliance":
         (paper / f"{f}.tex").write_text(f"\\section*{{{title}}}\nOnly two small datasets were studied.\n")
         m = (paper / "main.tex").read_text()
         (paper / "main.tex").write_text(m.replace("\\bibliographystyle", f"\\input{{{f}}}\n\\bibliographystyle", 1))
+elif agent == "proofreader":
+    f = re.search(r"proofread paper/([a-z0-9_]+)\.tex", prompt).group(1)
+    p = paper / f"{f}.tex"
+    t = p.read_text()
+    if os.environ.get("FAKE_REWRITE"):
+        t = re.sub(r"Text", "Completely different words", t)
+    p.write_text(t.replace("Text Text", "Text text", 1))
+    (work / "proof").mkdir(exist_ok=True)
+    (work / "proof" / f"{f}.md").write_text("- Text Text -> Text text\n")
+elif agent == "layout_inspector":
+    first = not list((work / "proof").glob("layout.r*.json"))
+    (work / "proof" / "layout.json").write_text(json.dumps(
+        {"verdict": "revise", "issues": [{"page": 1, "owner": "figure:fig_acc", "issue": "legend crowds the bars",
+                                          "fix": "move the legend above"}]} if first else
+        {"verdict": "pass", "issues": []}))
 elif agent == "reviewer":
     out = re.search(r"\.scriptorium/reviews/(\S+\.json)", prompt).group(1)
     res = paper / "03_results.tex"
