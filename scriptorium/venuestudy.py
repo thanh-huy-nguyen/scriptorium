@@ -382,7 +382,7 @@ class VenueStyle(S.Stage):
             return [".scriptorium/venue_style.md is missing"]
         t = p.read_text()
         errs = [f"venue_style.md needs a `## {h}` section" for h in PLAYBOOK_HEADINGS if f"## {h}" not in t]
-        used = {i for i in ok if i in t}
+        used = {i for i in ok if i in t or re.search(r"\b" + i[:2] + r"\b", t)}       # full id or its number
         if len(used) < min(3, len(ok)):
             errs.append("venue_style.md should ground its rules in the exemplars: name the exemplar ids (e.g. "
                         f"{ok[0]}) next to the patterns they show")

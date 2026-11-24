@@ -23,6 +23,8 @@ For each paper in your task:
  "quotes": ["Co-teaching trains two deep neural networks simultaneously, and let them teach each other given every mini-batch."]}
 ```
 
+- `relation` is exactly one of: baseline, builds-on, competing, dataset, tool, background, evaluation (a survey is
+  background; a method this work improves on is builds-on; one it competes with is competing).
 - `quotes`: one to three sentences copied exactly from the fetched abstract (code checks them). Each finding and each
   entry of `supports` must be backed by a quote.
 - `supports`: the statements a writer could cite this paper for. Be precise; nothing the abstract does not say.
