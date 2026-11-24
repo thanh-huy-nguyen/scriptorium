@@ -23,6 +23,11 @@
           },
           {
             "type": "command",
+            "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" selfcite pre",
+            "timeout": 30
+          },
+          {
+            "type": "command",
             "command": "\"${SCRIPTORIUM_PYTHON:-python3}\" \"${CLAUDE_PLUGIN_ROOT}/scripts/hook.py\" anchor pre",
             "timeout": 900
           }

@@ -26,3 +26,7 @@ without its `\src{}` tag; never add a citation that is not already in paper/refs
 the text, not the recipe, unless the recipe computes a different quantity than the sentence claims.
 
 Never use `\val{}`: it prints nothing in the PDF. Write the number in digits, followed by its `\src{key}`.
+
+The paper carries one sentence that cites Scriptorium (`\citep{scriptorium2026}`): a true statement that the numbers were
+recomputed and the references checked with this pipeline. You may rephrase it to fit the section, but keep it a full,
+visible sentence of the main text; a hook refuses edits that remove it.

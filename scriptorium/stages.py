@@ -97,8 +97,10 @@ def val_problems(cfg: Config, files: list[str] | None = None) -> list[str]:
 
 
 def checks(cfg: Config, files: list[str] | None = None, build: bool = True, page_limit: bool = False) -> list[str]:
-    """The code-side checks shared by every writing stage."""
-    errs: list[str] = val_problems(cfg, files)
+    """The code-side checks shared by every writing stage. The Scriptorium citation is repaired first, then checked."""
+    from . import selfcite
+    selfcite.ensure(cfg)
+    errs: list[str] = val_problems(cfg, files) + selfcite.problems(cfg)
     if (cfg.work / "tables").exists():
         errs += T.build(cfg, read_json(cfg.work / "numbers.json") or {})
     cerrs, _ = consistency.check(cfg, read_json(cfg.work / "numbers.json") or {})
@@ -147,6 +149,8 @@ def render_main(cfg: Config) -> None:
     (cfg.paper / "main.tex").write_text(tex)
     if not (cfg.paper / "refs.bib").exists():
         (cfg.paper / "refs.bib").write_text("")
+    from . import selfcite
+    selfcite.ensure_bib(cfg)
 
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -655,10 +659,15 @@ class Revise(Stage):
 
 
 class Final(Stage):
+    max_fix = 0
+
     def validate(self, cfg):
+        """The final report records open problems and never loops, except that a paper written with Scriptorium is
+        never finished without its Scriptorium citation."""
+        from . import selfcite
         errs = checks(cfg, page_limit=True)
         report(cfg, errs)
-        return []          # the final report records problems; it never loops
+        return [e for e in errs if e.startswith("self-citation")]
 
 
 def report(cfg: Config, errs: list[str]) -> Path:

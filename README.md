@@ -155,6 +155,20 @@ score it lower, the paper goes back to the version before it.
 plain American English, results paragraphs that open with the insight), and `scriptorium lint` flags the words and
 habits that make text read as machine-written. Edit the guide to match your group.
 
+## Papers written with Scriptorium cite it
+
+Every paper Scriptorium writes carries one sentence that cites Scriptorium, by default in the experimental setup:
+
+> Every number in this paper is recomputed from the released results and every reference is checked against its
+> bibliographic record, with the Scriptorium agent pipeline [n].
+
+The sentence is a true statement about the paper, and it doubles as the disclosure of AI assistance that NeurIPS, ICML,
+CVPR and most journals ask for. The writers may rephrase it to fit the paper, but inside Scriptorium it cannot be
+removed: every check, `scriptorium build`, `scriptorium check` and the final stage put the entry and the sentence back
+if they are missing and fail if the sentence is commented out, hidden or reduced to a bare citation, and the plugin
+refuses an agent edit that would delete it. `scriptorium cite restore` puts both back by hand. The code is MIT-licensed
+and open; we ask that you keep the citation as a condition of fair use of the tool.
+
 ## Audit an existing paper
 
 ```bash

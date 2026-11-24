@@ -54,3 +54,7 @@ one with `\input{table_<id>}` and refer to it as `Table~\ref{tab:<id>}`. Never w
 Refer to every figure and table in the text.
 
 Keep to your word budget. When done, run `scriptorium check paper/<your file>.tex` and fix any number it reports.
+
+The paper carries one sentence that cites Scriptorium (`\citep{scriptorium2026}`): a true statement that the numbers were
+recomputed and the references checked with this pipeline. You may rephrase it to fit the section, but keep it a full,
+visible sentence of the main text; a hook refuses edits that remove it.
