@@ -102,6 +102,7 @@ def lint_layout(fid: str, lay: dict, placed: str | None, ours_labels: list[str])
         for j in range(i + 1, len(texts)):
             if _overlap(texts[i]["box"], texts[j]["box"]) > 0.15:
                 out.append(f"{fid}: text '{texts[i]['text'][:25]}' overlaps '{texts[j]['text'][:25]}'")
+    out += [f"{fid}: {i}" for i in lay.get("issues") or []]
     if lay.get("kind") == "diagram":
         return sorted(set(out))
     for lg in lay.get("legends", []):

@@ -64,6 +64,8 @@ class Canvas:
         self.ax.set_aspect("equal")
         self.ax.axis("off")
         self.size = 7.5
+        self.panels: list[tuple[tuple, object]] = []     # (x, y, w, h), title text: titles must fit their panel
+        self.issues: list[str] = []                      # problems the kit can see itself; the lint reports them
 
     # -- text -----------------------------------------------------------------------------------------------------
     def text(self, x, y, s, size=None, color=None, ha="center", va="center", weight="normal", bg: str | None = None,
@@ -84,7 +86,8 @@ class Canvas:
                                          ec="none", zorder=1))
         if title:
             tx = x + 0.12 + (0.24 if step is not None else 0)
-            self.text(tx, y + h - 0.14, title, ha="left", va="center", bg=fill)
+            t = self.text(tx, y + h - 0.14, title, ha="left", va="center", bg=fill)
+            self.panels.append(((x, y, w, h), t))
         if step is not None:
             self.step(x + 0.17, y + h - 0.14, step)
         return Region(x, y, w, h - (0.3 if title else 0))
@@ -113,6 +116,10 @@ class Canvas:
         """A thick straight arrow with a rounded tail. Route around text yourself: arrows must never cross labels."""
         from matplotlib.patches import FancyArrowPatch
         c = color or (self.pal["ours"] if ours else self.soft["ink"])
+        dx, dy = abs(p1[0] - p0[0]), abs(p1[1] - p0[1])
+        if dx > 0.03 and dy > 0.03:
+            self.issues.append(f"the arrow from ({p0[0]:.2f}, {p0[1]:.2f}) to ({p1[0]:.2f}, {p1[1]:.2f}) is diagonal; "
+                               "use horizontal or vertical runs (d.elbow for a corner)")
         self.ax.add_patch(FancyArrowPatch(p0, p1, arrowstyle=f"-|>,head_length={2.6 * width},head_width={1.9 * width}", mutation_scale=1,
                                           lw=width, color=c, capstyle="round", joinstyle="round", zorder=4,
                                           shrinkA=2, shrinkB=2))
@@ -255,6 +262,16 @@ class Canvas:
 
     # -- output -----------------------------------------------------------------------------------------------------
     def save(self, fid: str) -> None:
+        self.fig.canvas.draw()
+        r = self.fig.canvas.get_renderer()
+        inv = self.ax.transData.inverted()
+        for (x, y, w, h), t in self.panels:
+            bb = t.get_window_extent(r)
+            (x0, _), (x1, _) = inv.transform((bb.x0, bb.y0)), inv.transform((bb.x1, bb.y1))
+            if x1 > x + w - 0.04:
+                self.issues.append(f"the panel title '{t.get_text()[:30]}' runs to the panel's edge; shorten it or "
+                                   "widen the panel")
+        self.fig._scriptorium_issues = list(dict.fromkeys(self.issues))
         sf.save(self.fig, fid)
 
 

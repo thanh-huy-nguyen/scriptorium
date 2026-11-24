@@ -104,6 +104,14 @@ class VisualsTest(unittest.TestCase):
                        "d.save('d')\n")
         self.assertEqual(figlint.lint(self.cfg, [{"id": "d", "kind": "diagram"}])["d"], [])
 
+    def test_kit_flags_diagonal_arrows_and_crowded_titles(self):
+        self.draw("bad", "import scriptorium_diagram as sd\nd = sd.canvas('column', height=1.6)\n"
+                         "d.panel(0.1, 0.1, 1.0, 1.4, 'A very long panel title here', step=1)\n"
+                         "d.arrow((1.2, 1.2), (2.0, 0.4))\nd.save('bad')\n")
+        probs = " | ".join(figlint.lint(self.cfg, [{"id": "bad", "kind": "diagram"}])["bad"])
+        self.assertIn("is diagonal", probs)
+        self.assertIn("runs to the panel's edge", probs)
+
     def test_outline_needs_one_teaser_and_planned_figures_must_be_included(self):
         self.cli("run", "--pause-at", "outline")
         o = json.loads((self.work / "outline.json").read_text())

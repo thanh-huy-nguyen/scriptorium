@@ -248,7 +248,8 @@ def _layout(fig) -> dict:
         t["legend"] = any(l[0] - 0.01 <= x0 and x1 <= l[2] + 0.01 and l[1] - 0.01 <= y0 and y1 <= l[3] + 0.01
                           for l in legends)
     return {"size": [float(W), float(H)], "width": getattr(fig, "_scriptorium_width", "custom"),
-            "kind": getattr(fig, "_scriptorium_kind", "plot"), "texts": texts,
+            "kind": getattr(fig, "_scriptorium_kind", "plot"), "issues": getattr(fig, "_scriptorium_issues", []),
+            "texts": texts,
             "axes": axes, "legends": legends, "marks": marks, "series": series, "theme": _state["theme"],
             "palette": palette(), "recipes": sorted(set(_state.get("recipes", [])))}
 
