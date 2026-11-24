@@ -86,7 +86,7 @@ def check_text(cfg: Config, order: list[str] | None = None) -> list[str]:
     d = load(cfg)
     if not d:
         return []
-    files = order or [p.stem for p in sorted(cfg.paper.glob("*.tex")) if p.name != "main.tex"]
+    files = order or [p.stem for p in sorted(cfg.paper.glob("*.tex")) if p.name not in ("main.tex", "checklist.tex")]
     texts = {f: _body((cfg.paper / f"{f}.tex").read_text()) for f in files if (cfg.paper / f"{f}.tex").exists()}
     errs = []
     for t in d.get("terms") or []:

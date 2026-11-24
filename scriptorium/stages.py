@@ -36,7 +36,16 @@ ID_RE = re.compile(r"^[a-z][a-z0-9_]*$")
 
 def context(cfg: Config) -> str:
     from .venues import note
-    return note(cfg.template) + (
+    from .venuestudy import required_sections
+    extra = ""
+    if (cfg.work / "venue_style.md").exists():
+        extra += ("How strong recent papers at the target venue, on this topic, are written is in "
+                  ".scriptorium/venue_style.md: follow it for framing, Figure 1, contributions, emphasis, structure "
+                  "and tone (it teaches craft; never copy wording from other papers).\n")
+    req = required_sections(cfg)
+    if req:
+        extra += "The venue requires these sections: " + "; ".join(f"{r['title']} ({r['why']})" for r in req) + ".\n"
+    return note(cfg.template) + extra + (
         f'Paper: "{cfg.title}" for {cfg.venue}, at most {cfg.page_limit} pages of main text (references excluded).\n'
         "The authors' brief is brief.md at the repository root. Shared notes live in .scriptorium/: inventory.md (what "
         "the repository holds), setup.md (the experimental setup, each fact quoted from its source file), numbers.md "
@@ -171,6 +180,9 @@ class Stage:
     max_fix: int = 1
     summary: str = ""
     deps: tuple[str, ...] = ()
+
+    def prepare(self, cfg: Config) -> None:
+        """Slow work that needs no lock (downloads), run before `before`."""
 
     def before(self, cfg: Config) -> None:
         pass
@@ -739,15 +751,18 @@ def pipeline(cfg: Config) -> list[Stage]:
     from . import team as T
     from . import visuals as V
     from . import lit as L
+    from . import venuestudy as VS
     st: list[Stage] = [
         _after(Scout("scout")),
         _after(T.Experiments("experiments"), "scout"),
         _after(Evidence("evidence"), "scout"),
         _after(T.Stats("stats"), "evidence"),
+        _after(VS.VenueRead("venueread"), "scout"),
+        _after(VS.VenueStyle("venuestyle"), "venueread"),
         _after(L.Search("search"), "scout"),
         _after(L.Read("read"), "search"),
         _after(Ledger("ledger"), "stats", "experiments"),
-        _after(Story("story"), "ledger", "read"),
+        _after(Story("story"), "ledger", "read", "venuestyle"),
         _after(Outline("outline"), "story"),
         _after(T.Notation("notation"), "outline"),
         _after(Library("library"), "outline", "read"),
@@ -770,7 +785,7 @@ def pipeline(cfg: Config) -> list[Stage]:
                _after(Revise(f"revise{r}", r), f"chair{r - 1}"),
                _after(Review(f"review{r}", r), f"revise{r}")]
         prev = f"review{r}"
-    st += [_after(Final("final"), prev), _after(T.Package("package"), "final")]
+    st += [_after(VS.Comply("comply"), prev), _after(Final("final"), "comply"), _after(T.Package("package"), "final")]
     return st
 
 

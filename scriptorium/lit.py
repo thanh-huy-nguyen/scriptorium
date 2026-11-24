@@ -289,7 +289,7 @@ def citing_sentences(cfg: Config) -> list[dict]:
     """Every (file, sentence, key) where a sentence cites a key, in reading order."""
     out = []
     for p in sorted(cfg.paper.glob("*.tex")):
-        if p.name == "main.tex" or p.name.startswith("table_"):
+        if p.name in ("main.tex", "checklist.tex") or p.name.startswith("table_"):
             continue
         body = re.sub(r"\s+", " ", re.sub(r"(?<!\\)%.*", "", p.read_text()))
         for sent in SENT_SPLIT.split(body):

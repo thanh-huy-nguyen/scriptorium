@@ -235,6 +235,29 @@ elif agent == "cite_auditor":
                     "verdict": "unsupported" if bad else "supported", "evidence": "abstract",
                     "fix": "cite something else" if bad else ""})
     (work / "lit" / "citecheck.json").write_text(json.dumps({"findings": out}))
+elif agent == "venue_reader":
+    pdf = re.search(r"(\.scriptorium/venue/papers/(\S+?))\.pdf", prompt)
+    sid = pdf.group(2)
+    txt = (root / f"{pdf.group(1)}.txt").read_text()
+    sents = [x.strip() for x in re.split(r"(?<=[.])\s+", txt) if len(x.split()) > 4][:3]
+    (work / "venue" / "notes" / f"{sid}.json").write_text(json.dumps(
+        {"framing": "f", "key_idea": "k", "figure1": "t", "contributions": "c", "emphasis": "e", "structure": "s",
+         "results": "r", "tone": "t", "quotes": sents}))
+elif agent == "venue_analyst":
+    ids = [e["id"] for e in json.loads((work / "venue" / "exemplars.json").read_text())["exemplars"]]
+    (work / "venue_style.md").write_text("# Playbook\n\n" + "".join(
+        f"## {h}\n\nAs in {', '.join(ids)}.\n\n" for h in
+        ("Framing", "Figure 1", "Contributions", "Emphasis", "Structure", "Results", "Tone", "For this paper")))
+elif agent == "compliance":
+    ck = paper / "checklist.tex"
+    if ck.exists():
+        ck.write_text(ck.read_text().replace("\\answerTODO{}", "\\answerYes{}")
+                      .replace("\\justificationTODO{}", "See Section~\\ref{sec:03_results}."))
+    for title in re.findall(r'requires a "([^"]+)" section', prompt):
+        f = "99_" + re.sub(r"[^a-z]+", "_", title.lower()).strip("_")
+        (paper / f"{f}.tex").write_text(f"\\section*{{{title}}}\nOnly two small datasets were studied.\n")
+        m = (paper / "main.tex").read_text()
+        (paper / "main.tex").write_text(m.replace("\\bibliographystyle", f"\\input{{{f}}}\n\\bibliographystyle", 1))
 elif agent == "reviewer":
     out = re.search(r"\.scriptorium/reviews/(\S+\.json)", prompt).group(1)
     res = paper / "03_results.tex"

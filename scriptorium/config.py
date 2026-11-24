@@ -22,6 +22,7 @@ title = "%(title)s"
 authors = [%(authors)s]
 affiliation = "%(affiliation)s"
 venue = "%(venue)s"           # free text shown to the agents (e.g. "NeurIPS 2026 main track")
+conference = "%(conference)s" # the target venue: its recent papers teach the style (cvpr, iccv, neurips, icml, iclr, acl, ...)
 template = "%(template)s"     # default | neurips | iclr | icml | cvpr | acl | miccai | ieee | a folder with main.tex
 mode = "%(mode)s"             # review (anonymous) or final (camera-ready)
 page_limit = %(page_limit)d   # main text pages, references excluded
@@ -41,6 +42,10 @@ python = ""                   # interpreter for recipes and figure scripts; the 
 [models]                      # sonnet | opus | haiku | a full model id, per agent; the preset fills the rest
 # default = "sonnet"
 
+[venue]
+study = true                  # for a top-tier venue, learn from its recent papers on your topic (needs network)
+# exemplars = 6               # how many recent papers to study (the preset sets it)
+
 [figures]
 theme = "harbor"              # harbor | ink-amber | forest-coral | academia | nature | minimal; see `scriptorium themes`
 # critic_rounds = 2           # times a figure critic may send a figure back to its maker
@@ -50,7 +55,8 @@ ignore = []                   # extra glob patterns the data lock may ignore (e.
 '''
 
 TOML_DEFAULTS = {"title": "Working title", "authors": '"First Author"', "affiliation": "Your institution",
-                 "venue": "workshop", "template": "default", "mode": "review", "page_limit": 8, "preset": "standard"}
+                 "venue": "workshop", "template": "default", "mode": "review", "page_limit": 8, "preset": "standard",
+                 "conference": ""}
 
 def render_toml(**kw) -> str:
     vals = {**TOML_DEFAULTS, **{k: v for k, v in kw.items() if v not in (None, "")}}
@@ -60,11 +66,11 @@ def render_toml(**kw) -> str:
 
 
 PRESETS = {
-    "lite": {"contest_n": 1, "review_rounds": 0, "critic_rounds": 1, "comprehension": False,
+    "lite": {"contest_n": 1, "review_rounds": 0, "critic_rounds": 1, "comprehension": False, "venue_exemplars": 3,
              "reviewers": ["soundness", "clarity"], "models": {"default": "sonnet"}},
     "standard": {"contest_n": 3, "review_rounds": 1, "critic_rounds": 2, "comprehension": True,
                  "models": {"default": "sonnet", "outliner": "opus"}},
-    "max": {"contest_n": 3, "review_rounds": 2, "critic_rounds": 3, "comprehension": True,
+    "max": {"contest_n": 3, "review_rounds": 2, "critic_rounds": 3, "comprehension": True, "venue_exemplars": 8,
             "models": {"default": "sonnet", **{r: "opus" for r in ("outliner", "architect", "writer", "editor",
                                                                      "auditor", "cite_auditor", "chair", "reviewer",
                                                                      "reviser", "figure_planner", "diagrammer")}}},
@@ -72,7 +78,7 @@ PRESETS = {
 
 
 ROLES = ("scout", "experimentalist", "evidence", "statistician", "cartographer", "architect", "outliner",
-         "terminologist", "searcher", "reader", "librarian", "figure_planner", "plotter", "diagrammer", "figure_critic", "tablesetter", "writer", "editor", "auditor", "cite_auditor", "line_editor",
+         "terminologist", "searcher", "reader", "librarian", "figure_planner", "plotter", "diagrammer", "figure_critic", "venue_reader", "venue_analyst", "compliance", "tablesetter", "writer", "editor", "auditor", "cite_auditor", "line_editor",
          "typesetter", "reviewer", "chair", "reviser")
 
 
@@ -105,6 +111,9 @@ class Config:
     mode: str = "review"                  # review (anonymous) or final (camera-ready)
     preset: str = "standard"              # lite | standard | max
     words_per_page: int = 480             # prose budget per page of main text (set by the venue)
+    conference: str = ""                  # venue key for the venue study (defaults to the template's venue)
+    venue_study: bool = True              # learn from recent papers at a top-tier venue
+    venue_exemplars: int = 6              # how many recent papers the readers study
     audit: bool = False                   # an audit folder made by `scriptorium audit`
     audit_main: str = "main.tex"          # the audited paper's main file, relative to src/
     critic_rounds: int = 2                # figure critic rounds
@@ -154,7 +163,7 @@ def load(root: Path) -> Config:
     if cfg.preset not in PRESETS:
         raise SystemExit(f"scriptorium.toml: preset must be one of {', '.join(PRESETS)}")
     pre = PRESETS[cfg.preset]
-    for k in ("contest_n", "review_rounds", "critic_rounds", "comprehension", "reviewers"):
+    for k in ("contest_n", "review_rounds", "critic_rounds", "comprehension", "reviewers", "venue_exemplars"):
         if k in pre:
             setattr(cfg, k, pre[k])
     cfg.models = dict(pre.get("models", {}))
@@ -189,6 +198,10 @@ def load(root: Path) -> Config:
     cfg.lock_ignore = list(lk.get("ignore", []))
     cfg.theme = str(fg.get("theme", cfg.theme))
     cfg.critic_rounds = int(fg.get("critic_rounds", cfg.critic_rounds))
+    cfg.conference = str(p.get("conference", cfg.template if cfg.template not in ("", "default") else ""))
+    vs = data.get("venue", {})
+    cfg.venue_study = bool(vs.get("study", cfg.venue_study))
+    cfg.venue_exemplars = int(vs.get("exemplars", cfg.venue_exemplars))
     cfg.audit = bool(r.get("audit", False))
     cfg.audit_main = str(r.get("audit_main", cfg.audit_main))
     return cfg

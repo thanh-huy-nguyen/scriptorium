@@ -19,7 +19,7 @@ VENUES: dict[str, dict] = {
     "neurips": {
         "name": "NeurIPS 2025", "url": "https://media.neurips.cc/Conferences/NeurIPS2025/Styles.zip",
         "files": ["neurips_2025.sty"], "page_limit": 9, "words_per_page": 650,
-        "mode": {"review": "main", "final": "main, final"},
+        "mode": {"review": "main", "final": "main, final"}, "checklist": "neurips_2025.tex",
         "reviewers": ["soundness", "clarity", "significance", "reproducibility"]},
     "iclr": {
         "name": "ICLR 2027", "url": "https://github.com/ICLR/Master-Template/archive/refs/heads/master.zip",
@@ -31,6 +31,8 @@ VENUES: dict[str, dict] = {
         "name": "ICML 2025", "url": "https://media.icml.cc/Conferences/ICML2025/Styles/icml2025.zip",
         "files": ["icml2025.sty", "icml2025.bst", "fancyhdr.sty", "algorithm.sty", "algorithmic.sty"],
         "page_limit": 8, "words_per_page": 520, "mode": {"review": "", "final": "accepted"},
+        "requires": [{"title": "Impact Statement", "why": "ICML asks every paper for an impact statement after the "
+                      "conclusion, before the references; it does not count toward the page limit"}],
         "reviewers": ["soundness", "clarity", "significance", "reproducibility"]},
     "cvpr": {
         "name": "CVPR", "url": "https://github.com/cvpr-org/author-kit/archive/refs/heads/main.zip",
@@ -40,6 +42,8 @@ VENUES: dict[str, dict] = {
     "acl": {
         "name": "ACL / *ACL", "url": "https://github.com/acl-org/acl-style-files/archive/refs/heads/master.zip",
         "files": ["acl.sty", "acl_natbib.bst"], "page_limit": 8, "words_per_page": 550,
+        "requires": [{"title": "Limitations", "why": "ACL desk-rejects papers without a Limitations section after the "
+                      "conclusion; it does not count toward the page limit"}],
         "mode": {"review": "review", "final": "final"},
         "reviewers": ["soundness", "clarity", "significance", "reproducibility"]},
     "miccai": {
@@ -76,6 +80,13 @@ def fetch(venue: str, dest: Path, refresh: bool = False) -> list[str]:
     z = zipfile.ZipFile(io.BytesIO(cache.read_bytes()))
     names = [n for n in z.namelist() if not n.endswith("/")]
     out = []
+    if v.get("checklist") and not (dest / "checklist.tex").exists():
+        sample = next((n for n in names if n.endswith("/" + v["checklist"]) or n == v["checklist"]), None)
+        if sample:
+            from .venuestudy import checklist_template
+            dest.mkdir(parents=True, exist_ok=True)
+            (dest / "checklist.tex").write_text(checklist_template(z.read(sample).decode("utf-8", "replace")))
+            out.append("checklist.tex")
     for want in v["files"]:
         hits = sorted((n for n in names if n == want or n.endswith("/" + want)), key=len)
         if not hits:

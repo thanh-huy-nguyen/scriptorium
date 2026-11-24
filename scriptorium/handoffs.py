@@ -97,6 +97,13 @@ def validate(cfg: Config, path: str | Path) -> list[str]:
         if len(parts) == 3 and parts[1] == "cards":
             d = json.loads(p.read_text()) if p.exists() else {}
             return lit.card_problems(cfg, d.get("id") or p.stem) if d else [f"{rel} is missing or empty"]
+    if parts == ("venue_style.md",):
+        from . import venuestudy
+        return venuestudy.VenueStyle("venuestyle").validate(cfg)
+    if len(parts) == 3 and parts[:2] == ("venue", "notes"):
+        from . import venuestudy
+        ex = next((e for e in venuestudy.exemplars(cfg) if e["id"] == p.stem), None)
+        return venuestudy.note_problems(cfg, ex) if ex else [f"{p.stem} is not one of the exemplars"]
     if parts == ("inventory.md",):
         return stages.Scout("scout").validate(cfg)
     if parts == ("ledger.json",):

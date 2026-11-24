@@ -18,6 +18,8 @@ from .runner import run_tasks
 
 def run_stage(cfg: Config, st: S.Stage, echo=print) -> dict:
     """Run one stage to the end. Returns the last result of stages.finish ({status, errors})."""
+    if state.stage(state.load(cfg), st.name).get("status") != "running":
+        st.prepare(cfg)                 # downloads and other slow work, outside the lock the checks share
     tasks = S.begin(cfg, st)
     recs = run_tasks(cfg, st.name, tasks, echo)
     state.add_usage(cfg, st.name, recs)

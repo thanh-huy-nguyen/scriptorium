@@ -28,7 +28,7 @@ def _strip(tex: str) -> str:
 def lint(paper: Path) -> list[str]:
     out = []
     for f in sorted(paper.glob("*.tex")):
-        if f.name == "main.tex":
+        if f.name in ("main.tex", "checklist.tex"):
             continue
         for i, line in enumerate(_strip(f.read_text()).splitlines(), 1):
             low = line.lower()

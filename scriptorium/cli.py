@@ -118,17 +118,30 @@ def init_answers(a) -> dict:
         au = _ask("Authors, comma-separated", ", ".join(ans["authors"] or []) or "First Author")
         ans["authors"] = [x.strip() for x in au.split(",") if x.strip()]
         ans["affiliation"] = ans["affiliation"] or _ask("Affiliation", "Your institution")
-        print("Venues: " + ", ".join(f"{k} ({v['name']}, {v['page_limit']} pages)" for k, v in venues.VENUES.items())
-              + ", default (a clean two-column layout)")
-        ans["template"] = ans["template"] or _ask("Venue", "default")
+        from .venuestudy import NAMES
+        print("Which conference are you aiming for? Scriptorium prepares its official template and requirements and, "
+              "for a top-tier venue, studies its recent papers on your topic.")
+        print("  with template: " + ", ".join(f"{k} ({v['name']}, {v['page_limit']} pages)" for k, v in
+                                               venues.VENUES.items()))
+        print("  study only (default template): " + ", ".join(k for k in NAMES if k not in venues.VENUES)
+              + "; or default for none")
+        ans["template"] = ans["template"] or _ask("Conference", "default")
         ans["mode"] = ans["mode"] or _ask("Mode: review (anonymous) or final", "review")
         ans["preset"] = ans["preset"] or _ask("Preset: lite, standard or max", "standard")
     t = ans.get("template") or "default"
+    from .venuestudy import NAMES
+    if t in NAMES and not venues.is_venue(t):
+        ans["conference"] = t                      # study the venue; use a compatible template
+        t = ans["template"] = "acl" if t in ("emnlp", "naacl") else "default"
+        if t == "default":
+            print(f"note: no bundled {NAMES[ans['conference']]} template yet; using the default layout (set [paper] "
+                  "template to a folder holding the venue's author kit main.tex)")
     if t != "default" and not venues.is_venue(t) and not (Path(t) / "main.tex").exists():
         sys.exit(f"scriptorium init: unknown venue {t!r}; choose one of {', '.join(venues.VENUES)}, default, "
                  "or a folder holding main.tex")
     v = venues.VENUES.get(t, {})
-    ans["venue"] = a.venue_text or v.get("name") or "workshop"
+    ans.setdefault("conference", t if t in NAMES else "")
+    ans["venue"] = a.venue_text or v.get("name") or NAMES.get(ans.get("conference", ""), "workshop")
     ans["page_limit"] = a.page_limit or v.get("page_limit") or 8
     return ans
 
@@ -246,6 +259,8 @@ def cmd_next(a) -> None:
     if st is None:
         print(json.dumps({"stage": None, "message": "all stages done; see .scriptorium/report.md"}))
         return
+    if state.stage(state.load(cfg), st.name).get("status") != "running":
+        st.prepare(cfg)
     tasks = S.begin(cfg, st)
     print(json.dumps({"stage": st.name, "tasks": [
         {"agent": f"scriptorium:{t.agent}", "label": t.label, "model": cfg.model(t.role or t.agent), "prompt": t.prompt}
@@ -584,7 +599,8 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--version", action="version", version=f"scriptorium {__version__}")
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("init")
-    p.add_argument("--venue", default="", help="neurips, iclr, icml, cvpr, acl, miccai, ieee, default, or a folder")
+    p.add_argument("--venue", default="", help="the target conference: neurips, iclr, icml, cvpr, iccv, wacv, acl, "
+                   "emnlp, naacl, miccai, ieee, default, or a folder with a main.tex")
     p.add_argument("--title", default="")
     p.add_argument("--authors", default="", help="comma-separated")
     p.add_argument("--affiliation", default="")

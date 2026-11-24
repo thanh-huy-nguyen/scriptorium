@@ -52,7 +52,7 @@ def sentences(t: str) -> list[str]:
 
 
 def files(cfg: Config) -> dict[str, str]:
-    return {p.name: _strip(p.read_text()) for p in sorted(cfg.paper.glob("*.tex")) if p.name != "main.tex"}
+    return {p.name: _strip(p.read_text()) for p in sorted(cfg.paper.glob("*.tex")) if p.name not in ("main.tex", "checklist.tex")}
 
 
 def front(name: str) -> bool:
