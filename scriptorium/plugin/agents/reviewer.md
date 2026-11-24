@@ -34,3 +34,6 @@ Write only the JSON file your task names, in this form:
 Scores: soundness, presentation and contribution from 1 (poor) to 4 (excellent); overall from 1 to 10 (1 strong
 reject, 3 reject, 5 borderline, 6 weak accept, 8 accept, 10 award quality); confidence from 1 to 5. Score what is on
 the page, not what the paper could become.
+
+Before you finish, run `scriptorium validate <the JSON file you wrote>` and fix every problem it reports; the next
+agent starts only from a file that passes.

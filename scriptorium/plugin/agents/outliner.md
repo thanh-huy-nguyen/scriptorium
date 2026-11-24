@@ -60,3 +60,6 @@ Rules:
 - Results subsection titles state the finding, not the experiment.
 - Word budgets add up to the total in your task.
 - Three to seven related topics, each with two or three search queries that would find the key papers.
+
+Before you finish, run `scriptorium validate <the JSON file you wrote>` and fix every problem it reports; the next
+agent starts only from a file that passes.

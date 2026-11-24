@@ -3,9 +3,14 @@
 Set up and run (from the root of the research repository):
     scriptorium init                 create scriptorium.toml, brief.md and paper/, and lock the repository's data
     scriptorium run                  run every remaining stage headless with `claude -p`
-    scriptorium run --from outline   rerun from a stage (that stage and every later one)
-    scriptorium reset STAGE          mark a stage and every later one as not done
+    scriptorium run --from outline   rerun from a stage (that stage and every stage that depends on it)
+    scriptorium run --pause-at story stop once a stage is done, to read or edit its output before going on
+    scriptorium watch                live view of a run: stages, agents working now, tokens (second terminal)
     scriptorium status               stages, review scores and token use
+    scriptorium report               write .scriptorium/report.html: every number, citation, figure and session
+    scriptorium history              one entry per finished stage (paper/ and notes as they were)
+    scriptorium rollback STAGE       put paper/ and notes back to right after STAGE; later stages rerun
+    scriptorium reset STAGE          mark a stage and every stage that depends on it as not done
 
 Used by the agents, and handy by hand:
     scriptorium numbers              run every recipe in paper/sources.py and list the values
@@ -20,6 +25,7 @@ Used by the agents, and handy by hand:
     scriptorium table [ID ...]       render paper/table_ID.tex from .scriptorium/tables/ID.json
     scriptorium consistency          cross-paper checks (references, significance, scope words)
     scriptorium peek PATH            first rows of a data file
+    scriptorium validate FILE        check a handoff file (outline, ledger, pitch, table spec, review) before handing on
 
 Inside a Claude Code session (the /scriptorium:write-paper skill drives these):
     scriptorium next                 start the next stage and print its agent tasks as JSON
@@ -34,10 +40,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from . import __version__, anchor, cite, latex, lint, lock, state
+from . import __version__, anchor, cite, engine, events, handoffs, history, htmlreport, latex, lint, lock, state
 from . import config as C
 from . import stages as S
-from .runner import run_tasks
+from . import watch as W
 
 BRIEF = """# Brief for the paper
 
@@ -117,44 +123,33 @@ def cmd_run(a) -> None:
         sys.exit("scriptorium: the `claude` command was not found; install Claude Code first")
     if a.from_stage:
         reset(cfg, a.from_stage)
+    history.init(cfg)
     real, sys.stdout = sys.stdout, Tee(sys.stdout, cfg.work / "run.log")
     try:
-        run_loop(cfg, a)
+        status = engine.run_graph(cfg, stop_after=a.to_stage)
+        if status == "done":
+            print(f"\nall stages done. Paper: paper/main.pdf; report: .scriptorium/report.html (and report.md)")
+            if (cfg.work / "report.md").exists():
+                print("\n" + (cfg.work / "report.md").read_text())
+        elif status == "paused":
+            print(f"\npaused after {a.to_stage}. Read or edit its output, then `scriptorium run` to go on.")
+        elif status == "stuck":
+            print("\nno stage can start; see `scriptorium status`")
     finally:
         sys.stdout.f.close()
         sys.stdout = real
+    if status in ("failed", "stuck"):
+        sys.exit(1)
 
 
-def run_loop(cfg: C.Config, a) -> None:
-    while True:
-        st = S.next_stage(cfg)
-        if st is None:
-            print(f"\nall stages done. Report: {(cfg.work / 'report.md').relative_to(cfg.root)}; "
-                  f"paper: paper/main.pdf")
-            break
-        print(f"\n== {st.name}")
-        tasks = S.begin(cfg, st)
-        recs = run_tasks(cfg, st.name, tasks)
-        state.add_usage(cfg, st.name, recs)
-        while True:
-            res = S.finish(cfg, st)
-            for e in res["errors"]:
-                print("    check: " + e.splitlines()[0][:220])
-            if res["status"] == "fix":
-                print(f"    asking the agents to fix {len(res['errors'])} problem(s)")
-                recs = run_tasks(cfg, st.name, res["tasks"])
-                state.add_usage(cfg, st.name, recs)
-                continue
-            break
-        if res["status"] == "failed":
-            print(f"\nstage {st.name} failed; see `scriptorium status`, fix by hand or rerun with "
-                  f"`scriptorium run --from {st.name}`")
-            sys.exit(1)
-        print(f"    {st.name} done")
-        if a.to_stage and st.name == a.to_stage:
-            break
-    if (cfg.work / "report.md").exists() and S.next_stage(cfg) is None:
-        print("\n" + (cfg.work / "report.md").read_text())
+def descendants(cfg: C.Config, name: str) -> list[str]:
+    """`name` and every stage that depends on it, directly or not, in pipeline order."""
+    pipe = S.pipeline(cfg)
+    out = {name}
+    for st in pipe:
+        if any(d in out for d in st.deps):
+            out.add(st.name)
+    return [st.name for st in pipe if st.name in out]
 
 
 def reset(cfg: C.Config, name: str) -> None:
@@ -162,7 +157,7 @@ def reset(cfg: C.Config, name: str) -> None:
     if name not in names:
         sys.exit(f"no stage {name!r}; stages: {', '.join(names)}")
     s = state.load(cfg)
-    for n in names[names.index(name):]:
+    for n in descendants(cfg, name):
         s["stages"][n] = {"status": "pending", "fixes": 0}
         s["scores"].pop(n, None)
         if n in s["usage"]:          # keep what earlier passes spent, apart from the current pass
@@ -217,6 +212,44 @@ def cmd_done(a) -> None:
         out["tasks"] = [{"agent": f"scriptorium:{t.agent}", "label": t.label, "model": cfg.model(t.role or t.agent),
                          "prompt": t.prompt} for t in res["tasks"]]
     print(json.dumps(out, indent=1))
+
+
+def cmd_watch(a) -> None:
+    W.watch(need_root(), once=a.once)
+
+
+def cmd_report(a) -> None:
+    cfg = need_root()
+    print(f"wrote {htmlreport.write(cfg).relative_to(cfg.root)}")
+
+
+def cmd_history(a) -> None:
+    cfg = need_root()
+    log = history.log(cfg)
+    if not log:
+        print("no history yet (it starts with the first finished stage)" if history.available() else
+              "git is not installed, so Scriptorium keeps no stage history")
+        return
+    for c in log:
+        print(f"{c['id']}  {c['time']}  {c['subject']}")
+
+
+def cmd_rollback(a) -> None:
+    cfg = need_root()
+    c = history.rollback(cfg, a.target)
+    pending = [n for n, r in state.load(cfg)["stages"].items() if r.get("status") not in S.FINISHED]
+    print(f"paper/ and notes restored to {c['stage']} ({c['id']}, {c['time']}). Stages to run again: "
+          f"{', '.join(pending) or 'none'}. The state before the rollback is kept in the history.")
+
+
+def cmd_validate(a) -> None:
+    cfg = need_root()
+    bad = 0
+    for f in a.files:
+        errs = handoffs.validate(cfg, f)
+        bad += bool(errs)
+        print(f"{f}: ok" if not errs else f"{f}: {len(errs)} problem(s)\n  - " + "\n  - ".join(errs))
+    sys.exit(1 if bad else 0)
 
 
 def cmd_numbers(a) -> None:
@@ -380,11 +413,23 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("init").set_defaults(f=cmd_init)
     p = sub.add_parser("run")
     p.add_argument("--from", dest="from_stage")
-    p.add_argument("--to", dest="to_stage")
+    p.add_argument("--to", "--pause-at", dest="to_stage")
     p.set_defaults(f=cmd_run)
+    p = sub.add_parser("watch")
+    p.add_argument("--once", action="store_true")
+    p.set_defaults(f=cmd_watch)
+    sub.add_parser("report").set_defaults(f=cmd_report)
+    sub.add_parser("history").set_defaults(f=cmd_history)
+    p = sub.add_parser("rollback")
+    p.add_argument("target", help="a stage name or a history id")
+    p.set_defaults(f=cmd_rollback)
+    p = sub.add_parser("validate")
+    p.add_argument("files", nargs="+")
+    p.set_defaults(f=cmd_validate)
     p = sub.add_parser("reset")
     p.add_argument("stage")
-    p.set_defaults(f=lambda a: (reset(need_root(), a.stage), print(f"{a.stage} and every later stage set to pending")))
+    p.set_defaults(f=lambda a: (reset(need_root(), a.stage),
+                                print(f"pending again: {', '.join(descendants(need_root(), a.stage))}")))
     sub.add_parser("status").set_defaults(f=cmd_status)
     sub.add_parser("next").set_defaults(f=cmd_next)
     p = sub.add_parser("done")

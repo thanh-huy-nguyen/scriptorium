@@ -3,10 +3,14 @@ from __future__ import annotations
 
 import json
 import shutil
+import threading
 import time
 from pathlib import Path
 
 from .config import Config
+
+# Stages run in parallel threads; every read-modify-write of state.json holds this lock (it is reentrant).
+LOCK = threading.RLock()
 
 
 def path(cfg: Config) -> Path:
@@ -25,9 +29,10 @@ def load(cfg: Config) -> dict:
 def save(cfg: Config, s: dict) -> None:
     p = path(cfg)
     p.parent.mkdir(parents=True, exist_ok=True)
-    tmp = p.with_suffix(".tmp")
-    tmp.write_text(json.dumps(s, indent=1))
-    tmp.replace(p)
+    with LOCK:
+        tmp = p.with_suffix(".tmp")
+        tmp.write_text(json.dumps(s, indent=1))
+        tmp.replace(p)
 
 
 def stage(s: dict, name: str) -> dict:
@@ -35,15 +40,21 @@ def stage(s: dict, name: str) -> dict:
 
 
 def mark(cfg: Config, name: str, status: str, **extra) -> None:
-    s = load(cfg)
-    st = stage(s, name)
-    st["status"] = status
-    st[status + "_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-    st.update(extra)
-    save(cfg, s)
+    with LOCK:
+        s = load(cfg)
+        st = stage(s, name)
+        st["status"] = status
+        st[status + "_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
+        st.update(extra)
+        save(cfg, s)
 
 
 def add_usage(cfg: Config, name: str, recs: list[dict]) -> None:
+    with LOCK:
+        _add_usage(cfg, name, recs)
+
+
+def _add_usage(cfg: Config, name: str, recs: list[dict]) -> None:
     s = load(cfg)
     u = s["usage"].setdefault(name, {"sessions": 0, "turns": 0, "input_tokens": 0, "output_tokens": 0,
                                      "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0})

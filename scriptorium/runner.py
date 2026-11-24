@@ -26,7 +26,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import anchor
+from . import anchor, events
 from .config import PKG, PLUGIN_DIR, Config
 
 JAIL_DIR = PKG / "jail"
@@ -46,6 +46,17 @@ RESET_EPOCH_RE = re.compile(r"limit reached\|(\d{9,11})")
 UNAVAILABLE_RE = re.compile(r"requires usage credits|switch to another model|not available on your plan", re.I)
 _limit_lock = threading.Lock()
 _resume_after = [0.0]          # shared across threads: when the subscription is expected to accept requests again
+_slots: dict[str, threading.BoundedSemaphore] = {}   # agent sessions running at once, shared by every stage
+_slots_lock = threading.Lock()
+
+
+def slots(cfg: Config) -> threading.BoundedSemaphore:
+    """One cap on agent sessions for the whole run ([run] parallel), however many stages run at the same time."""
+    with _slots_lock:
+        key = f"{cfg.root}:{cfg.parallel}"
+        if key not in _slots:
+            _slots[key] = threading.BoundedSemaphore(max(1, cfg.parallel))
+        return _slots[key]
 
 
 @dataclass
@@ -184,6 +195,8 @@ def _call(cfg: Config, cmd: list[str], prompt: str, cwd: Path, env: dict, echo=p
                     "attempts": attempt + 1, "waited_s": round(waited), "tokens": tokens}
         with _limit_lock:
             _resume_after[0] = max(_resume_after[0], time.time() + w)
+        if cfg.work.exists():
+            events.emit(cfg, "limit_wait", minutes=round(w / 60, 1))
         waited += w
         attempt += 1
         if resumable and out and out.get("session_id") and (out.get("num_turns") or 0) > 1:
@@ -210,8 +223,11 @@ def run_task(cfg: Config, stage: str, task: Task, echo=print) -> dict:
            "--settings", agent_settings(), "--allowedTools", *ALLOWED]
     logdir = cfg.work / "logs" / stage
     logdir.mkdir(parents=True, exist_ok=True)
-    t0 = time.time()
-    r = _call(cfg, cmd, task.prompt, cfg.root, session_env(cfg, stage, task.agent), echo)
+    with slots(cfg):
+        events.emit(cfg, "task_start", stage=stage, label=task.label, agent=task.agent, model=model)
+        echo(f"    start {task.label} ({task.agent}, {model})")
+        t0 = time.time()
+        r = _call(cfg, cmd, task.prompt, cfg.root, session_env(cfg, stage, task.agent), echo)
     out = r["out"]
     rec: dict = {"label": task.label, "agent": task.agent, "model": model, "seconds": round(time.time() - t0, 1),
                  "ok": r["ok"], "turns": out.get("num_turns"), "session_id": out.get("session_id"),
@@ -220,15 +236,15 @@ def run_task(cfg: Config, stage: str, task: Task, echo=print) -> dict:
     if not r["ok"]:
         rec["error"] = (r["err"] or "")[-2000:]
     (logdir / f"{task.label}.json").write_text(json.dumps({**rec, "prompt": task.prompt}, indent=1))
+    events.emit(cfg, "task_end", stage=stage, label=task.label, agent=task.agent, ok=rec["ok"], turns=rec["turns"],
+                seconds=rec["seconds"], output_tokens=r["tokens"].get("output_tokens", 0))
     return rec
 
 
 def run_tasks(cfg: Config, stage: str, tasks: list[Task], echo=print) -> list[dict]:
     if not tasks:
         return []
-    for t in tasks:
-        echo(f"    start {t.label} ({t.agent}, {cfg.model(t.role or t.agent)})")
-    with ThreadPoolExecutor(max_workers=max(1, cfg.parallel)) as ex:
+    with ThreadPoolExecutor(max_workers=len(tasks)) as ex:
         recs = list(ex.map(lambda t: run_task(cfg, stage, t, echo), tasks))
     for r in recs:
         tok = r.get("tokens") or {}

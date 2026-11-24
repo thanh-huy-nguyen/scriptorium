@@ -1,6 +1,10 @@
 """The pipeline. Each stage prepares its inputs, hands agents their tasks, then checks the result in code.
 
-    scout -> evidence -> outline -> library -> figures -> draft -> frame -> edit -> review0 -> (revise_r -> review_r)* -> final
+Stages form a graph; a stage starts as soon as the stages it depends on are done, so independent teams work at the
+same time (engine.py schedules them):
+
+    scout -> evidence -> ledger -> story -> outline -> { library | figures | tables } -> draft -> frame -> edit
+          -> review0 -> (revise_r -> review_r)* -> final
 
 Agents do the reading and writing. Everything that can be checked without a model is checked here: recipes run,
 the outline parses and names only numbers that exist, citations come from the bibliographic databases, the paper
@@ -14,7 +18,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import anchor, cite, consistency, contest, latex, ledger, lint, lock, state
+from . import anchor, cite, consistency, contest, events, history, latex, ledger, lint, lock, state
 from . import tables as T
 from .config import TEMPLATES, Config
 from .runner import Task
@@ -135,6 +139,7 @@ class Stage:
     name: str
     max_fix: int = 1
     summary: str = ""
+    deps: tuple[str, ...] = ()
 
     def before(self, cfg: Config) -> None:
         pass
@@ -549,13 +554,11 @@ class Review(Stage):
         return out
 
     def validate(self, cfg):
+        from .handoffs import review_problems
         errs = []
         for p in cfg.reviewers:
-            r = read_json(cfg.work / "reviews" / f"{self.name}_{p}.json")
-            if r is None:
-                errs.append(f".scriptorium/reviews/{self.name}_{p}.json is missing or is not valid JSON")
-            elif not isinstance(r.get("overall"), (int, float)):
-                errs.append(f"{self.name}_{p}.json needs a numeric `overall` score (1 to 10)")
+            errs += [e if f"{self.name}_{p}.json" in e else f"{self.name}_{p}.json: {e}"
+                     for e in review_problems(cfg.work / "reviews" / f"{self.name}_{p}.json")]
         return errs
 
     def fix_tasks(self, cfg, errors):
@@ -682,17 +685,38 @@ def report(cfg: Config, errs: list[str]) -> Path:
         lines += ["## Prose flags", ""] + [f"- {f}" for f in flags[:40]] + [""]
     out = cfg.work / "report.md"
     out.write_text("\n".join(lines))
+    (cfg.work / "final_errors.json").write_text(json.dumps({"errors": errs}, indent=1))
+    from . import htmlreport
+    htmlreport.write(cfg, errs)
     return out
 
 
+def _after(st: Stage, *deps: str) -> Stage:
+    st.deps = tuple(deps)
+    return st
+
+
 def pipeline(cfg: Config) -> list[Stage]:
-    st: list[Stage] = [Scout("scout"), Evidence("evidence"), Ledger("ledger"), Story("story"), Outline("outline"),
-                       Library("library"),
-                       Figures("figures"), Tables("tables"), Draft("draft", 1), Draft("frame", 2), Edit("edit"),
-                       Review("review0", 0)]
+    """Every stage, in an order that respects its dependencies (the order the interactive mode walks)."""
+    st: list[Stage] = [
+        _after(Scout("scout")),
+        _after(Evidence("evidence"), "scout"),
+        _after(Ledger("ledger"), "evidence"),
+        _after(Story("story"), "ledger"),
+        _after(Outline("outline"), "story"),
+        _after(Library("library"), "outline"),
+        _after(Figures("figures"), "outline"),
+        _after(Tables("tables"), "outline"),
+        _after(Draft("draft", 1), "library", "figures", "tables"),
+        _after(Draft("frame", 2), "draft"),
+        _after(Edit("edit"), "frame"),
+        _after(Review("review0", 0), "edit"),
+    ]
+    prev = "review0"
     for r in range(1, cfg.review_rounds + 1):
-        st += [Revise(f"revise{r}", r), Review(f"review{r}", r)]
-    st.append(Final("final"))
+        st += [_after(Revise(f"revise{r}", r), prev), _after(Review(f"review{r}", r), f"revise{r}")]
+        prev = f"review{r}"
+    st.append(_after(Final("final"), prev))
     return st
 
 
@@ -707,29 +731,74 @@ def get(cfg: Config, name: str) -> Stage:
     raise SystemExit(f"no stage {name!r}; stages: " + ", ".join(s.name for s in pipeline(cfg)))
 
 
+FINISHED = ("done", "skipped")
+
+
+def ready(cfg: Config, active: set[str] | frozenset = frozenset()) -> list[Stage]:
+    """Stages that may start now: not finished, not in `active`, and every dependency finished (a stage that failed in
+    an earlier run is tried again). Review rounds after a rollback are marked skipped here."""
+    with state.LOCK:
+        s = state.load(cfg)
+        out = []
+        for st in pipeline(cfg):
+            status = s["stages"].get(st.name, {}).get("status", "pending")
+            if status in FINISHED or st.name in active:
+                continue
+            if not all(s["stages"].get(d, {}).get("status") in FINISHED for d in st.deps):
+                continue
+            if s.get("stop_reviews") and isinstance(st, (Revise, Review)):
+                state.mark(cfg, st.name, "skipped")
+                events.emit(cfg, "stage_done", stage=st.name, skipped=True)
+                return ready(cfg, active)
+            out.append(st)
+        return out
+
+
 def next_stage(cfg: Config) -> Stage | None:
+    """The first stage that may start (or is already running), for the interactive mode, which runs one at a time."""
     s = state.load(cfg)
     for st in pipeline(cfg):
-        status = s["stages"].get(st.name, {}).get("status", "pending")
-        if status in ("done", "skipped"):
-            continue
-        if s.get("stop_reviews") and isinstance(st, (Revise, Review)):
-            state.mark(cfg, st.name, "skipped")
-            continue
-        return st
-    return None
+        if s["stages"].get(st.name, {}).get("status") == "running":
+            return st
+    r = ready(cfg)
+    return r[0] if r else None
+
+
+def all_finished(cfg: Config) -> bool:
+    s = state.load(cfg)
+    return all(s["stages"].get(st.name, {}).get("status") in FINISHED for st in pipeline(cfg))
 
 
 def begin(cfg: Config, st: Stage) -> list[Task]:
-    s = state.load(cfg)
-    if state.stage(s, st.name).get("status") != "running":
-        st.before(cfg)
-        state.mark(cfg, st.name, "running", fixes=0)
-    return st.tasks(cfg)
+    with state.LOCK:
+        s = state.load(cfg)
+        if state.stage(s, st.name).get("status") != "running":
+            st.before(cfg)
+            state.mark(cfg, st.name, "running", fixes=0)
+            events.emit(cfg, "stage_start", stage=st.name, deps=list(st.deps))
+        return st.tasks(cfg)
 
 
 def finish(cfg: Config, st: Stage) -> dict:
-    """After the agents ran: post-process, check, and decide. Returns {status: done|fix|failed, errors, tasks}."""
+    """After the agents ran: post-process, check, and decide. Returns {status: done|fix|failed, errors, tasks}.
+    Checks of parallel stages run one at a time (they build the paper and rewrite shared notes)."""
+    with state.LOCK:
+        res = _finish(cfg, st)
+    events.emit(cfg, "stage_check", stage=st.name, status=res["status"], errors=[e.splitlines()[0][:200]
+                                                                                for e in res["errors"]][:20])
+    if res["status"] == "done":
+        cid = history.commit(cfg, st.name, "accepted" if not res["errors"] else
+                             f"accepted with {len(res['errors'])} open problem(s)")
+        events.emit(cfg, "stage_done", stage=st.name, commit=cid)
+        if isinstance(st, Final):
+            from . import htmlreport
+            htmlreport.write(cfg)          # again, now that the final stage is marked done
+    elif res["status"] == "failed":
+        events.emit(cfg, "stage_failed", stage=st.name)
+    return res
+
+
+def _finish(cfg: Config, st: Stage) -> dict:
     moved = lock.verify(cfg.root, cfg.lock_ignore)
     if moved.get("modified") or moved.get("deleted"):
         errs = ([f"modified outside paper/: {f}" for f in moved["modified"]]

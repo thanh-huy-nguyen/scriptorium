@@ -38,3 +38,6 @@ Write .scriptorium/pitches/<framing>.json:
   story needs it.
 - The title and insight must be specific to this work: someone who reads only them should know what was found.
 - Results section titles in `sections` state findings, not experiments.
+
+Before you finish, run `scriptorium validate <the JSON file you wrote>` and fix every problem it reports; the next
+agent starts only from a file that passes.
