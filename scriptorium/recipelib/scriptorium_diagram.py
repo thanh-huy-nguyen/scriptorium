@@ -119,7 +119,9 @@ class Canvas:
         self.fig = plt.figure(figsize=(self.W, self.H))
         self.fig._scriptorium_width = width if isinstance(width, str) else "custom"
         self.fig._scriptorium_kind = "diagram"
-        self.fig._scriptorium_case = False             # the kit sets case per label (case=None keeps a label as is)
+        # the kit sets case per label (case=None keeps one as is); saving also puts any plot drawn inside the
+        # diagram (axis labels, ticks, legend, titles) in sentence case
+        self.fig._scriptorium_case = True
         self.ax = self.fig.add_axes((0, 0, 1, 1))
         self.ax.set_xlim(0, self.W)
         self.ax.set_ylim(0, self.H)

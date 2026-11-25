@@ -37,7 +37,7 @@ WIDTHS = {"column": 3.25, "full": 6.75, "half": 3.25}   # inches; two-column ven
 # and in normal vision, and every colour has at least 3:1 contrast on white (checked in tests/test_visuals.py).
 _NEUTRAL = {"ref": "#8A8F96", "text": "#1B1F24", "grid": "#E6E8EB", "panel": "#FFFFFF", "edge": "#3A3F45"}
 THEMES = {
-    "harbor": {"ours": "#0B6E79", "partner": "#D1495B", "base": ["#C08A1E", "#8E7DBE", "#B5838D", "#7D8CA3"],
+    "harbor": {"ours": "#0B6E79", "partner": "#D1495B", "base": ["#3E4C8A", "#E09F3E", "#8A5A9E", "#6B8F3E"],
                **_NEUTRAL},
     "ink-amber": {"ours": "#1D3557", "partner": "#E07A1F", "base": ["#5B8C5A", "#A05195", "#B5838D", "#8E7DBE"],
                   **_NEUTRAL},
