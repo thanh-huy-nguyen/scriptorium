@@ -134,6 +134,13 @@ def match_number(n: dict, key: dict) -> dict:
         out["verdict"], out["key_ids"] = "supported", [q["id"] for q in hit[:3]]
         return out
     anywhere = [q for q in Q if value_ok(printed, comp, q)]
+    no_stat = {**n, "statistic": ""}
+    if not hit and stated(no_stat) >= 2:          # right quantity, statistic named differently ("ratio of means")
+        loose = [q for q in Q if same_identity(no_stat, q) and value_ok(printed, comp, q)]
+        if loose:
+            out["verdict"], out["key_ids"] = "supported", [q["id"] for q in loose[:3]]
+            out["note"] = "statistic named differently"
+            return out
     if hit:                                                   # identity barely stated: a match, but weakly placed
         common = float(v).is_integer() and abs(v) < 20
         out["verdict"] = "unclear" if common and len(anywhere) > 3 else "supported"

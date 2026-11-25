@@ -340,6 +340,32 @@ def _norm(entry: str) -> str:
     return hashlib.sha256(" ".join(entry.split()).encode()).hexdigest()[:16]
 
 
+CONTENT_FIELDS = ("title", "author", "year", "journal", "booktitle", "volume", "number", "pages", "doi", "eprint")
+_ACCENT = {"'": "\u0301", "`": "\u0300", "^": "\u0302", '"': "\u0308", "~": "\u0303", "c": "\u0327", "v": "\u030c",
+           "u": "\u0306", "=": "\u0304", ".": "\u0307", "H": "\u030b", "k": "\u0328", "r": "\u030a"}
+
+
+def _plain(v: str) -> str:
+    """A field value with LaTeX accents decoded, then accents, braces, dashes, case and spacing normalized away."""
+    import unicodedata
+    v = re.sub(r"\\(['`^\"~=.Hckruv])\s*\{?\\?([A-Za-z])\}?", lambda m: m.group(2) + _ACCENT[m.group(1)], v)
+    v = re.sub(r"\\(ss|o|O|l|L|ae|AE|oe|OE|i|j)\b", lambda m: {"ss": "ss", "o": "o", "O": "o", "l": "l", "L": "l",
+                                                            "ae": "ae", "AE": "ae", "oe": "oe", "OE": "oe", "i": "i",
+                                                            "j": "j"}[m.group(1)], v)
+    v = unicodedata.normalize("NFKD", v)
+    v = "".join(c for c in v if not unicodedata.combining(c))
+    v = re.sub(r"[\u2010-\u2015\u2212]|-{2,}", "-", v)
+    v = re.sub(r"\\[A-Za-z]+|[{}\\$]", "", v)
+    return " ".join(v.lower().split())
+
+
+def content_hash(entry: str) -> str:
+    """A fingerprint of what an entry says (title, authors, year, venue, volume, pages, DOI), not how it is typeset:
+    fixing a dash, an accent, braces or spacing, or adding a note, keeps it; changing what the entry claims does not."""
+    parts = [f"{f}={_plain(entry_field(entry, f) or '')}" for f in CONTENT_FIELDS]
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
+
+
 def _paths(root: Path) -> tuple[Path, Path]:
     return root / PAPER / "refs.bib", root / WORK / "citations.json"
 
@@ -369,7 +395,7 @@ def add(root: Path, cid: str, key: str | None = None) -> str:
     with bib.open("a") as f:
         f.write(("\n" if bib.exists() and bib.stat().st_size else "") + entry + "\n")
     prov[key] = {"id": cid, "title": entry_field(entry, "title"), "year": entry_field(entry, "year"),
-                 "hash": _norm(entry)}
+                 "hash": _norm(entry), "content": content_hash(entry)}
     prov_path.parent.mkdir(parents=True, exist_ok=True)
     prov_path.write_text(json.dumps(prov, indent=1))
     return key
@@ -392,7 +418,8 @@ def verify(root: Path) -> dict[str, list[str]]:
     entries, prov, cited = bib_entries(root), _prov(root), cited_keys(root)
     missing = sorted(k for k in cited if k not in entries)
     untracked = sorted(k for k in entries if k not in prov)
-    edited = sorted(k for k in entries if k in prov and prov[k].get("hash") != _norm(entries[k]))
+    edited = sorted(k for k in entries if k in prov and prov[k].get("hash") != _norm(entries[k])
+                    and prov[k].get("content") != content_hash(entries[k]))      # typographic fixes are allowed
     unused = sorted(k for k in entries if k not in cited)
     where = {k: sorted(set(cited[k])) for k in missing}
     return {"missing": missing, "untracked": untracked, "edited": edited, "unused": unused, "missing_in": where}

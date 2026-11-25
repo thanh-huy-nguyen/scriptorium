@@ -89,6 +89,114 @@ def chunks(text: str, limit: int = 9000) -> list[str]:
     return out
 
 
+def pdf_path(paper: Path) -> Path:
+    p = paper / "main.pdf"
+    if not p.exists():
+        cands = sorted(paper.glob("*.pdf"), key=lambda x: x.stat().st_size, reverse=True)
+        cands = [c for c in cands if "figures" not in str(c)]
+        if not cands:
+            raise FileNotFoundError(f"no compiled PDF in {paper}")
+        p = cands[0]
+    return p
+
+
+def _ruler(span: dict) -> bool:
+    """A review-mode line number in the margin (CVPR, ICCV, ...): a bare two- or three-digit number in colour."""
+    return bool(re.fullmatch(r"\d{2,3}", span["text"].strip()) if "text" in span else False) and span.get("color", 0) != 0
+
+
+def _line_text(line: dict) -> str:
+    """One line rebuilt from its characters in x order, so separately placed decimal points land where they print."""
+    chars = []
+    for sp in line["spans"]:
+        txt = "".join(c["c"] for c in sp.get("chars", []))
+        if _ruler({"text": txt, "color": sp.get("color", 0)}):
+            continue
+        for c in sp.get("chars", []):
+            chars.append((c["bbox"][0], c["bbox"][2], c["c"], sp.get("size", 9)))
+    chars.sort()
+    out, last = "", None
+    for x0, x1, ch, size in chars:
+        if last is not None and x0 - last > 0.22 * size and not out.endswith(" "):
+            out += " "
+        out += ch
+        last = x1
+    return " ".join(out.split())
+
+
+def page_blocks(page, clip=None) -> list[tuple]:
+    """(x0, y0, x1, y1, text) for each text block of a page, rebuilt from characters."""
+    d = page.get_text("rawdict", clip=clip)
+    out = []
+    for b in d["blocks"]:
+        if b.get("type") != 0:
+            continue
+        lines = [_line_text(l) for l in b["lines"]]
+        t = "\n".join(l for l in lines if l)
+        if t.strip():
+            out.append((*b["bbox"], t))
+    return out
+
+
+def pdf_pages(paper: Path) -> list[str]:
+    """The text of each page as a reader sees it, column by column (macros expanded, tags invisible, review line
+    numbers removed)."""
+    import pymupdf
+    out = []
+    for page in pymupdf.open(str(pdf_path(paper))):
+        w = page.rect.width
+        blocks = page_blocks(page)
+        full = [b for b in blocks if b[2] - b[0] > 0.6 * w]
+        cols = [b for b in blocks if b not in full]
+        top = min([c[1] for c in cols] or [1e9])
+        order = sorted(blocks, key=lambda b: (0 if b in full and b[1] < top else 1 + (b[0] > w / 2) + 2 * (b in full),
+                                              b[1]))
+        out.append("\n".join(b[4].replace("\n", " ") if b not in full else b[4] for b in order))
+    return out
+
+
+def pdf_chunks(paper: Path, limit: int = 9000) -> list[str]:
+    """Page texts up to the references, grouped into pieces of at most about `limit` characters."""
+    pages, out, cur = pdf_pages(paper), [], ""
+    for i, t in enumerate(pages):
+        m = re.search(r"\n(References|Bibliography)\n", t)
+        if m:
+            t = t[:m.start()]
+        t = f"[page {i + 1}]\n" + t
+        if len(cur) + len(t) > limit and cur:
+            out.append(cur)
+            cur = ""
+        cur += t + "\n"
+        if m:
+            break
+    if cur.strip():
+        out.append(cur)
+    return out
+
+
+def pdf_tables(paper: Path) -> dict[str, str]:
+    """{'Table 2': the table's text} from the compiled PDF: each table region the PDF parser finds, read line by line
+    and named by the caption nearest to it."""
+    import pymupdf
+    out = {}
+    for page in pymupdf.open(str(pdf_path(paper))):
+        blocks = page_blocks(page)
+        caps = [(b[1], b[3], re.match(r"Table\s+(\d+)", b[4]).group(1)) for b in blocks
+                if re.match(r"Table\s+\d+\s*[.:|]", b[4])]
+        try:
+            found = page.find_tables().tables
+        except Exception:  # noqa: BLE001
+            found = []
+        for t in found:
+            if not caps:
+                continue
+            y0, y1 = t.bbox[1], t.bbox[3]
+            n = min(caps, key=lambda c: min(abs(c[1] - y0), abs(c[0] - y1)))[2]
+            text = "\n".join(b[4] for b in page_blocks(page, clip=pymupdf.Rect(t.bbox)))
+            out[f"Table {n}"] = (out.get(f"Table {n}", "") + "\n" + text).strip()
+    return out
+
+
 def labels(paper: Path) -> dict[str, str]:
     """Printed numbers of tables and figures from the .aux file: {'tab:main': '2', ...}."""
     out = {}

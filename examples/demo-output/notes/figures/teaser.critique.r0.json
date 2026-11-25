@@ -1,15 +1,67 @@
-{"verdict": "revise",
+{
+ "verdict": "revise",
  "issues": [
-  {"issue": "The y axis in panel 3 starts at 50, which exaggerates the drop of the MLP and logistic regression, but neither the figure nor the caption draft says so.", "fix": "Add 'y axis starts at 50%' to the caption (or a small axis-break note in panel 3).", "severity": "major"},
-  {"issue": "The caption says the precision bar is 'pooled over all noisy runs', but teaser.py computes the mean of per-run precisions (mean of n_dropped_noisy/n_dropped), which is not the pooled ratio.", "fix": "Either compute sum(n_dropped_noisy)/sum(n_dropped) or word the caption as 'mean over the 20 noisy filter runs'; keep the key precision_pooled_noisy consistent with the recipe.", "severity": "major"},
-  {"issue": "In panel 2 the predicted samples show only the digit glyph, not the class tag, so the reader cannot see that a disagreement means 'prediction differs from the tag'. The red-outlined, crossed thumbnails also look like the image is wrong rather than the label.", "fix": "Add a small tag under each of the four predicted samples (the given tag, plus a tiny 'pred' value on the crossed ones), or write 'prediction ≠ tag' next to the crosses.", "severity": "minor"},
-  {"issue": "The stacked bar is labelled 'precision of the filter' below and 'dropped samples, noisy runs' above. The caption for flipped is purple here but red in panel 1, and the second label is far from the bar and reads as a second title.", "fix": "Use one label above the bar, such as 'dropped samples that are truly flipped: 71%'. Give the flipped segment a thin red outline or marker so the red-means-flipped convention carries over from panel 1.", "severity": "minor"},
-  {"issue": "Panel 3 carries the claim, but at 40% on Breast cancer the filter's error bar is huge and the filter does not clearly beat logistic regression. Seed dots (s=1.6) are barely visible. A reader cannot tell at a glance how far each method falls from its own clean accuracy.", "fix": "Enlarge the seed dots slightly, and add a faint dashed line at the filter's 0% accuracy (or label the drop in points at 40% for each method). Keep the caption sentence about instability on Breast cancer.", "severity": "minor"},
-  {"issue": "The two connecting arrows are small dark blobs that look heavier than the thin purple arrows inside panel 2 and do not read as the thick rounded arrows of the style; the 6.5 pt text is small at column scale.", "fix": "Make the inter-panel arrows lighter (light purple or gray) and slightly longer, and raise the smallest labels to 7 pt where space allows.", "severity": "minor"}
+  {
+   "issue": "Panel (c): the axis-break mark sits between the labelled ticks 60 and 70 (axes fractions 0.058 and 0.112 with ylim 60 to 100). It reads as if the 60 to 70 interval were cut or compressed, although the scale is linear there and several seeds lie near it. A break belongs below the lowest labelled tick.",
+   "fix": "Use axc.set_ylim(54, 100), keep the ticks 60 to 100, and move both slashes and the white gap below the 60 tick (for example y0 in (0.035, 0.085) with a half-height of 0.025 in axes fraction). The bars then pass below 60 into the broken stub. Keep 'the y axis does not start at zero' in the caption.",
+   "severity": "major"
+  },
+  {
+   "issue": "Panel (b): the 'All mislabeled' key is split from the legend and floats at the right of the title row. It reads as a subtitle, and a reader scanning the legend finds only two of the three encodings, although the tick carries the 'how close does the solid segment come' comparison.",
+   "fix": "Shorten the labels to 'Mislabeled', 'Correctly labeled' and 'All mislabeled' (the y label already says 'removed'), and pass all three, the tick as a Line2D handle, to the single legend() call at LEGEND_Y. Delete the hand-drawn key (script lines 236 to 240). Reduce columnspacing if needed to stay inside the panel.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Panel (b): on digits at both noise rates and on breast cancer at the lower rate, the thick gray tick covers the solid-to-light boundary and looks like a segment divider. Gray on teal is also faint, and the same gray horizontal line means something else (clean-label reference) in the neighbouring panel.",
+   "fix": "Draw the tick in the dark text colour (INK) at about 1.4 pt, extending further past the bar (x - 0.44 to x + 0.44), and use the same style for its legend handle. Gray then means only the clean-label reference.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Panel (b): the two-line y label starts left of the canvas edge in the layout file (x = -0.008 in) and touches the panel border, while the title and the (c) y label have a visible margin.",
+   "fix": "Move the (b) axes right (BX from 0.49 to about 0.55) so the y label has at least 0.05 in of padding inside the panel.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Stage 1: nothing connects the four grey folds to the model card. The only arrow goes from the card to the held-out fold, so 'fit on the other folds', the core of out-of-fold prediction, is conveyed by proximity alone.",
+   "fix": "Add a thin bracket over the four grey folds with a short arrow up into the card (lower the strip or raise the card by about 0.04 in to make room), keeping the existing curved arrow as the prediction step.",
+   "severity": "minor"
+  },
+  {
+   "issue": "The numbered circles float in the header row, on one line with '(a) Filter noisy labels'. Circle 1 reads as part of the panel title, and the numbers are detached from the stage names they mark.",
+   "fix": "Set each circle directly left of its stage title inside the tile, with shorter titles ('Predict', 'Compare', 'Drop', 'Refit once') and the note under the fold strip changed to 'Out-of-fold, each in turn'.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Stage 3: at print size the crosses cover most of each small marker, so it is hard to see that three struck points carry the other cluster's marker and one carries a correct label.",
+   "fix": "Make the scatter markers slightly larger (r about 0.028) and draw longer, thinner crosses (s about 0.048, lw about 1.2) so the filled or open centre stays visible between the arms.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Tight spacing in panel (a): the 'No clean set' and 'No noise rate' pills nearly touch and their text fills the outline; in stage 4 the decision line runs almost into the title above and the model card below, so it looks like a pointer to the card.",
+   "fix": "Use pill height 0.15 in with a gap of about 0.035 in. Shorten the refit line to the vertical extent of the points (about SY + 0.03 to SY + 0.52).",
+   "severity": "minor"
+  },
+  {
+   "issue": "Panel (c): seed dots with neighbouring offsets (-0.135, -0.105, -0.075) overlap into clumps where seed values are close, mostly in the clean settings and for ours, and crowd the reference line.",
+   "fix": "Spread the fixed offsets, for example [-0.16, -0.06, 0.06, 0.16, -0.11], which stays inside the bar and clear of the error bar.",
+   "severity": "minor"
+  },
+  {
+   "issue": "The title '(c) What it scores' is awkward and does not say that this panel holds both the gain and its cost.",
+   "fix": "Retitle it '(c) What it gains and costs'.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Caption: 'at 40% noise ours stays below the gray line on both datasets' suggests that ours reaches the reference at the lower rate, but its seed mean is below the line in every noisy setting. The third contribution's run-by-run result also cannot be read from panel (c), whose dots are not paired.",
+   "fix": "Write 'On seed means, ours stays below the gray line in every noisy setting, furthest on breast cancer at 40% noise.' Add one sentence that run by run ours is more accurate in all but one noisy run, citing the paired-gain figure, with the needed source tags.",
+   "severity": "minor"
+  }
  ],
  "strengths": [
-  "Left-to-right flow with numbered circles and plain titles is readable in five seconds: noisy tags, drop disagreements, refit.",
-  "Purple is used consistently for our method (network icon, flipped bar, Filter bars), and the baselines have distinct muted hues.",
-  "Panel 3 shows the problem and the result together, with sd error bars and seed dots, and the legend sits above the data.",
-  "The 4x6 grid with red-outlined tags makes the noise concrete, and the 'flipped tag' key is clear."
- ]}
+  "The message reads at a glance: a four-stage left-to-right filter, mostly solid (mislabeled) drops under noise, and teal bars above logistic regression but under the clean-label line.",
+  "The three lettered panels map one to one onto the three contributions, so the figure and caption carry the central claim.",
+  "Equal tiles, arrows at one height, a consistent accent for what the method adds, and no equations.",
+  "Panels (b) and (c) share the same six settings, order and baseline, which makes the two outcomes easy to link; legends stay off the data.",
+  "Honest display: a correctly labeled drop in the schematic, the light segment in (b), seed dots and sd bars in (c), the wide spread on breast cancer at 40% noise, and a caption that states the non-zero axis and the unestablished gain."
+ ]
+}

@@ -1,15 +1,25 @@
-# teaser
+# Figure `teaser`
+
+Files: `paper/figures/teaser.pdf` (script `paper/figures/teaser.py`), full text width, 6.75 in x 3.33 in.
 
 ## Caption
 
-Out-of-fold disagreement finds flipped labels, and refitting without them keeps a linear model accurate under label noise. (1) A training set with symmetric label flips; flipped tags are outlined in red, and thumbnails are schematic digit glyphs, not dataset samples. (2) Each sample is predicted by a logistic regression fit on the other four folds; samples whose prediction disagrees with their tag are crossed out and dropped. Most dropped samples are truly flipped (bar, pooled over all noisy runs). (3) Test accuracy of plain logistic regression, an untuned MLP and the filter (ours) at 0, 20 and 40% label noise. Bars are means over 5 seeds (all runs, no selection), error bars are sd, and dots are seeds. The y axis starts at 50%; the dashed line is the filter's clean-label accuracy. The filter stays closest to its clean-label accuracy as noise grows and the MLP falls furthest; on Breast cancer at 40% noise the seed spread is wide and the filter's lead over logistic regression is small.
+This is the caption printed in `paper/01_intro.tex`.
+
+We show what the out-of-fold filter does, removes, gains and costs. (a) A logistic regression fit on the other cross-validation folds predicts each training sample (1). The filter compares this prediction with the given label (2), drops mismatches (3) and refits once (4). Samples are schematic (fill marks the given class); correctly labeled ones can be dropped too. (b) Share of the training set removed, split into mislabeled and correctly labeled samples; black marks beside the bars give the mislabeled share of the whole training set. (c) Test accuracy of ours minus that of logistic regression with the same settings (red zero line), paired by seed. Gray marks place the clean-label reference on this scale, at the accuracy that noise costs logistic regression. Under noise, every mean gain falls short of its mark. Bars are means over 5\src{n_seeds} seeds; in (c), error bars are sd and dots are seeds.
 
 ## What the figure shows
 
-Three panels: noisy labels, out-of-fold dropping, refit. Panel 2 shows folds 1-4 (bracket) fitting the network card and fold 5 as the held-out fold it predicts. The stacked bar gives the pooled precision, computed from `results/runs.jsonl` (digits, 40% noise runs where the filter dropped samples). Panel 3 draws bars, sd and seed dots from the same file.
+- (a) "Filter noisy labels": the noisy input with the two things the filter does without ("Needs no clean set", "Needs no noise rate"), then four numbered stages ("Predict", "Compare", "Drop", "Refit once"). In stage 1 a bracket and arrow lead from the other folds into the model card (fit), and a curved arrow leads from the card into the held-out fold (predict). The held-out fold, the crosses, the refit line and the refit model card are in the accent color. The scatter positions are hand-placed and schematic; one correctly labeled point is dropped along with three mislabeled ones.
+- (b) "What it removes": stacked means per setting (`drop_fraction_*_noise0`, `drop_share_mislabeled_*`, `drop_share_correct_*`). The mislabeled share of the training set (`noisy_share_*`) is a black mark in two short stubs, one on each side of the bar, so the top of the solid segment stays visible. All three encodings share one legend.
+- (c) "What it gains and costs": mean paired gain over logistic regression (`gain_vs_logreg_*`), its sd (`std_gain_vs_logreg_*`), the five seed values of each bar, and on each noisy setting the accuracy that noise costs logistic regression (`noise_cost_*`) as a gray mark. The red zero line is logistic regression.
 
-## Notes for the author
+## Layout choices that differ from the plan
 
-- Colors now come from the theme (`sf.color`), so figlint passes. The accent is therefore the theme's ours color (teal in "harbor"), not Northwestern purple, and the pale tints are computed from it. The figure uses the theme's partner color for flipped tags and crosses. If the paper should show purple, set that in scriptorium.toml.
-- scikit-learn is not importable in the figure environment, so the script falls back to hand-drawn 5x7 pixel digits, and the caption says the thumbnails are schematic. With sklearn it uses real 8x8 digit images; then delete that clause from the caption.
-- Fonts: labels, tags, legend and tick labels are 7.5-8 pt. "clean 24%" sits below the bar. The legend row is one line above the plots, and the dashed-line meaning is in the caption only.
+- The figure uses the kit's full width and is slightly taller than planned, so that all text stays at 7.5 pt or larger without collisions.
+- Stage titles are shortened so that each numbered circle sits directly left of its title inside the tile.
+- The note under the fold strip reads "Out-of-fold, each in turn", and the two pills begin with "Needs".
+- The input tile also names the correctly labeled point that stage 3 drops.
+- The reference in (b) is black instead of gray, so that gray stands only for the clean-label reference. The legend labels of (b) are shortened to fit on one line.
+- Panel (c) is titled "What it gains and costs" and plots paired gains with a true zero, in place of two accuracy bars per setting on an axis that starts at 60.
+- The check and cross marks are drawn in the script, so that they match in weight and cannot be mistaken for the filled class marker.

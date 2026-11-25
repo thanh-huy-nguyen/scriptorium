@@ -3,7 +3,9 @@
 Verdicts per cited entry:
     found          a record with this title exists, and its year and first author agree
     wrong metadata the record exists, but the year (off by more than one) or the first author differs
-    not found      no record with a title this close in Crossref, OpenAlex or arXiv
+    not found      no record with a title this close in Crossref, OpenAlex, Semantic Scholar or arXiv, all of which
+                   answered
+    unverified     not found, but at least one database did not answer (rate limit); rerun later
 Requests carry a generic client name and no personal details.
 """
 from __future__ import annotations
@@ -21,13 +23,20 @@ from common import body, main_tex
 UA = {"User-Agent": "repowrite-checker/0.1 (research benchmark)"}
 
 
+FAILED: list[str] = []          # sources that did not answer during the current lookup
+
+
 def _get(url: str, tries: int = 3):
     for k in range(tries):
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=30) as r:
-                return r.read().decode("utf-8", "replace")
+                body_ = r.read().decode("utf-8", "replace")
+                if "not a bot" in body_[:2000]:
+                    break                      # a bot check, not an answer
+                return body_
         except Exception:  # noqa: BLE001  rate limits and network errors: wait and retry
             time.sleep(3 * (k + 1))
+    FAILED.append(urllib.parse.urlparse(url).netloc)
     return None
 
 
@@ -77,7 +86,7 @@ def lookup(title: str) -> list[dict]:
     """Candidate records {title, year, first} from Crossref, then OpenAlex, then arXiv."""
     q = urllib.parse.quote(title)
     out = []
-    r = _get(f"https://api.crossref.org/works?query.bibliographic={q}&rows=5&select=title,author,issued")
+    r = _get(f"https://api.crossref.org/works?query.bibliographic={q}&rows=10&select=title,author,issued")
     if r:
         for it in json.loads(r).get("message", {}).get("items", []):
             yr = ((it.get("issued") or {}).get("date-parts") or [[None]])[0][0]
@@ -89,6 +98,36 @@ def lookup(title: str) -> list[dict]:
             au = ((it.get("authorships") or [{}])[0].get("author") or {}).get("display_name", "")
             out.append({"title": it.get("title") or "", "year": it.get("publication_year"),
                         "first": norm(au.split()[-1]) if au else "", "src": "openalex"})
+    for url in (f"https://api.semanticscholar.org/graph/v1/paper/search/match?query={q}&fields=title,year,authors",
+                f"https://api.semanticscholar.org/graph/v1/paper/search?query={q}&limit=5&fields=title,year,authors"):
+        r = _get(url)
+        if r:
+            try:
+                data = json.loads(r).get("data") or []
+            except json.JSONDecodeError:
+                data = []
+            for it in data:
+                au = (it.get("authors") or [{}])[0].get("name", "")
+                out.append({"title": it.get("title") or "", "year": it.get("year"),
+                            "first": norm(au.split()[-1]) if au else "", "src": "semanticscholar"})
+            if data and url.find("/match?") > 0 and difflib.SequenceMatcher(None, norm(title),
+                                                                           norm(data[0].get("title") or "")).ratio() > 0.9:
+                break
+        time.sleep(1.0)
+    r = _get(f"https://dblp.org/search/publ/api?q={q}&format=json&h=8")     # often behind a bot check
+    if r:
+        try:
+            hits = json.loads(r).get("result", {}).get("hits", {}).get("hit", []) or []
+        except json.JSONDecodeError:
+            hits = []
+        for h in hits:
+            info = h.get("info", {})
+            au = (info.get("authors") or {}).get("author") or []
+            au = au[0] if isinstance(au, list) and au else au
+            name = au.get("text", "") if isinstance(au, dict) else str(au)
+            name = re.sub(r"\s+\d{4}$", "", name)
+            out.append({"title": info.get("title", "").rstrip("."), "year": int(info["year"]) if info.get("year") else None,
+                        "first": norm(name.split()[-1]) if name else "", "src": "dblp"})
     r = _get("https://export.arxiv.org/api/query?max_results=5&search_query=" + urllib.parse.quote(f'ti:"{title}"'))
     if r:
         for e in re.findall(r"<entry>(.*?)</entry>", r, re.S):
@@ -105,24 +144,36 @@ def check_entry(e: dict) -> dict:
     if not title:
         return {"verdict": "not found", "why": "no title"}
     want = norm(title)
-    best, score = None, 0.0
-    for c in lookup(title):
-        s = difflib.SequenceMatcher(None, want, norm(c["title"])).ratio()
-        if s > score:
-            best, score = c, s
-    if not best or score < 0.9:
-        return {"verdict": "not found", "closest": best and best["title"], "similarity": round(score, 2)}
-    why = []
+    FAILED.clear()
+    scored = [(difflib.SequenceMatcher(None, want, norm(c["title"])).ratio(), c) for c in lookup(title)]
+    close = [(sc, c) for sc, c in scored if sc >= 0.9]
+    if not close:
+        best = max(scored, key=lambda x: x[0], default=(0.0, None))
+        failed = sorted(set(f for f in FAILED if "dblp" not in f))
+        return {"verdict": "unverified" if failed else "not found", "why": ("lookup failed: " + ", ".join(failed))
+                if failed else "", "closest": best[1] and best[1]["title"], "similarity": round(best[0], 2)}
     try:
-        if e.get("year") and best.get("year") and abs(int(re.sub(r"\D", "", e["year"])[:4]) - int(best["year"])) > 1:
-            why.append(f"year {e['year']} vs {best['year']}")
+        year = int(re.sub(r"\D", "", e.get("year", ""))[:4]) if e.get("year") else None
     except ValueError:
-        pass
-    if e.get("author") and best.get("first") and surname(e["author"]) and surname(e["author"]) != best["first"] \
-            and best["first"] not in norm(e["author"]):
-        why.append(f"first author {surname(e['author'])} vs {best['first']}")
-    return {"verdict": "wrong metadata" if why else "found", "why": "; ".join(why), "source": best["src"],
-            "similarity": round(score, 2)}
+        year = None
+    who = surname(e.get("author", "")) if e.get("author") else ""
+
+    def problems(c):
+        why = []
+        if year and c.get("year") and abs(year - int(c["year"])) > 1:
+            why.append(f"year {year} vs {c['year']}")
+        if who and c.get("first") and who != c["first"] and c["first"] not in norm(e.get("author", "")):
+            why.append(f"first author {who} vs {c['first']}")
+        return why
+    # the entry is right if any record with this title agrees with it (databases list reprints and later versions)
+    best = min(close, key=lambda x: (len(problems(x[1])), -x[0]))
+    why = problems(best[1])
+    failed = sorted(set(f for f in FAILED if "dblp" not in f))
+    if why and failed:                          # the record that agrees may sit in the database that did not answer
+        return {"verdict": "unverified", "why": "; ".join(why) + "; lookup failed: " + ", ".join(failed),
+                "source": best[1]["src"], "similarity": round(best[0], 2)}
+    return {"verdict": "wrong metadata" if why else "found", "why": "; ".join(why), "source": best[1]["src"],
+            "similarity": round(best[0], 2)}
 
 
 def check_refs(paper: Path) -> list[dict]:

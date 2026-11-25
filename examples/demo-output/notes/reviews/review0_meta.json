@@ -1,109 +1,141 @@
 {
   "decision": "major revision",
-  "summary": "The paper measures a known rule, the single-algorithm cross-validated filter (fit logistic regression out-of-fold, drop disagreements, refit), on digits and breast cancer under symmetric noise with 5 seeds. It finds that most dropped samples are flipped, that the refit model beats plain logistic regression in most noisy cells and an untuned MLP in all of them, and that the clean-label cost is small. The scope is stated honestly, but the headline wording runs ahead of the weakest cells, the precision test uses the wrong null, and the MLP win carries more weight than a weak baseline can bear. The reviser cannot run new experiments, so most fixes are narrower claims, re-analysis of existing per-seed data, and stated limitations.",
+  "summary": "On two small datasets with symmetric noise, a one-pass out-of-fold filter drops mostly mislabeled samples, has a higher mean accuracy than logistic regression with the same settings in every noisy setting (unresolved on breast cancer at the lower rate), costs little on clean labels and recovers only part of the lost accuracy. The scoping is careful and no new experiment is required, but the paper does not say what it measures beyond a known filter, omits the most direct evidence its runs hold (the noise left after filtering), rests verdicts on a test criterion it never states and prints without its bold and italic type.",
   "required_changes": [
     {
-      "change": "Use one scoped claim about the gain over logistic regression in the abstract, intro paragraph 4, contribution 2 and the Sec. 4 opening: clear gains on digits at 20% and 40%, a gain on breast cancer at 40% with a seed sd of about 9 points and only about 22% of the loss recovered, and a non-significant gain on breast cancer at 20%. Remove 'in every noisy setting we ran' and 'all but one paired noisy run' (or name the run). Fix the Sec. 4 opening 'five of six dataset-noise cells', which does not match the tables; the filter has a significant gain over logistic regression in three of four noisy cells.",
-      "where": "abstract, Sec. 1 paragraph 4 and contributions 1-2, Sec. 4 opening, Sec. 4.2",
-      "why": "all four reviewers flag that the headline is stronger than the breast cancer cells, and the wording differs between abstract, intro and results. The ledger marks the low-noise breast cancer gain as weak and the 40% breast cancer recovery as partial.",
+      "change": "Reframe the paper as a measurement of a known filter. In Sec. 1, replace the second paragraph (inputs that other repairs need) with the question the runs answer: what one linear out-of-fold filter removes, recovers and costs on small clean and symmetrically noisy training sets. Turn the first contribution from the filter itself into that study, keeping three bullets. Move the italic central claim from a design property to the measured finding (most drops are mislabeled and refitting wins back only part of the lost accuracy, on these two datasets). Retitle so the title names label noise and out-of-fold filtering and does not rest on a property true by construction (the working title in brief.md does this). In Sec. 2, state what Brodley and Friedl report in their abstract (single-algorithm, majority and consensus filters on five datasets, accuracy gains for noise levels up to 30%, and the trade-off between discarding good data and keeping bad data), then what this study adds. Do not claim they omitted anything the abstract does not settle. Keep 'needs no noise rate or clean set' as one property in Sec. 3.",
+      "where": "title; abstract; Sec. 1, paragraphs 2 and 3 and first contribution; Sec. 2 'Filtering mislabeled samples'",
+      "why": "All four reviewers cannot tell what is new. The paper says it claims no new method, yet its title, italic claim and first bullet present the filter, and the stated gap also fits classification filtering and confident learning. Sec. 2 names the antecedent's filter types but none of its findings.",
       "action": "narrow claim",
-      "from": ["clarity", "soundness", "significance", "experiments"]
+      "from": ["significance", "soundness", "experiments", "clarity"]
     },
     {
-      "change": "Replace the 50% null for precision. A random drop has precision equal to the realized flip rate (about 39% at the high rate, about 20% at the low rate; the paper already prints the realized rates). Report per-cell precision next to the realized noise rate and the lift over it, computed from existing per-seed results, and either drop the 'p vs 50%' column or relabel it as a test against 50%, not 'chance'. Drop the pooled 71% from the abstract and teaser, or label it 'pooled over four noisy cells' and give the per-cell range of 65 to 76%.",
-      "where": "Sec. 4 'Metrics and statistics', Sec. 4.1, Table 2 caption and column, abstract, Fig. 1 panel 2",
-      "why": "three reviewers agree the null is wrong and the pooled number mixes base rates. A correct baseline would make the precision claim stronger at 20% noise, where 65% is far above a 20% base rate. At 40% on breast cancer the lift is small, and the text should say so.",
+      "change": "Add two columns to Table 1 from the saved runs, each a mean over seeds of per-seed ratios: the mislabeled share of the kept set, (n_noisy - n_dropped_noisy) / (n_train - n_dropped), and the share of correctly labeled samples dropped, (n_dropped - n_dropped_noisy) / (n_train - n_noisy). Build Sec. 4.1 around them. State that random removal of as many samples would, in expectation, leave the mislabeled share unchanged, with precision equal to the flipped share and recall equal to the drop share. Rewrite 'Removal adapts to the labels' to say that removal grows with noise and exceeds the flipped share in every noisy setting. Rewrite 'Heavier noise shifts what is dropped' to say that at the higher rate the filter misses more flips and discards more correct samples (on seed means), and compare precision only with the flipped share. Do not attribute the accuracy gain to these quantities. Add recipes in paper/sources.py and a matching ledger entry.",
+      "where": "Table 1 and its caption; Sec. 4.1",
+      "why": "This is the most direct evidence of what the filter does to the training set and it is absent. My check of results/runs.jsonl gives about 0.4% and 2% mislabeled in the kept set on digits and 2% and 15% on breast cancer (lower, higher rate), and correct samples dropped rising from about 13% to 20% and from 7% to 23%. Rising precision on digits also reads as better selection, although precision relative to the flipped share falls on both datasets.",
       "action": "add analysis from existing data",
-      "from": ["soundness", "experiments", "clarity"]
-    },
-    {
-      "change": "Demote the MLP comparison. Label it everywhere as an untuned MLP reference (no tuning, no early stopping, no weight decay, not given the filtered data), and reword the Sec. 4.3 heading so that it says the MLP is hurt more by noisy labels. Remove 'beats an MLP in every run' from the abstract as a headline, and move the MLP contribution after the logistic regression comparison. State as a limitation that an MLP trained on the filtered set, a regularized or early-stopped MLP and a tuned-C logistic regression were not run.",
-      "where": "abstract, Sec. 1 contribution 2, Fig. 1 caption, Sec. 4.3 heading and text, Fig. 2 caption, Sec. 5",
-      "why": "all four reviewers say the untuned MLP is a weak baseline, so the 28-point gap shows that the MLP overfits noise, not that filtering is valuable. The paper already says the MLP was untuned, but the abstract and bullet give the win equal weight with logistic regression.",
-      "action": "narrow claim",
-      "from": ["significance", "soundness", "clarity", "experiments"]
-    },
-    {
-      "change": "State plainly that the rule is the 1999 single-algorithm filter and that the contribution is a measurement of its precision, recall, accuracy effect and clean-label cost on small symmetric-noise problems. Rewrite contribution 1 and the abstract as an empirical check of a known filter, not a new method. Add to the limitations that no comparison with confident learning, a majority-vote variant or a noise-aware logistic regression was run, so the paper cannot say whether thresholds or per-class counts matter.",
-      "where": "abstract, Sec. 1 contributions, Sec. 2, Sec. 5",
-      "why": "three reviewers say novelty is near zero and the nearest method is not compared. No baseline can be added, so honest framing is the fix. Sec. 2 already says the idea is Brodley and Friedl's, but the intro and bullets use method-paper language.",
-      "action": "narrow claim",
       "from": ["significance", "experiments", "soundness"]
     },
     {
-      "change": "Narrow the title, the Sec. 3 'Why' paragraph and Sec. 5 to what was tested: two near-linearly separable datasets, symmetric noise, 5 seeds. Add to the limitations that class-dependent noise, where a linear model's confusions follow the flips, is the obvious failure case, and that no experiment separates the effect of targeting flipped labels from the effect of dropping samples (random-drop and oracle-drop controls). Tie 'a simple first thing to try' to small symmetric-noise problems.",
-      "where": "title, Sec. 3 'Why disagreement marks a flipped label', Sec. 5",
-      "why": "reviewers say the title and mechanism sentence state a general result from two easy datasets, and that gains may come from regularization by subsampling, not targeting. Recall of 79% on breast cancer at 40% does not support 'finds the flipped labels' without qualification.",
-      "action": "state as limitation",
-      "from": ["soundness", "experiments", "significance"]
-    },
-    {
-      "change": "Make the statistics statement honest and fix the cross-reference. Say that the p-values come from 5 paired seeds and about a dozen uncorrected tests, and are descriptive. Describe the trend test (paired difference of per-seed gains between 40% and 20%) in one sentence. Sec. 4.2 cites Table 2 for the non-significant breast cancer trend, but that table has no such test; state the p-values or cite the correct source. Report per-cell counts of seeds with a gain, from existing runs, in place of the pooled win counts.",
-      "where": "Sec. 4 'Metrics and statistics', Sec. 4.2, Table 2 caption",
-      "why": "reviewers flag thin statistics, no multiplicity note, an undescribed trend test and pooled win counts that treat runs as independent. The cross-reference error is confirmed in the paper.",
-      "action": "edit text",
-      "from": ["soundness", "experiments", "clarity"]
-    },
-    {
-      "change": "Treat the clean-label cost and the recovered share with their resolution. Say that on breast cancer one test sample is about 0.6 points (171 test samples), so a cost of 0.1 to 0.2 points is below one sample and 5 seeds cannot show equivalence. Define 'recovered share' in one sentence in Sec. 4.2, give the raw accuracy loss it divides by for each cell (from existing means), and note that it is unstable when that loss is small, or drop the column in favor of the paired gain. Merge the orphan breast cancer sentence into the clean-label paragraph.",
-      "where": "Sec. 4.2, Sec. 4.4, Table 2, abstract",
-      "why": "reviewers read 'costs a fraction of a point' as below test-set resolution and the recovered share as the authors' own unstable metric (22% to 78% across cells).",
-      "action": "add analysis from existing data",
-      "from": ["soundness", "experiments", "clarity"]
-    },
-    {
-      "change": "Fill the missing setup details that can be taken from the code and existing results: argmax disagreement for 10-class digits, how multiclass flips are drawn, whether standardization is fit inside each fold, whether folds are stratified on the noisy labels, the MLP solver and scaling, and how time was measured. List as a limitation that the clean-label drops (about 3.5% on digits) are not broken down by class.",
-      "where": "Sec. 3 Procedure, Sec. 4 'Data and noise' and 'Models', Sec. 5",
-      "why": "clarity and soundness reviewers could not reproduce or judge the rule from the text; these are one-line additions.",
-      "action": "edit text",
-      "from": ["clarity", "soundness"]
-    },
-    {
-      "change": "Rewrite contribution 3 as findings (clean-label cost, fit time, the unstable breast cancer cell) instead of 'an honest account'. Delete the Scriptorium pipeline sentence from Sec. 3. Cut Sec. 5 to the take-away and the limits not already given in Sec. 2 and 4, and delete the untested last line about passing the dropped set to a reviewer.",
-      "where": "Sec. 1 contribution 3, Sec. 3 last paragraph, Sec. 5",
-      "why": "three reviewers flag the pipeline sentence and the tone-based bullet, and Sec. 5 repeats earlier text. The cuts also free space in a 4-page limit.",
-      "action": "edit text",
+      "change": "Fix two statements that read stronger than the data. (a) Say that the mean of the refit model stays below the clean-label reference in all four noisy settings, and that both lower-rate gaps are borderline: digits just misses the 0.05 level and breast cancer just passes it. (b) Wherever breast cancer at the lower rate is counted among settings that win back much of the lost accuracy, say in the same place that its gain over logistic regression is not established; in Sec. 4.2 add that its per-seed recovered share is unstable (with a recipe for the range).",
+      "where": "abstract; Sec. 1, third contribution; Sec. 4.2 'Recovery is partial'; Sec. 5; Fig. 1 caption",
+      "why": "The last sentence of Sec. 4.2 omits digits at the lower rate, so it reads as if the filter reaches the reference there, although that mean gap in Table 2 is slightly larger than the one listed for breast cancer. The abstract counts breast cancer at the lower rate under 'much of the lost accuracy' although the gain is unresolved and the per-seed share runs from below zero to 100%.",
+      "action": "narrow claim",
       "from": ["clarity", "experiments", "soundness"]
+    },
+    {
+      "change": "Make the statistics checkable. Define 'established' once (two-sided paired t-test across seeds, p < 0.05, no correction for multiple comparisons) and add that re-split seeds overlap, so these p-values are likely optimistic. Replace the sentence on what the tests pair with plain wording. Print the p-values of the borderline comparisons next to their sentences (p_filter_vs_logreg_breast_noise20, p_clean_logreg_vs_filter_digits_noise20, p_clean_logreg_vs_filter_breast_noise20). Delete the sentences on whether more than half of the loss is won back.",
+      "where": "Sec. 4 'Checks and statistics'; Sec. 4.2; captions of Figs. 1 and 2; Sec. 5",
+      "why": "All four reviewers find verdicts with no level, p-value or interval, in a section that also calls the tests descriptive. The one-half threshold is never motivated. A rough check with a correction for overlapping splits puts the gap-to-clean verdicts above 0.05, so they should not be worded as firm.",
+      "action": "edit text",
+      "from": ["soundness", "clarity", "experiments", "significance"]
+    },
+    {
+      "change": "State in Sec. 4 'Methods' that the only comparison that isolates filtering is logistic regression with the same fixed C, and that no other noise treatment was run. Tie the gain to that baseline in the abstract and third contribution ('logistic regression with the same settings'). Place the sentence on not attributing the gain to removing the right samples next to the accuracy result in Sec. 4.2. Add to the limitations that removing samples at fixed C also changes the relative strength of regularization, that stronger regularization was not tried, and that the filter was tested only where clean-label logistic regression is very accurate.",
+      "where": "abstract; Sec. 1, third contribution; Sec. 4 'Methods'; Sec. 4.2; Sec. 5 'Limitations and next steps'",
+      "why": "The missing controls appear only in the last paragraph, and the confound with regularization is nowhere. Random-drop, oracle, other filters and other values of C cannot be run in revision, so the scope has to say it.",
+      "action": "state as limitation",
+      "from": ["experiments", "soundness", "significance"]
+    },
+    {
+      "change": "Restore the template fonts so that bold and italic print. Fix this in the main.tex preamble (for example, load TeX Gyre Termes and matching sans and mono fonts under an engine test) without editing cvpr.sty or changing margins. Rebuild, check run-in heads, contribution lead-ins, the italic claim and the bold values in Table 2 on the page, and recheck the 4-page limit.",
+      "where": "paper/main.tex preamble; all pages of main.pdf",
+      "why": "I confirmed it in the PDF and log: TU/ptm, TU/phv and TU/pcr shapes are undefined and substituted, run-in heads and the italic claim print upright, and Table 2 shows no bold value although its caption says bold marks the best mean.",
+      "action": "edit text",
+      "from": ["clarity"]
+    },
+    {
+      "change": "Say that breast cancer is a two-class diagnosis task (benign or malignant, citing the dataset) and digits a multi-class handwritten digit task, and that symmetric noise therefore means different things on them: with two classes, the higher rate comes much closer to labels that carry no information. Print no class counts without a recipe. In Sec. 4.2, report that on breast cancer at the higher rate the two least accurate seeds also have the most flipped labels and the most mislabeled samples left after filtering (about 42% against 35 to 38% flipped, and 18 to 24% against 8 to 13% left, in my check). Word it as an association over five seeds, with recipes and a ledger entry.",
+      "where": "Sec. 4 'Data and noise'; Sec. 4.2 'Recovery is partial'",
+      "why": "All four reviewers need these facts to read the one clear weak case. The text now only says that accuracy varies widely there and that no cause is shown.",
+      "action": "add analysis from existing data",
+      "from": ["experiments", "significance", "soundness", "clarity"]
+    },
+    {
+      "change": "Keep one accuracy figure and Table 2. Move the paired-gain plot (bars from a true zero with sd and seed points, clean columns included) into Fig. 1(c) and delete Fig. 2, updating every reference to it. Label the zero line as logistic regression, keep the remaining gap to the clean-label reference visible (a gray mark per noisy setting, or Table 2 in the text), rename the 'All mislabeled' legend entry to 'Mislabeled in training set', and cut the Fig. 1 caption to how to read each panel and one takeaway each. Render the figure and check it.",
+      "where": "Fig. 1(b), Fig. 1(c) and caption; Fig. 2; Secs. 1, 4.2 and 4.3 references",
+      "why": "Accuracy appears three times in four pages, the Fig. 1(c) bars sit on a truncated axis that exaggerates differences, and the space is needed for the changes above.",
+      "action": "edit text",
+      "from": ["clarity", "soundness", "experiments", "significance"]
+    },
+    {
+      "change": "Give each results paragraph one finding and its evidence, and state each caveat once where its result appears. Cut the sentences comparing the gain at the higher rate with the clean-label gain. State the question behind the MLP in Sec. 4 (does a larger model trained on the same labels make filtering unnecessary) and shorten its results paragraph to two sentences. Split or shorten the third contribution.",
+      "where": "Sec. 1, third contribution; Sec. 4 'Methods'; Sec. 4.2; Sec. 5",
+      "why": "Reviewers could not extract the takeaways: qualified comparisons are chained, the same caveat recurs in several places, and a full paragraph goes to a comparison the paper says is no evidence about filtering.",
+      "action": "edit text",
+      "from": ["clarity", "experiments", "soundness", "significance"]
     }
   ],
   "optional_changes": [
     {
-      "change": "Use the same noise labels (0/20/40%) in Table 1, Fig. 1, Fig. 2 and Table 2; draw the Fig. 1 dashed clean-accuracy line per dataset or drop it; replace the network icon for the model in Fig. 1 with a linear-classifier icon.",
-      "where": "Table 1 header, Fig. 1, Fig. 2, Table 2"
+      "change": "Use the names in .scriptorium/notation.md consistently ('the filter' or 'ours', 'logistic regression'). Rename the Table 1 headers 'Flip.' and 'Back' to 'Flipped' and 'Won back', show the share of lost accuracy won back as a displayed ratio, and group the Table 2 columns by dataset with cmidrule.",
+      "where": "text, legends, axis labels, Tables 1 and 2, Sec. 4 'Measures'"
     },
     {
-      "change": "Check compiled length and the type size of the resized Table 1. If space is short, fold the Fig. 2 gains into Table 1 or cut the corresponding text numbers, since Fig. 2 and Table 1 show largely the same differences.",
-      "where": "Table 1, Fig. 2"
+      "change": "Add the held-out test fraction, that both models come from scikit-learn with otherwise default settings (versions not recorded), the logistic regression iteration limit, and that each seed shares its split across noise rates, with the samples flipped at the lower rate also flipped at the higher rate (check against run.py).",
+      "where": "Sec. 4 'Data and noise', 'Methods' and 'Checks and statistics'"
     },
     {
-      "change": "Note that the MLP seed varies with the split, so its variance mixes both sources, and keep the timing marked as indicative.",
-      "where": "Sec. 4.4, Sec. 4 'Metrics and statistics'"
+      "change": "Describe the clean-label cost by its scale: give the per-seed range of the paired difference on digits, and say that on breast cancer the models differ in one seed only, by one test sample (add recipes).",
+      "where": "Sec. 4.3"
     },
     {
-      "change": "If the existing per-seed results show it, say whether the 9-point sd on breast cancer at 40% comes from seeds with higher realized noise or from recall; otherwise state the cause as unknown.",
-      "where": "Sec. 4.2"
+      "change": "Open the abstract with a plainer first sentence, replace 'needs neither' with an explicit statement of what the filter does not need, write 'on average over seeds' for 'on seed means', and either give the MLP outcome in one clause (with the fact that plain logistic regression also beats it) or drop the MLP from the abstract.",
+      "where": "abstract"
+    },
+    {
+      "change": "Rewrite 'Running it did not require knowing whether the labels were wrong' to say that the filter ran without being told the noise rate or whether the labels were noisy, and replace 'one untuned, unfiltered MLP' with 'one untuned MLP, which we did not combine with the filter'. Cut restatement of results where space is needed.",
+      "where": "Sec. 5"
+    },
+    {
+      "change": "Shorten the deep-network paragraph and add one or two sentences on the nearest alternatives from .scriptorium/related.md (saez2016inffc, wilson1972asymptotic, verbaeten2003ensemble, bootkrajang2012labelnoise), saying no more than was verified; the title-only entries support nothing beyond their titles.",
+      "where": "Sec. 2"
+    },
+    {
+      "change": "In the first tile write 'Needs no clean set' and 'Needs no noise rate', and mark there the correctly labeled sample that is later dropped.",
+      "where": "Fig. 1(a)"
+    },
+    {
+      "change": "Fetch the published records for co-teaching, DivideMix and scikit-learn with `scriptorium cite` (no hand-typed fields), verify them, and make sure 'Python' keeps its capital.",
+      "where": "paper/refs.bib"
+    },
+    {
+      "change": "As a sensitivity check, add a t-test corrected for overlapping splits (Nadeau and Bengio), only with a verified citation and recipes. If added, reword every verdict it changes and update stats.md and the ledger.",
+      "where": "Sec. 4 'Checks and statistics'; Sec. 4.2"
     }
   ],
   "dismissed": [
     {
-      "point": "Add CIFAR-10N or fashion-MNIST features, a harder dataset, or class-dependent noise experiments",
-      "why": "The reviser cannot run new experiments. The ledger fixes the study at two datasets and symmetric noise, and Sec. 5 already lists these as next steps. The narrowed title and the added limitation cover it."
+      "point": "Remove the sentence on the Scriptorium agent pipeline and its reference from Sec. 4.",
+      "why": "The concern is fair: the sentence says nothing about the experiments, the entry names people in an anonymous submission and its title conflicts with the project writing rule against mentioning AI writing. The pipeline attaches this citation to every paper it writes (`scriptorium cite restore`), so the reviser should leave it. The authors need to decide this before submission."
     },
     {
-      "point": "Run cleanlab, a C sweep, an MLP trained on the filtered set, K and C sensitivity, iterated filtering, random-drop and oracle-drop controls, and 20 or more seeds",
-      "why": "All need new runs. The ledger lists the missing baselines and ablations as limitations (no_baselines_no_scaling). The required changes turn them into narrowed claims and stated limitations."
+      "point": "Print the 95% intervals already in the project notes next to the comparisons.",
+      "why": "Those are bootstrap intervals over five seeds. Some exclude zero where the paired t-test does not pass (the gain on breast cancer at the lower rate; the half-recovery comparison on digits at the higher rate), so printing them would contradict the stated criterion. The required p-values serve the purpose."
     },
     {
-      "point": "Add a noise-aware logistic regression baseline (Bootkrajang and Kaban)",
-      "why": "It needs a new method implementation. Related work already cites it, and the stated baseline limitation covers it."
+      "point": "State that the keep rule equals a confusion-matrix variant evaluated in the confident learning paper.",
+      "why": "The reviewer asks for this to be checked, and the fetched abstract does not support it. Sec. 2 already presents the two as relatives; make no equivalence claim without reading the source."
     },
     {
-      "point": "The paper says too little about its scope",
-      "why": "Several reviewers list the scope statements as strengths, and the paper states them in the abstract, Sec. 4 and Sec. 5. The only problem is that the headline wording is inconsistent with them."
+      "point": "Add Chen et al. (ICML 2019) and Natarajan et al. (NeurIPS 2013) to related work.",
+      "why": "Neither is in the verified list in .scriptorium/related.md, and verified entries already cover cross-validation filtering and noise-tolerant alternatives."
     },
     {
-      "point": "A per-class breakdown of dropped clean digits and the class balance of the kept set in the unstable breast cancer cell",
-      "why": "It would need per-sample drop records that the ledger does not list among its evidence keys. It becomes a limitation instead."
+      "point": "Motivate the study with linear probes on pretrained image features.",
+      "why": "Nothing of the kind was run. The brief rules out claims about deep networks or large data, and the ledger marks transfer beyond the tested settings as unsupported."
+    },
+    {
+      "point": "Call the drops on clean labels 'unflipped' instead of correctly labeled.",
+      "why": "Sec. 4 'Measures' already says that pre-existing label errors are not counted, and notation.md fixes 'correctly labeled' for samples whose label was not flipped."
+    },
+    {
+      "point": "Relate the MLP result to the finding that lower-capacity models may be more useful when many labels are wrong.",
+      "why": "That report concerns label errors in benchmark test sets and model choice. It does not explain this training-noise comparison, and the MLP paragraph is being shortened."
+    },
+    {
+      "point": "Report per-class drop counts and convergence status, or add practitioner checks to the discussion.",
+      "why": "results/runs.jsonl records neither per-class drops nor convergence, and no new runs are possible. Practitioner checks would be untested advice in a paper at its page limit."
     }
   ]
 }

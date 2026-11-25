@@ -1,32 +1,78 @@
 {
   "framing": "insight-first",
-  "title": "A Linear Model's Out-of-Fold Disagreements Are Mostly Label Errors: Dropping Them Beats a Larger Model Trained on Noisy Labels",
-  "insight": "When a logistic regression trained on other folds disagrees with a sample's label, the label is usually wrong, so dropping those samples and refitting recovers most of the accuracy noise costs and beats an MLP that trains on every noisy label.",
-  "abstract_sketch": "Methods for learning with noisy labels usually need a clean validation set, a noise-rate estimate or a deep network, and simple linear models have no plain filter of their own. We present an out-of-fold disagreement filter: fit logistic regression with 5-fold cross-validation, drop every training sample whose out-of-fold prediction disagrees with its given label, and refit on the rest. The key idea is that a sample which a model fit on the other folds cannot explain is more likely mislabeled than one it explains, so the model's own disagreement is a usable noise detector. On two small datasets with symmetric noise, most dropped samples are truly mislabeled, the refit model regains much of the accuracy that noise costs, and it beats an untuned MLP trained on the same noisy labels. With clean labels the filter costs a fraction of a point. The study is small and linear, and we make no claim about deep networks or large data.",
-  "figure1": "Three panels with numbered circles. (1) A noisy training set as a grid of labeled points with a few flipped labels in red; (2) five folds, each predicted by a model fit on the other four, with samples that disagree with their label marked and removed (a small bar shows that most removed samples are truly flipped: precision); (3) grouped bars of test accuracy on digits at 40% noise: plain logistic regression, MLP (low, about 65%), filter (purple accent), and a gray 0%-noise logistic regression reference line. A reader sees the problem (noise drops accuracy), the mechanism (disagreement marks flips) and the result (filter above both baselines, near the clean reference) without the text. The caption states that digits at 40% noise is the largest-effect cell, and that breast cancer at 40% noise is smaller and unstable.",
+  "title": "Logistic Regression Hurt by Symmetric Label Noise Still Flags Most Flipped Labels Out of Fold",
+  "insight": "Logistic regression weakened by symmetric label noise still disagrees, out of fold, with most of the flipped labels, and dropping those disagreements before one refit wins back much of the lost accuracy on average in three of our four noisy settings.",
+  "abstract_sketch": "Symmetric label noise costs logistic regression accuracy, yet predictions from the same kind of classifier, made on samples held out from its fit, disagree with most of the flipped labels. We turn this into a one-pass filter that drops every training sample whose out-of-fold prediction disagrees with its given label and refits on the rest, with no clean validation set, noise-rate estimate, or confidence threshold. On two small datasets with noisy training labels, most dropped samples are mislabeled, a far higher share than in the training set as a whole. On seed means, the refit model wins back much of the lost accuracy on digits at both noise rates and on breast cancer at the lower rate, but only a small part on breast cancer at the higher rate. The price is that correct samples are discarded too (the filter removes up to about half of the training set at the higher rate), while with clean labels its mean accuracy is only a fraction of a point below that of plain logistic regression.",
+  "figure1": "One full-width figure at the top of page 1, in three panels, readable without the text. (a) 'One pass': a schematic stack of training samples with given labels, a few of them flipped, passing through four numbered stages with short plain labels: 1 'Predict out of fold', 2 'Compare labels', 3 'Drop mismatches', 4 'Refit'. The dropped pile holds mostly flipped samples and also a correct one, and one flipped sample slips through. The caption says the samples are schematic because no per-sample outputs were saved. (b) 'What gets dropped': for each of the four noisy settings (two datasets, two noise rates), grouped bars give the share of flipped labels that are dropped and the share of dropped samples that are flipped, with a gray bar for the share of flipped labels in the whole training set; bars are means over 5 seeds with sd error bars and seed points. The reader sees that both shares are high and that the drops are far richer in flipped labels than the training set. (c) 'What comes back': test accuracy in the same four settings for clean-label logistic regression (gray reference), logistic regression on all noisy labels (partner color), and ours (accent), with paired seed points joined by thin lines. The reader sees noise open a gap, filtering close much of it on average in three settings but not all of it, and only a small part come back on breast cancer at the higher rate, where seeds also spread widely. The caption's first sentence states the idea and the rest walks through the three panels, including the weak case.",
   "contributions": [
-    "We present an out-of-fold disagreement filter for logistic regression that needs no clean validation set and uses no noise rate.",
-    "We show that the filter's drops are mostly truly mislabeled samples, that it recovers much of the accuracy lost to symmetric noise, and that it beats an untuned MLP trained on the same noisy labels.",
-    "We report where it does not help: the clean-label cost, the clean-label tie with the MLP, the unstable breast cancer 40% cell, and the scope of two small datasets with five seeds."
+    "We show on two small datasets that out-of-fold predictions of logistic regression under symmetric label noise disagree with most flipped labels, and that most of these disagreements are truly mislabeled, although correctly labeled samples are flagged too.",
+    "We describe a one-pass filter that drops the disagreements and refits the linear model, with fixed folds and regularization and with no clean validation set, noise-rate estimate, or confidence threshold.",
+    "We measure what the refit model gains and costs: accuracy under noisy labels, including the setting where little is recovered and the gap that remains to clean-label training, and the small mean cost on clean labels."
   ],
-  "storyline": "Label noise costs a plain linear model many accuracy points, and an untuned MLP falls much further, to about 65% at 40% noise. The observation that drives the paper is that the linear model's out-of-fold disagreements with the given labels are mostly real label errors. Across both datasets and both noise rates, the majority of dropped samples are flipped ones, and the filter removes most of the flipped labels. So the filter is just: cross-validate, drop the disagreements, refit, with no clean validation set and no noise rate. Dropping those samples recovers most of the lost accuracy in three of four noisy cells and beats the MLP in every noisy run, with gains that grow with noise on digits. The filter is not free or universal: it costs a fraction of a point on clean labels, the MLP is as good or slightly better there, and breast cancer at 40% noise recovers little and varies across seeds. This suggests that for simple models, the model's own held-out disagreement is a cheap, checkable noise detector, to be tested against confident learning and co-teaching and on larger models in future work.",
+  "storyline": "On two small datasets, symmetric label noise lowers the accuracy of logistic regression, and the higher rate lowers it further. The same kind of classifier still gives a useful check on its own training labels: when each sample is predicted by a model fit without it, the disagreements include most of the flipped labels and are far richer in them than the training set as a whole. The method follows directly, since we drop the disagreements and refit once, and by design it needs no clean validation set and no noise-rate estimate. On seed means the refit model wins back much of the lost accuracy in three of the four noisy settings and only a small part on breast cancer at the higher rate, and it remains below clean-label training at the higher rate on both datasets and at the lower rate on breast cancer. The price is measured as well: correct samples are discarded, a large part of the training set goes at the higher rate, and on clean labels every drop is a correct sample even though mean accuracy barely falls. In the settings we test, one cross-validation pass is enough to find most flipped labels, which leaves keeping the correct samples and closing the remaining gap as the open problems.",
   "sections": [
-    {"title": "Introduction", "claims": ["noise_hurts_logreg", "filter_method", "contribution_filter_study", "setup_scope"]},
-    {"title": "Related work", "claims": ["no_baselines_no_scaling"]},
-    {"title": "Method: drop what the out-of-fold model disagrees with", "claims": ["filter_method"]},
-    {"title": "Experimental setup", "claims": ["setup_scope"]},
-    {"title": "Most samples the filter drops are truly mislabeled", "claims": ["filter_drops_mostly_mislabeled", "filter_recall_high"]},
-    {"title": "Filtering recovers most of the accuracy noise costs a linear model, except at the noisiest breast cancer setting", "claims": ["filter_beats_logreg_digits", "filter_beats_logreg_bc_high", "filter_vs_logreg_bc_moderate", "filter_wins_most_noisy_runs", "filter_recovers_most_loss_partial", "gain_grows_with_noise_digits", "gain_grows_with_noise_bc", "filter_variance_bc_high_noise"]},
-    {"title": "A filtered linear model beats an untuned MLP under noise", "claims": ["filter_beats_mlp_noisy", "mlp_memorizes_noise"]},
-    {"title": "On clean labels the filter costs little and the MLP ties it", "claims": ["clean_cost_small", "clean_drops", "mlp_ties_clean", "filter_cost_time"]},
-    {"title": "Discussion and limitations", "claims": ["no_baselines_no_scaling", "filter_cost_time"]}
+    {
+      "title": "Introduction",
+      "claims": ["noise_costs_logreg", "filter_catches_most_flips", "dropped_mostly_mislabeled", "oof_filter_method", "contribution_measured_study", "recovery_partial_seed_means"]
+    },
+    {
+      "title": "Related Work",
+      "claims": []
+    },
+    {
+      "title": "Method: One Pass of Out-of-Fold Filtering",
+      "claims": ["oof_filter_method"]
+    },
+    {
+      "title": "Experimental Setup",
+      "claims": ["study_scope"]
+    },
+    {
+      "title": "Out-of-fold disagreements catch most flipped labels and are mostly mislabeled",
+      "claims": ["filter_catches_most_flips", "dropped_mostly_mislabeled"]
+    },
+    {
+      "title": "Correct samples are dropped too, and heavier noise changes what is caught",
+      "claims": ["filter_discards_correct_samples", "drop_quality_shifts_with_noise"]
+    },
+    {
+      "title": "Refitting wins back much of the lost accuracy, with a clear weak case",
+      "claims": ["noise_costs_logreg", "filter_beats_logreg_noisy", "filter_vs_logreg_breast_low_noise", "filter_wins_most_noisy_runs", "recovery_partial_seed_means", "recovery_over_half_digits_low", "recovery_over_half_not_shown", "gap_to_clean_remains"]
+    },
+    {
+      "title": "With clean labels, mean accuracy barely falls although every drop is a correct sample",
+      "claims": ["clean_label_cost_small", "filter_discards_correct_samples", "clean_labels_mlp_ahead_digits"]
+    },
+    {
+      "title": "The lead over a small MLP does not isolate the effect of filtering",
+      "claims": ["filter_beats_mlp_noisy", "mlp_more_noise_sensitive"]
+    },
+    {
+      "title": "Discussion and Limitations",
+      "claims": ["study_limitations", "gap_to_clean_remains"]
+    }
   ],
   "claims": [
-    "filter_method", "setup_scope", "noise_hurts_logreg", "filter_beats_logreg_digits", "filter_beats_logreg_bc_high",
-    "filter_vs_logreg_bc_moderate", "filter_wins_most_noisy_runs", "filter_beats_mlp_noisy", "mlp_memorizes_noise",
-    "filter_drops_mostly_mislabeled", "filter_recall_high", "filter_recovers_most_loss_partial",
-    "gain_grows_with_noise_digits", "gain_grows_with_noise_bc", "clean_cost_small", "clean_drops", "mlp_ties_clean",
-    "filter_variance_bc_high_noise", "filter_cost_time", "no_baselines_no_scaling", "contribution_filter_study"
+    "oof_filter_method",
+    "study_scope",
+    "contribution_measured_study",
+    "noise_costs_logreg",
+    "filter_catches_most_flips",
+    "dropped_mostly_mislabeled",
+    "filter_discards_correct_samples",
+    "drop_quality_shifts_with_noise",
+    "filter_beats_logreg_noisy",
+    "filter_vs_logreg_breast_low_noise",
+    "filter_wins_most_noisy_runs",
+    "recovery_partial_seed_means",
+    "recovery_over_half_digits_low",
+    "recovery_over_half_not_shown",
+    "gap_to_clean_remains",
+    "clean_label_cost_small",
+    "clean_labels_mlp_ahead_digits",
+    "filter_beats_mlp_noisy",
+    "mlp_more_noise_sensitive",
+    "study_limitations"
   ],
-  "risks": "A reviewer will say the study is tiny (two sklearn datasets, five seeds), that the MLP is untuned so beating it proves little, that confident learning already uses out-of-fold predictions and co-teaching is not run, and that 'recovers most' fails on breast cancer at 40%. The paper answers by stating the scope up front, calling the MLP untuned and showing the clean-label tie, saying plainly that the filter is a simple linear instance of known out-of-fold ideas and that no head-to-head with confident learning was run, reporting the 22% recovery and the 9-point seed spread in that cell, and using the MLP's collapse only as a consistent-with observation (no memorization test was run)."
+  "risks": "First, a reviewer will say that out-of-fold filtering is close to classification filtering and confident learning. The paper claims no new method or priority, presents both as close relatives that were not run here, and offers a measured account of what one pass drops and what accuracy it returns. Second, high recall could come from dropping a large part of the data. The paper reports drop precision beside the flipped share of the whole training set, which shows that the drops are enriched in flipped labels. It does not claim that the accuracy gain comes from this choice, because no random-drop or oracle control was run. Third, finding wrong labels with a model trained on partly correct ones may look expected under symmetric noise. The paper offers the size of the effect and its limits as measurements: fewer flips are caught at the higher rate, correct samples are lost, and a gap to clean-label training remains. Fourth, recovery is partial and uneven. The abstract, Figure 1 and the results state the weak case on breast cancer at the higher rate and quote recovery as a ratio of seed means. A share above one half is claimed as tested only on digits at the lower rate; on digits at the higher rate and breast cancer at the lower rate it holds on seed means but the tests do not establish it. The lower-rate gain on breast cancer is reported as a higher mean that five seeds do not establish. Fifth, the study is small, with two datasets, synthetic noise, and seeds that re-split the same data. The scope is stated up front, paired seed values are shown, tests are treated as descriptive, and nothing is said about deep networks or large data. Sixth, the MLP comparison could be read as support for filtering. The paper states that plain logistic regression also beats this untuned MLP under noise, so the gap is not counted as a contribution."
 }

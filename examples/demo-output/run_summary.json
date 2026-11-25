@@ -1,17 +1,17 @@
 {
- "tagged": 85,
- "recipes": 169,
- "citations": 15,
- "sessions": 102,
- "output_tokens": 602140,
+ "tagged": 107,
+ "recipes": 329,
+ "citations": 24,
+ "sessions": 93,
+ "output_tokens": 2631878,
  "pages": 5,
  "main_pages": 4,
  "scores": {
-  "review0": 4.25,
-  "review1": 4.25
+  "review0": 4.5,
+  "review1": 4.5
  },
  "decisions": {
-  "revise1": "kept: mean score 4.25 -> 4.25"
+  "revise1": "kept: mean score 4.50 -> 4.50"
  },
  "agents": [
   "architect",

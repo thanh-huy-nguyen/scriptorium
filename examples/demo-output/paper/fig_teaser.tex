@@ -1,0 +1,5 @@
+% Fig. 1, set across both columns in the title block of main.tex.
+\centering
+\includegraphics[width=0.96\textwidth]{figures/teaser.pdf}
+\captionof{figure}{What the out-of-fold filter does, removes and gains. (a) A logistic regression fit on the other folds predicts each sample (1). It drops mismatches with the given label (2, 3) and refits once (4). Samples are schematic (fill marks the given class). (b) Share of the training set removed, split into mislabeled and correctly labeled; black side marks give the set's mislabeled share. (c) Test accuracy of ours minus that of logistic regression with the same settings (red zero line), paired by seed. Gray marks give the same difference for the clean-label reference, the accuracy lost to noise; no mean gain reaches them. Bars are 5\src{n_seeds}-seed means; in (c), error bars are sd and dots are seeds.}
+\label{fig:teaser}

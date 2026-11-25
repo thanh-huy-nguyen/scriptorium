@@ -2,59 +2,76 @@
 
 ## baselines
 
-- The logreg baseline is logistic regression with inverse regularization C=1.0 and at most 5000 iterations, trained on the noisy labels. (`experiments/run.py`: "LogisticRegression(C=CFG["logreg_C"], max_iter=5000)")
-- The logistic regression regularization constant C is 1.0. (`experiments/config.json`: ""logreg_C": 1.0")
-- The mlp baseline is a scikit-learn MLPClassifier with one hidden layer, trained on the noisy labels after standardization, with random_state equal to the seed and other defaults. (`experiments/run.py`: "MLPClassifier(hidden_layer_sizes=(CFG["mlp_hidden"],)")
-- The MLP hidden layer has 64 units and is trained for at most 500 iterations. (`experiments/config.json`: ""mlp_hidden": 64")
-- The MLP maximum number of iterations is 500. (`experiments/config.json`: ""mlp_max_iter": 500")
+- The linear baseline is a logistic regression trained on all noisy training labels. (`experiments/run.py`: "m = logreg().fit(Xtr, ytr_noisy)")
+- The larger baseline is a scikit-learn multilayer perceptron on standardized features, with all arguments other than hidden layer size, maximum iterations and random state left at library defaults. (`experiments/run.py`: "m = make_pipeline(StandardScaler(), MLPClassifier(hidden_layer_sizes=(CFG["mlp_hidden"],),")
+- The multilayer perceptron has one hidden layer with 64 units. (`experiments/config.json`: ""mlp_hidden": 64")
+- The multilayer perceptron is trained on the same noisy training labels as the logistic regression baseline, without filtering. (`experiments/run.py`: "m.fit(Xtr, ytr_noisy)")
 
 ## data
 
-- Experiments use two scikit-learn built-in datasets, digits and breast_cancer. (`experiments/run.py`: "LOADERS = {"digits": load_digits, "breast_cancer": load_breast_cancer}")
-- The datasets run are digits and breast_cancer, as listed in the configuration. (`experiments/config.json`: ""datasets": ["digits", "breast_cancer"]")
-- Symmetric label noise is added: each training label is flipped with probability equal to the noise rate, to a class drawn uniformly from the other classes. (`experiments/run.py`: "y[i] = rng.choice([c for c in range(n_classes) if c != y[i]])")
-- Flip decisions are independent Bernoulli draws per training sample from a NumPy generator seeded with the run seed. (`experiments/run.py`: "noisy = rng.random(len(y)) < rate")
-- Noise is applied to training labels only; test labels stay clean and are used for scoring. (`experiments/run.py`: "ytr_noisy, is_noisy = flip(ytr, rate, k, rng)")
-- Noise rates are 0%, 20% and 40%. (`experiments/config.json`: ""noise_rates": [0.0, 0.2, 0.4]")
+- Experiments use the digits and breast cancer datasets. (`experiments/config.json`: ""datasets": ["digits", "breast_cancer"]")
+- Both datasets are loaded with the scikit-learn functions load_digits and load_breast_cancer. (`experiments/run.py`: "LOADERS = {"digits": load_digits, "breast_cancer": load_breast_cancer}")
+- The training and test set sizes of every run are saved with its result. (`experiments/run.py`: ""n_train": int(len(ytr)), "n_test": int(len(yte))")
 
 ## evaluation
 
-- One record is written per dataset, noise rate, seed and method to results/runs.jsonl. (`experiments/run.py`: "out = ROOT / "results" / "runs.jsonl"")
+- All three methods are run for every combination of dataset, noise rate and seed, sharing the same split and noisy labels within each combination. (`experiments/run.py`: "for rate in CFG["noise_rates"]:")
 
 ## metrics
 
-- The main metric is accuracy on the clean test split. (`experiments/run.py`: ""test_acc": float(m.score(Xte, yte))")
-- For the filter, the number of dropped samples and how many of them were truly flipped are recorded per run. (`experiments/run.py`: ""n_dropped_noisy": int((dropped & is_noisy).sum())")
-- Wall-clock fit time is recorded per method; for the filter it includes cross-validation and the refit. (`experiments/run.py`: ""fit_seconds": time.time() - t")
+- Methods are compared by classification accuracy on the clean test labels. (`experiments/run.py`: ""method": "filter", "test_acc": float(m.score(Xte, yte))")
+- For the filter, we record the number of dropped training samples and how many of them had a corrupted label. (`experiments/run.py`: ""n_dropped_noisy": int((dropped & is_noisy).sum())")
 
 ## models
 
-- The filter method gets out-of-fold predictions from logistic regression on the noisy training labels and keeps only samples whose prediction equals their noisy label. (`experiments/run.py`: "keep = oof == ytr_noisy")
-- Out-of-fold predictions come from cross_val_predict with the same logistic regression pipeline. (`experiments/run.py`: "oof = cross_val_predict(logreg(), Xtr, ytr_noisy, cv=cv)")
-- After dropping disagreeing samples, logistic regression is refit on the kept samples with their noisy labels. (`experiments/run.py`: "m = logreg().fit(Xtr[keep], ytr_noisy[keep])")
-- The filter uses 5 stratified, shuffled folds seeded with the run seed. (`experiments/config.json`: ""filter_folds": 5")
-- The filter needs neither a clean validation set nor a noise-rate estimate; it takes no noise-rate input. (`experiments/run.py`: "keep = oof == ytr_noisy")
+- Every logistic regression uses an inverse regularization strength C of 1.0. (`experiments/config.json`: ""logreg_C": 1.0")
+- The filter uses 5-fold cross-validation. (`experiments/config.json`: ""filter_folds": 5")
+- Each training sample receives a predicted class from a logistic regression fit on the folds that exclude it. (`experiments/run.py`: "oof = cross_val_predict(logreg(), Xtr, ytr_noisy, cv=cv)")
+- A training sample is kept only if its out-of-fold predicted class equals its noisy label, with no confidence threshold, noise-rate estimate or clean data. (`experiments/run.py`: "keep = oof == ytr_noisy")
+
+## other
+
+- The experiments are implemented with scikit-learn and NumPy. (`experiments/run.py`: "Needs scikit-learn and numpy.")
 
 ## preprocessing
 
-- Features are standardized with StandardScaler inside every model pipeline, fit on the (noisy-label) training data only. (`experiments/run.py`: "make_pipeline(StandardScaler(), LogisticRegression(")
+- Logistic regression is preceded by feature standardization fit on the data that the classifier is trained on, including within each cross-validation fold and again before the filter's refit. (`experiments/run.py`: "return make_pipeline(StandardScaler(), LogisticRegression(C=CFG["logreg_C"], max_iter=5000))")
+- Label noise is studied at rates of 0, 0.2 and 0.4. (`experiments/config.json`: ""noise_rates": [0.0, 0.2, 0.4]")
+- Each training label is selected for corruption independently with probability equal to the noise rate, so the realized number of noisy labels varies between runs. (`experiments/run.py`: "noisy = rng.random(len(y)) < rate")
+- A selected label is replaced by a class drawn uniformly at random from the other classes (symmetric label noise). (`experiments/run.py`: "y[i] = rng.choice([c for c in range(n_classes) if c != y[i]])")
+- Noise is applied to the training labels only, and the test labels stay clean. (`experiments/run.py`: "ytr_noisy, is_noisy = flip(ytr, rate, k, rng)")
 
 ## seeds
 
-- Each configuration is run with five seeds, 0 to 4. (`experiments/config.json`: ""seeds": [0, 1, 2, 3, 4]")
-- The seed sets the train/test split, the noise draw, the cross-validation folds and the MLP initialization; all methods share split and noisy labels within a seed. (`experiments/run.py`: "rng = np.random.default_rng(seed)")
+- Each setting is repeated with five seeds, 0 to 4. (`experiments/config.json`: ""seeds": [0, 1, 2, 3, 4]")
+- The run seed initializes the NumPy random generator that draws the label noise, and the generator is re-created for each noise rate. (`experiments/run.py`: "rng = np.random.default_rng(seed)")
+- The run seed also sets the train/test split, so for a given dataset and seed the split is the same across noise rates. (`experiments/run.py`: "stratify=y,
+                                                      random_state=seed)")
+- The run seed sets the random state of the multilayer perceptron. (`experiments/run.py`: "max_iter=CFG["mlp_max_iter"], random_state=seed))")
 
 ## splits
 
-- Each dataset is split into 70% train and 30% test, stratified by class, with the split seed equal to the run seed. (`experiments/run.py`: "test_size=CFG["test_fraction"], stratify=y")
-- The test fraction is 0.3. (`experiments/config.json`: ""test_fraction": 0.3")
-- No separate validation set is used; the filter uses cross-validation inside the training set. (`experiments/run.py`: "cv = StratifiedKFold(CFG["filter_folds"], shuffle=True, random_state=seed)")
+- A fraction of 0.3 of each dataset is held out for testing. (`experiments/config.json`: ""test_fraction": 0.3")
+- Each seed draws a random train/test split, stratified on the clean labels, with no separate validation set. (`experiments/run.py`: "Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=CFG["test_fraction"], stratify=y,")
+- The filter's cross-validation folds are shuffled with the run seed and stratified on the noisy training labels. (`experiments/run.py`: "cv = StratifiedKFold(CFG["filter_folds"], shuffle=True, random_state=seed)")
+
+## training
+
+- Every logistic regression is fit with at most 5000 solver iterations, and its remaining settings are scikit-learn defaults. (`experiments/run.py`: "LogisticRegression(C=CFG["logreg_C"], max_iter=5000)")
+- The multilayer perceptron is trained for at most 500 iterations. (`experiments/config.json`: ""mlp_max_iter": 500")
+- After a single filtering pass, a new standardization and logistic regression pipeline is fit on the kept samples with their noisy labels. (`experiments/run.py`: "m = logreg().fit(Xtr[keep], ytr_noisy[keep])")
 
 ## Not found in the repository
 
-- the scikit-learn and numpy versions are not recorded anywhere
-- hardware (CPU/GPU, machine) is not stated; fit_seconds are indicative only
-- dataset sizes are not set in code; n_train and n_test appear only in results/runs.jsonl (digits 1257/540, breast_cancer 398/171)
-- no ablations over folds, C or MLP size; MLP hyperparameters were not tuned and convergence within max_iter=500 is not logged
-- co-teaching, confident learning and other noise-robust methods are not run; there is no clean-label oracle baseline
-- no significance tests or aggregation code exist in the repository; only per-run records
+- scikit-learn, NumPy and Python versions are not stated, and there is no requirements or environment file; library defaults (logistic regression solver and penalty; MLP activation, optimizer, learning rate, batch size, L2 penalty and stopping rule) therefore cannot be pinned to values from the repository
+- hardware is not stated, although fit_seconds is recorded in the results
+- the number of classes and features of each dataset is not stated or saved by any repository file
+- dataset sizes are not set in code or config; they follow from the loaders and test_fraction and appear only as n_train and n_test in results/runs.jsonl, so printed sizes need recipes
+- how C, the number of folds, the MLP hidden size, the iteration limits and the noise rates were chosen is not stated; the code performs no tuning and uses no validation set
+- convergence status and warnings for logistic regression and the MLP are not recorded
+- the aggregation across seeds (mean, spread) and any statistical test are not implemented in experiments/run.py, which writes only per-run records
+- seeds re-split the same data, so test sets can overlap between seeds and runs are not independent samples
+- co-teaching and confident learning, named in brief.md as must-cite work, are not implemented or run
+- run_console.log is empty and no run date is recorded, so there is no log of the run that produced results/runs.jsonl
+- no disagreement was found between experiments/config.json and experiments/run.py; the logistic regression iteration limit of 5000 is hard-coded in run.py and absent from the config
+- README.md gives the path examples/demo, which does not match the layout of this repository

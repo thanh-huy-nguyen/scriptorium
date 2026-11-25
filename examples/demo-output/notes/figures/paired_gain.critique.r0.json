@@ -1,0 +1,32 @@
+{
+ "verdict": "revise",
+ "issues": [
+  {
+   "issue": "The zero line stands for logistic regression but is drawn in reference gray. In Fig. 1(c), which has the same six settings in the same order, logistic regression is the partner color and a gray horizontal line is the clean-label reference. A reader coming from Fig. 1 can take this line for the clean-label reference and conclude that ours beats it under noise, which is the opposite of what Fig. 1(c) shows.",
+   "fix": "In paired_gain.py, draw the axhline with sf.color(\"Logistic regression\", partner=True), as teaser.py does, so the method keeps one color across figures. This deliberately replaces the 'reference-gray' wording in the plan. In the caption, change 'the gray line marks no difference' to 'the red line at zero is logistic regression (no difference)'.",
+   "severity": "major"
+  },
+  {
+   "issue": "The figure never says what is gained. The y label reads 'Gain of ours over logistic regression (points)' without naming test accuracy, and 'points' alone can be read as the dots. The label is also longer than the axis is tall, so it is pushed off center (y=0.44) and hangs below the axis beside the tick labels.",
+   "fix": "Use three short lines, 'Test accuracy, ours minus' / 'logistic regression' / '(percentage points)', and center the label on the axis (y=0.5). Each line is no longer than about 25 characters, so it should fit the axis height. The plot can give up the small extra width.",
+   "severity": "major"
+  },
+  {
+   "issue": "The clean-label bar on breast cancer is completely hidden under the 1.4 pt zero line, and only a thin sliver of the digits clean bar shows. These two settings look as if they have no bar.",
+   "fix": "Thin the zero line to about 1.0 pt, which is still clearly heavier than the grid. The caption already says that both clean means are slightly below zero, so no further change is needed.",
+   "severity": "minor"
+  },
+  {
+   "issue": "The caption says that the accuracy of both methods varies widely between seeds on breast cancer at 40% noise. This figure shows only paired differences, so a reader cannot see that spread here.",
+   "fix": "Point to the panel that shows it, for example 'varies widely between seeds (Fig. 1(c))', using the figure's label reference.",
+   "severity": "minor"
+  }
+ ],
+ "strengths": [
+  "The message reads at a glance: bars and dots sit well above zero under noise and around zero on clean labels",
+  "The one noisy run below zero (breast cancer, 20%) is visible, and the error bar crossing zero shows the weak case honestly",
+  "The y axis includes zero, with sd error bars and all five seed dots, and the dot offsets keep the error bars and caps clear",
+  "Setting order, dataset names, x label and the accent color for ours match Fig. 1",
+  "No overlapping or clipped text, no redundant legend and little wasted space"
+ ]
+}

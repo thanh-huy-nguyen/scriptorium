@@ -1,16 +1,17 @@
-\section{Experimental Setup}\label{sec:setup}
+\section{Experiments}\label{sec:setup}
 
-\paragraph{Data and noise.}
-The study is small by design: two datasets, one noise model, two baselines. We use two scikit-learn datasets, digits (multiclass) and breast cancer (binary), with a stratified split into
-$1{,}257$\src{n_train_digits} and 398\src{n_train_breast_cancer} training samples. Symmetric noise flips each training label independently with probability 20\%\src{noise_low_pct} or 40\%\src{noise_high_pct}. On digits, a flipped label is drawn uniformly from the other nine classes. The unflipped labels serve as the clean reference, and the clean test split is never corrupted.
+\paragraph{Data and noise.} We use two small datasets from scikit-learn~\citep{pedregosa2012scikitlearn}. Digits is a multi-class handwritten digit task (1,257\src{n_train_digits} training and 540\src{n_test_digits} test samples). Breast cancer is a two-class diagnosis task, benign or malignant~\citep{mangasarian1995breast} (398\src{n_train_breast} training and 171\src{n_test_breast} test samples).
 
-\paragraph{Models.}
-Logistic regression uses $C=1$\src{logreg_C} on standardized features and trains on the noisy labels. The multilayer perceptron (MLP) is an untuned reference: one hidden layer of
-64\src{mlp_hidden} units, at most 500\src{mlp_max_iter} iterations, scikit-learn defaults otherwise (Adam solver, default weight decay, no early stopping), standardized inputs, and it never sees the filtered set. The
-out-of-fold filter wraps the same logistic regression with 5\src{filter_folds} folds. We run no other noise-robust method, no clean-label oracle, and no ablation over folds, $C$ or MLP size.
+Each seed draws a split, stratified on the clean labels, that holds out 30\%\src{test_fraction} for testing and is shared by all noise rates. Symmetric noise flips each training label independently, with probability equal to the noise rate (20\%\src{noise_rate_low} or 40\%\src{noise_rate_high}), to a different class drawn uniformly at random. A sample flipped at the lower rate is also flipped at the higher one. We also train on clean labels; test labels stay clean. With two classes, every symmetric flip goes to the other class, so the higher rate comes much closer to uninformative labels than with many classes.
 
-\paragraph{Metrics and statistics.}
-We measure accuracy on the clean test split (30\%\src{test_fraction_pct} of each dataset). For the filter we also report precision,
-recall, the realized noise rate (the precision a random drop would have), and the recovered share. We run each setting with 5\src{n_seeds} seeds. A seed fixes the split, the noise draw, the folds and the MLP
-initialization, and all methods share it, so comparisons are paired; the MLP variance therefore mixes data and initialization. We use two-sided paired $t$-tests over seeds. The trend test is a paired $t$-test on the per-seed gain at the higher noise rate minus the gain at the lower rate. With 5\src{n_seeds} seeds and about a dozen uncorrected tests, the $p$-values are descriptive. Fit time is wall-clock time on an unrecorded machine and is indicative only. Because precision is compared with the realized noise rate, we report no test against a fixed level.
-We recomputed every number in this paper from the released results and checked every reference against its bibliographic record with the Scriptorium pipeline~\citep{scriptorium2026}.
+\paragraph{Methods.} The only comparison that isolates filtering is with logistic regression trained on all given labels with the same settings, including a fixed inverse regularization strength $C = 1$\src{logreg_c}. On clean labels, this model is the clean-label reference. We ran no other noise treatment. To ask whether a larger model trained on the same labels makes filtering unnecessary, we also train an untuned multilayer perceptron (MLP). The filter uses $K = 5$\src{filter_folds} folds.
+
+\paragraph{Settings.} All methods standardize features and share each run's split and labels. Both model types come from scikit-learn with otherwise default settings; library versions were not recorded. Logistic regression runs at most 5,000\src{logreg_max_iter} solver iterations. The MLP has one hidden layer of 64\src{mlp_hidden} units and runs at most 500\src{mlp_max_iter} iterations.
+
+\paragraph{Measures.} We report test accuracy and, for the filter, the following, each computed per seed and then averaged: the share of the training set removed, drop precision (the share of drops whose label we flipped), drop recall (the share of flipped labels dropped), the mislabeled share of the kept set and the share of correctly labeled samples dropped. Pre-existing label errors are not counted. The share of lost accuracy won back compares the seed-mean test accuracies $A$ of ours, logistic regression on noisy labels and the clean-label reference:
+\begin{equation}
+  \text{won back} = \frac{A_{\mathrm{ours}} - A_{\mathrm{noisy}}}{A_{\mathrm{clean}} - A_{\mathrm{noisy}}} .
+  \label{eq:wonback}
+\end{equation}
+
+\paragraph{Statistics.} We recomputed the reported numbers and checked the references with the Scriptorium agent pipeline~\citep{scriptorium2026}. Each of 5\src{n_seeds} seeds per setting determines the split, noise, folds and MLP initialization. We call a difference \emph{established} when a two-sided paired $t$-test over the seeds is significant at the five percent level, uncorrected for multiple comparisons. Each test pairs, by seed, the two accuracies its sentence names. Seeds re-split the same data, so test sets overlap and these $p$-values are likely too low.

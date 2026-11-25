@@ -1,0 +1,43 @@
+{
+ "verdict": "pass",
+ "issues": [
+  {
+   "issue": "Panel (c): the seed dots of the two bars in a pair meet at their shared edge. On breast cancer at the higher noise rate, the logistic-regression seed 3 dot (about 89) sits on that edge, a dot's width from the first dot of ours, and reads as a value of ours. This is the setting where the spread matters most.",
+   "fix": "Open a narrow gap inside each pair and pull the dots in: CBAR = 0.40, bar offsets of -0.22 and +0.22, JITTER = [-0.14, -0.065, 0.065, 0.14, -0.105]. Check that the dots stay clear of the error-bar caps.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Stage 3 (and the input tile): the point labelled 'Correct label, dropped' is a filled marker much nearer the open cluster than the filled one, so it looks like a fourth wrong label and the reader has to take the label on trust. The two crosses in the open cluster also nearly chain into one mark.",
+   "fix": "Put the borderline point midway between the clusters, e.g. ACROSS = (0.58, 0.085), and move the refit line to run from (0.38, 0.52) to (0.575, 0.03) so the point stays just on the open side. Move the second WRONG point to about (0.92, 0.38) and the third to (0.83, 0.22) to separate their crosses.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Panel (a) shows two of the three things the first contribution says the filter does without ('No clean set', 'No noise rate'). The missing confidence threshold appears only in the caption.",
+   "fix": "Add a third pill, 'No threshold', in the free space at the foot of the 'Compare' tile, in the same style and with no arrow. Tighten the row spacing from 0.22 to 0.20 in to make room.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Panel (b) legend: with 'Dropped' removed, 'Mislabeled' and 'All mislabeled' are easy to confuse, and 'All mislabeled' can be read as 'everything removed was mislabeled'.",
+   "fix": "Rename the tick entry to 'Total mislabeled' and keep the other two labels. Check that the legend still fits on one line inside the panel.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Caption: it is about ten sentences and 190 words, long for a full-width figure on page 1 of a 4-page paper. It still leaves out the clean-label half of 'What it gains and costs', which the third contribution names and which the 60 to 100 scale can only show as level bars.",
+   "fix": "Cut to about 130 words. Drop 'so the gap from the top of a solid segment ... that the filter misses', drop 'for ours and for logistic regression trained on all given labels' (the legend says it), and shorten the gray-line sentence to 'On seed means, ours stays below the gray line in every noisy setting, furthest on breast cancer at 40\\%\\src{noise_rate_high} noise.' Add 'On clean labels, the mean of ours is lower by a fraction of a point.' Keep the axis, sd, seed and run-count statements.",
+   "severity": "minor"
+  },
+  {
+   "issue": "Panel (b) shows means over seeds with no spread, while panel (c) shows both sd and seed dots. A reader may ask whether the gap between the solid segment and the tick is stable.",
+   "fix": "Either add five small seed dots for the total share removed (same style as panel (c), with new per-seed recipes in paper/sources.py computed from results/runs.jsonl), or say in the caption that panel (b) shows means only.",
+   "severity": "minor"
+  }
+ ],
+ "strengths": [
+  "The message reads within five seconds: a numbered left-to-right filter, mostly solid (mislabeled) drops under noise, and accent bars above logistic regression under noise but below the clean-label line.",
+  "The three lettered panels map one to one onto the three planned contributions, so figure and caption carry the central claim.",
+  "The major issue of the last round is fixed: the axis break now sits below the lowest labelled tick, and the caption says the axis does not start at zero.",
+  "The bracket into the model card and the curved arrow into the held-out fold make fit and predict distinct without equations.",
+  "Equal tiles, arrows at one height, aligned baselines in (b) and (c), legends off the data, and colours that match the paired-gain figure.",
+  "Honest display: a correct sample dropped in the schematic, the correctly labeled segment in (b), sd bars and seed dots in (c), and the wide spread on breast cancer at the higher noise rate left visible."
+ ]
+}

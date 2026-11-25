@@ -4,172 +4,332 @@ Each row is a recipe in paper/sources.py. Print a number with its key right afte
 
 | key | value | what it is | files read |
 |---|---|---|---|
-| `acc_filter_breast_cancer_n0` | 96.6082 | test accuracy (%) of filter on breast_cancer at 0% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_filter_breast_cancer_n20` | 95.2047 | test accuracy (%) of filter on breast_cancer at 20% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_filter_breast_cancer_n40` | 83.9766 | test accuracy (%) of filter on breast_cancer at 40% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_filter_digits_n0` | 96.5926 | test accuracy (%) of filter on digits at 0% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_filter_digits_n20` | 95.1111 | test accuracy (%) of filter on digits at 20% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_filter_digits_n40` | 92.6296 | test accuracy (%) of filter on digits at 40% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_logreg_breast_cancer_n0` | 96.7251 | test accuracy (%) of logreg on breast_cancer at 0% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_logreg_breast_cancer_n20` | 92.2807 | test accuracy (%) of logreg on breast_cancer at 20% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_logreg_breast_cancer_n40` | 80.3509 | test accuracy (%) of logreg on breast_cancer at 40% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_logreg_digits_n0` | 96.8148 | test accuracy (%) of logreg on digits at 0% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_logreg_digits_n20` | 89.1111 | test accuracy (%) of logreg on digits at 20% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_logreg_digits_n40` | 83.5926 | test accuracy (%) of logreg on digits at 40% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_mlp_breast_cancer_n0` | 96.7251 | test accuracy (%) of mlp on breast_cancer at 0% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_mlp_breast_cancer_n20` | 84.2105 | test accuracy (%) of mlp on breast_cancer at 20% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_mlp_breast_cancer_n40` | 65.3801 | test accuracy (%) of mlp on breast_cancer at 40% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_mlp_digits_n0` | 97.3333 | test accuracy (%) of mlp on digits at 0% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_mlp_digits_n20` | 82.4074 | test accuracy (%) of mlp on digits at 20% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `acc_mlp_digits_n40` | 64.8889 | test accuracy (%) of mlp on digits at 40% label noise, mean over seeds 0-4 | results/runs.jsonl |
-| `bc0_lr_diff_ci_high` | 0 | upper end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 0% noise | results/runs.jsonl |
-| `bc0_lr_diff_ci_low` | -0.350877 | lower end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 0% noise | results/runs.jsonl |
-| `bc0_mlp_diff_ci_high` | 0.350877 | upper end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 0% noise | results/runs.jsonl |
-| `bc0_mlp_diff_ci_low` | -0.701754 | lower end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 0% noise | results/runs.jsonl |
-| `bc20_lr_diff_ci_high` | 5.49708 | upper end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 20% noise | results/runs.jsonl |
-| `bc20_lr_diff_ci_low` | 0.350877 | lower end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 20% noise | results/runs.jsonl |
-| `bc20_mlp_diff_ci_high` | 14.0351 | upper end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 20% noise | results/runs.jsonl |
-| `bc20_mlp_diff_ci_low` | 7.95322 | lower end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 20% noise | results/runs.jsonl |
-| `bc40_lr_diff_ci_high` | 4.79532 | upper end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 40% noise | results/runs.jsonl |
-| `bc40_lr_diff_ci_low` | 2.80702 | lower end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 40% noise | results/runs.jsonl |
-| `bc40_mlp_diff_ci_high` | 21.6374 | upper end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 40% noise | results/runs.jsonl |
-| `bc40_mlp_diff_ci_low` | 15.4386 | lower end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 40% noise | results/runs.jsonl |
-| `cost_clean_breast_cancer` | 0.116959 | mean paired test-accuracy drop (points) of filter relative to logreg at 0% noise on breast_cancer, seeds 0-4 (logreg minus filter) | results/runs.jsonl |
-| `cost_clean_digits` | 0.222222 | mean paired test-accuracy drop (points) of filter relative to logreg at 0% noise on digits, seeds 0-4 (logreg minus filter) | results/runs.jsonl |
-| `dg0_lr_diff_ci_high` | 0.333333 | upper end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, digits, 0% noise | results/runs.jsonl |
-| `dg0_lr_diff_ci_low` | -0.888889 | lower end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, digits, 0% noise | results/runs.jsonl |
-| `dg0_mlp_diff_ci_high` | -0.37037 | upper end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, digits, 0% noise | results/runs.jsonl |
-| `dg0_mlp_diff_ci_low` | -1.14815 | lower end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, digits, 0% noise | results/runs.jsonl |
-| `dg20_lr_diff_ci_high` | 6.96296 | upper end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, digits, 20% noise | results/runs.jsonl |
-| `dg20_lr_diff_ci_low` | 4.77778 | lower end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, digits, 20% noise | results/runs.jsonl |
-| `dg20_mlp_diff_ci_high` | 14.3704 | upper end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, digits, 20% noise | results/runs.jsonl |
-| `dg20_mlp_diff_ci_low` | 10.8519 | lower end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, digits, 20% noise | results/runs.jsonl |
-| `dg40_lr_diff_ci_high` | 10.8148 | upper end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, digits, 40% noise | results/runs.jsonl |
-| `dg40_lr_diff_ci_low` | 7.03704 | lower end of 95% CI (points) of paired filter minus logreg accuracy difference, 5 seeds, digits, 40% noise | results/runs.jsonl |
-| `dg40_mlp_diff_ci_high` | 31.1481 | upper end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, digits, 40% noise | results/runs.jsonl |
-| `dg40_mlp_diff_ci_low` | 24.9259 | lower end of 95% CI (points) of paired filter minus mlp accuracy difference, 5 seeds, digits, 40% noise | results/runs.jsonl |
-| `diff_filter_logreg_breast_cancer_n0` | -0.116959 | mean paired test-accuracy difference (points), filter minus logreg, breast_cancer, 0% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_logreg_breast_cancer_n20` | 2.92398 | mean paired test-accuracy difference (points), filter minus logreg, breast_cancer, 20% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_logreg_breast_cancer_n40` | 3.62573 | mean paired test-accuracy difference (points), filter minus logreg, breast_cancer, 40% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_logreg_digits_n0` | -0.222222 | mean paired test-accuracy difference (points), filter minus logreg, digits, 0% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_logreg_digits_n20` | 6 | mean paired test-accuracy difference (points), filter minus logreg, digits, 20% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_logreg_digits_n40` | 9.03704 | mean paired test-accuracy difference (points), filter minus logreg, digits, 40% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_mlp_breast_cancer_n0` | -0.116959 | mean paired test-accuracy difference (points), filter minus mlp, breast_cancer, 0% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_mlp_breast_cancer_n20` | 10.9942 | mean paired test-accuracy difference (points), filter minus mlp, breast_cancer, 20% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_mlp_breast_cancer_n40` | 18.5965 | mean paired test-accuracy difference (points), filter minus mlp, breast_cancer, 40% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_mlp_digits_n0` | -0.740741 | mean paired test-accuracy difference (points), filter minus mlp, digits, 0% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_mlp_digits_n20` | 12.7037 | mean paired test-accuracy difference (points), filter minus mlp, digits, 20% noise, seeds 0-4 | results/runs.jsonl |
-| `diff_filter_mlp_digits_n40` | 27.7407 | mean paired test-accuracy difference (points), filter minus mlp, digits, 40% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_breast_cancer_n0` | 7.4 | mean number of training samples the filter drops on breast_cancer at 0% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_breast_cancer_n20` | 92.8 | mean number of training samples the filter drops on breast_cancer at 20% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_breast_cancer_n40` | 177.2 | mean number of training samples the filter drops on breast_cancer at 40% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_digits_n0` | 43.6 | mean number of training samples the filter drops on digits at 0% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_digits_n20` | 377.4 | mean number of training samples the filter drops on digits at 20% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_digits_n40` | 634.2 | mean number of training samples the filter drops on digits at 40% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_pct_breast_cancer_n0` | 1.8593 | mean percent of breast_cancer training samples dropped by the filter at 0% noise, seeds 0-4 | results/runs.jsonl |
-| `dropped_pct_digits_n0` | 3.46858 | mean percent of the 1257 digits training samples dropped by the filter at 0% noise, seeds 0-4 | results/runs.jsonl |
-| `dz_bc20_filter_vs_lr` | 0.890871 | Cohen's dz of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 20% noise | results/runs.jsonl |
-| `dz_bc20_filter_vs_mlp` | 2.81193 | Cohen's dz of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 20% noise | results/runs.jsonl |
-| `dz_bc40_filter_vs_lr` | 2.71888 | Cohen's dz of paired filter minus logreg accuracy difference, 5 seeds, breast_cancer, 40% noise | results/runs.jsonl |
-| `dz_bc40_filter_vs_mlp` | 4.62867 | Cohen's dz of paired filter minus mlp accuracy difference, 5 seeds, breast_cancer, 40% noise | results/runs.jsonl |
-| `dz_dg0_filter_vs_lr` | -0.289346 | Cohen's dz of paired filter minus logreg accuracy difference, 5 seeds, digits, 0% noise | results/runs.jsonl |
-| `dz_dg20_filter_vs_lr` | 4.24337 | Cohen's dz of paired filter minus logreg accuracy difference, 5 seeds, digits, 20% noise | results/runs.jsonl |
-| `dz_dg20_filter_vs_mlp` | 5.56786 | Cohen's dz of paired filter minus mlp accuracy difference, 5 seeds, digits, 20% noise | results/runs.jsonl |
-| `dz_dg40_filter_vs_lr` | 3.99517 | Cohen's dz of paired filter minus logreg accuracy difference, 5 seeds, digits, 40% noise | results/runs.jsonl |
-| `dz_dg40_filter_vs_mlp` | 6.76245 | Cohen's dz of paired filter minus mlp accuracy difference, 5 seeds, digits, 40% noise | results/runs.jsonl |
-| `filter_folds` | 5 | number of cross-validation folds used by the filter, from the config | experiments/config.json |
-| `lift_breast_cancer_n20` | 57.157 | mean filter precision minus mean realized flip rate (percentage points), breast_cancer, 20% noise | results/runs.jsonl |
-| `lift_breast_cancer_n40` | 29.6578 | mean filter precision minus mean realized flip rate (percentage points), breast_cancer, 40% noise | results/runs.jsonl |
-| `lift_digits_n20` | 44.9162 | mean filter precision minus mean realized flip rate (percentage points), digits, 20% noise | results/runs.jsonl |
-| `lift_digits_n40` | 36.7416 | mean filter precision minus mean realized flip rate (percentage points), digits, 40% noise | results/runs.jsonl |
-| `logreg_C` | 1 | inverse regularization strength C of logistic regression, from the config | experiments/config.json |
-| `loss_logreg_breast_cancer_n20` | 4.44444 | accuracy (points) logreg loses on breast_cancer at 20% noise: mean at 0% minus mean at 20%, seeds 0-4 | results/runs.jsonl |
-| `loss_logreg_breast_cancer_n40` | 16.3743 | accuracy (points) logreg loses on breast_cancer at 40% noise: mean at 0% minus mean at 40%, seeds 0-4 | results/runs.jsonl |
-| `loss_logreg_digits_n20` | 7.7037 | accuracy (points) logreg loses on digits at 20% noise: mean at 0% minus mean at 20%, seeds 0-4 | results/runs.jsonl |
-| `loss_logreg_digits_n40` | 13.2222 | accuracy (points) logreg loses on digits at 40% noise: mean at 0% minus mean at 40%, seeds 0-4 | results/runs.jsonl |
-| `mlp_hidden` | 64 | hidden units of the MLP (one hidden layer), from the config | experiments/config.json |
-| `mlp_max_iter` | 500 | maximum training iterations of the MLP, from the config | experiments/config.json |
-| `n_datasets` | 2 | number of datasets in the config | experiments/config.json |
-| `n_noise_rates` | 3 | number of noise rates in the config, including 0% | experiments/config.json |
-| `n_runs` | 90 | number of records in results/runs.jsonl (datasets x noise rates x seeds x methods) | results/runs.jsonl |
-| `n_seeds` | 5 | number of seeds in the config | experiments/config.json |
-| `n_test_breast_cancer` | 171 | number of test samples in breast_cancer (30% split) | results/runs.jsonl |
-| `n_test_digits` | 540 | number of test samples in digits (30% split) | results/runs.jsonl |
-| `n_total_breast_cancer` | 569 | total samples in breast_cancer (n_train + n_test) | results/runs.jsonl |
-| `n_total_digits` | 1797 | total samples in digits (n_train + n_test) | results/runs.jsonl |
-| `n_train_breast_cancer` | 398 | number of training samples in breast_cancer (70% split) | results/runs.jsonl |
-| `n_train_digits` | 1257 | number of training samples in digits (70% split) | results/runs.jsonl |
-| `noise_high_pct` | 40 | highest label-noise rate (%) from the config | experiments/config.json |
-| `noise_low_pct` | 20 | lower non-zero label-noise rate (%) from the config | experiments/config.json |
-| `noisy_pct_breast_cancer_n20` | 19.196 | mean realized percent of breast_cancer training labels flipped at nominal 20% noise, seeds 0-4 | results/runs.jsonl |
-| `noisy_pct_breast_cancer_n40` | 38.593 | mean realized percent of breast_cancer training labels flipped at nominal 40% noise, seeds 0-4 | results/runs.jsonl |
-| `noisy_pct_digits_n20` | 19.6977 | mean realized percent of digits training labels flipped at nominal 20% noise, seeds 0-4 | results/runs.jsonl |
-| `noisy_pct_digits_n40` | 39.3636 | mean realized percent of digits training labels flipped at nominal 40% noise, seeds 0-4 | results/runs.jsonl |
-| `nwin_lr_breast_cancer_n20` | 4 | number of seeds out of 5 where filter beats logreg, breast_cancer, 20% noise | results/runs.jsonl |
-| `nwin_lr_breast_cancer_n40` | 5 | number of seeds out of 5 where filter beats logreg, breast_cancer, 40% noise | results/runs.jsonl |
-| `nwin_lr_digits_n20` | 5 | number of seeds out of 5 where filter beats logreg, digits, 20% noise | results/runs.jsonl |
-| `nwin_lr_digits_n40` | 5 | number of seeds out of 5 where filter beats logreg, digits, 40% noise | results/runs.jsonl |
-| `nwins_filter_logreg_clean` | 3 | number of (dataset, seed) runs at 0% noise, out of 10, where filter test accuracy exceeds logreg | results/runs.jsonl |
-| `nwins_filter_logreg_noisy` | 19 | number of (dataset, noise in {20%, 40%}, seed) runs, out of 20, where filter test accuracy exceeds logreg | results/runs.jsonl |
-| `nwins_filter_mlp_noisy` | 20 | number of (dataset, noise in {20%, 40%}, seed) runs, out of 20, where filter test accuracy exceeds mlp | results/runs.jsonl |
-| `one_sample_pts_breast_cancer` | 0.584795 | accuracy points that one test sample is worth on breast_cancer: 100 / n_test | results/runs.jsonl |
-| `one_sample_pts_digits` | 0.185185 | accuracy points that one test sample is worth on digits: 100 / n_test | results/runs.jsonl |
-| `p_bc0_filter_vs_lr` | 0.373901 | p-value, two-sided paired t-test over 5 seeds, filter vs logreg test accuracy, breast_cancer, 0% noise | results/runs.jsonl |
-| `p_bc0_filter_vs_mlp` | 0.704 | p-value, two-sided paired t-test over 5 seeds, filter vs mlp test accuracy, breast_cancer, 0% noise | results/runs.jsonl |
-| `p_bc20_filter_vs_lr` | 0.117176 | p-value, two-sided paired t-test over 5 seeds, filter vs logreg test accuracy, breast_cancer, 20% noise | results/runs.jsonl |
-| `p_bc20_filter_vs_mlp` | 0.00326808 | p-value, two-sided paired t-test over 5 seeds, filter vs mlp test accuracy, breast_cancer, 20% noise | results/runs.jsonl |
-| `p_bc40_filter_vs_lr` | 0.00369925 | p-value, two-sided paired t-test over 5 seeds, filter vs logreg test accuracy, breast_cancer, 40% noise | results/runs.jsonl |
-| `p_bc40_filter_vs_mlp` | 0.000491848 | p-value, two-sided paired t-test over 5 seeds, filter vs mlp test accuracy, breast_cancer, 40% noise | results/runs.jsonl |
-| `p_dg0_filter_vs_lr` | 0.552889 | p-value, two-sided paired t-test over 5 seeds, filter vs logreg test accuracy, digits, 0% noise | results/runs.jsonl |
-| `p_dg0_filter_vs_mlp` | 0.0309058 | p-value, two-sided paired t-test over 5 seeds, filter vs mlp test accuracy, digits, 0% noise | results/runs.jsonl |
-| `p_dg20_filter_vs_lr` | 0.000688454 | p-value, two-sided paired t-test over 5 seeds, filter vs logreg test accuracy, digits, 20% noise | results/runs.jsonl |
-| `p_dg20_filter_vs_mlp` | 0.000239335 | p-value, two-sided paired t-test over 5 seeds, filter vs mlp test accuracy, digits, 20% noise | results/runs.jsonl |
-| `p_dg40_filter_vs_lr` | 0.00086823 | p-value, two-sided paired t-test over 5 seeds, filter vs logreg test accuracy, digits, 40% noise | results/runs.jsonl |
-| `p_dg40_filter_vs_mlp` | 0.000111491 | p-value, two-sided paired t-test over 5 seeds, filter vs mlp test accuracy, digits, 40% noise | results/runs.jsonl |
-| `p_prec_bc20_gt50` | 6.52046e-05 | p-value, two-sided one-sample t-test (paired against constant 50) over 5 seeds, filter precision (%), breast_cancer, 20% noise | results/runs.jsonl |
-| `p_prec_bc40_gt50` | 0.000545144 | p-value, two-sided one-sample t-test (paired against constant 50) over 5 seeds, filter precision (%), breast_cancer, 40% noise | results/runs.jsonl |
-| `p_prec_dg20_gt50` | 0.000151772 | p-value, two-sided one-sample t-test (paired against constant 50) over 5 seeds, filter precision (%), digits, 20% noise | results/runs.jsonl |
-| `p_prec_dg40_gt50` | 2.1437e-07 | p-value, two-sided one-sample t-test (paired against constant 50) over 5 seeds, filter precision (%), digits, 40% noise | results/runs.jsonl |
-| `p_trend_bc_gain_lr` | 0.663335 | p-value, two-sided paired t-test over 5 seeds, per-seed filter-minus-logreg gain at 40% vs 20% noise, breast_cancer | results/runs.jsonl |
-| `p_trend_bc_gain_mlp` | 0.0531733 | p-value, two-sided paired t-test over 5 seeds, per-seed filter-minus-mlp gain at 40% vs 20% noise, breast_cancer | results/runs.jsonl |
-| `p_trend_dg_gain_lr` | 0.00247732 | p-value, two-sided paired t-test over 5 seeds, per-seed filter-minus-logreg gain at 40% vs 20% noise, digits | results/runs.jsonl |
-| `p_trend_dg_gain_mlp` | 0.00046115 | p-value, two-sided paired t-test over 5 seeds, per-seed filter-minus-mlp gain at 40% vs 20% noise, digits | results/runs.jsonl |
-| `precision_breast_cancer_n20` | 76.353 | mean over seeds 0-4 of filter precision (%), dropped samples truly flipped, breast_cancer, 20% noise | results/runs.jsonl |
-| `precision_breast_cancer_n40` | 68.2508 | mean over seeds 0-4 of filter precision (%), dropped samples truly flipped, breast_cancer, 40% noise | results/runs.jsonl |
-| `precision_digits_n20` | 64.6139 | mean over seeds 0-4 of filter precision (%), dropped samples truly flipped, digits, 20% noise | results/runs.jsonl |
-| `precision_digits_n40` | 76.1051 | mean over seeds 0-4 of filter precision (%), dropped samples truly flipped, digits, 40% noise | results/runs.jsonl |
-| `precision_min_breast_cancer_n40` | 63.1016 | lowest per-seed filter precision (%) over seeds 0-4, breast_cancer, 40% noise | results/runs.jsonl |
-| `precision_min_digits_n40` | 75.3106 | lowest per-seed filter precision (%) over seeds 0-4, digits, 40% noise | results/runs.jsonl |
-| `precision_pooled_noisy` | 71.3307 | mean filter precision (%) over both datasets, 20% and 40% noise, seeds 0-4 (20 runs) | results/runs.jsonl |
-| `recall_breast_cancer_n20` | 92.5165 | mean over seeds 0-4 of filter recall (%), flipped samples dropped, breast_cancer, 20% noise | results/runs.jsonl |
-| `recall_breast_cancer_n40` | 78.9076 | mean over seeds 0-4 of filter recall (%), flipped samples dropped, breast_cancer, 40% noise | results/runs.jsonl |
-| `recall_digits_n20` | 98.4639 | mean over seeds 0-4 of filter recall (%), flipped samples dropped, digits, 20% noise | results/runs.jsonl |
-| `recall_digits_n40` | 97.5422 | mean over seeds 0-4 of filter recall (%), flipped samples dropped, digits, 40% noise | results/runs.jsonl |
-| `recovered_breast_cancer_n20` | 65.7895 | percent of logreg's accuracy loss at 20% noise on breast_cancer regained by filter: (filter - logreg)/(logreg at 0% - logreg), means over seeds 0-4 | results/runs.jsonl |
-| `recovered_breast_cancer_n40` | 22.1429 | percent of logreg's accuracy loss at 40% noise on breast_cancer regained by filter: (filter - logreg)/(logreg at 0% - logreg), means over seeds 0-4 | results/runs.jsonl |
-| `recovered_digits_n20` | 77.8846 | percent of logreg's accuracy loss at 20% noise on digits regained by filter: (filter - logreg)/(logreg at 0% - logreg), means over seeds 0-4 | results/runs.jsonl |
-| `recovered_digits_n40` | 68.3473 | percent of logreg's accuracy loss at 40% noise on digits regained by filter: (filter - logreg)/(logreg at 0% - logreg), means over seeds 0-4 | results/runs.jsonl |
-| `sd_filter_breast_cancer_n0` | 0.960917 | sample sd (points) over seeds 0-4 of test accuracy, filter, breast_cancer, 0% noise | results/runs.jsonl |
-| `sd_filter_breast_cancer_n20` | 0.76248 | sample sd (points) over seeds 0-4 of test accuracy, filter, breast_cancer, 20% noise | results/runs.jsonl |
-| `sd_filter_breast_cancer_n40` | 8.95138 | sample sd (points) over seeds 0-4 of test accuracy, filter, breast_cancer, 40% noise | results/runs.jsonl |
-| `sd_filter_digits_n0` | 0.360992 | sample sd (points) over seeds 0-4 of test accuracy, filter, digits, 0% noise | results/runs.jsonl |
-| `sd_filter_digits_n20` | 0.874498 | sample sd (points) over seeds 0-4 of test accuracy, filter, digits, 20% noise | results/runs.jsonl |
-| `sd_filter_digits_n40` | 1.59517 | sample sd (points) over seeds 0-4 of test accuracy, filter, digits, 40% noise | results/runs.jsonl |
-| `sd_logreg_breast_cancer_n0` | 1.21266 | sample sd (points) over seeds 0-4 of test accuracy, logreg, breast_cancer, 0% noise | results/runs.jsonl |
-| `sd_logreg_breast_cancer_n20` | 3.73079 | sample sd (points) over seeds 0-4 of test accuracy, logreg, breast_cancer, 20% noise | results/runs.jsonl |
-| `sd_logreg_breast_cancer_n40` | 9.38956 | sample sd (points) over seeds 0-4 of test accuracy, logreg, breast_cancer, 40% noise | results/runs.jsonl |
-| `sd_logreg_digits_n0` | 0.821939 | sample sd (points) over seeds 0-4 of test accuracy, logreg, digits, 0% noise | results/runs.jsonl |
-| `sd_logreg_digits_n20` | 0.974644 | sample sd (points) over seeds 0-4 of test accuracy, logreg, digits, 20% noise | results/runs.jsonl |
-| `sd_logreg_digits_n40` | 1.25325 | sample sd (points) over seeds 0-4 of test accuracy, logreg, digits, 40% noise | results/runs.jsonl |
-| `sd_mlp_breast_cancer_n0` | 1.21266 | sample sd (points) over seeds 0-4 of test accuracy, mlp, breast_cancer, 0% noise | results/runs.jsonl |
-| `sd_mlp_breast_cancer_n20` | 3.98777 | sample sd (points) over seeds 0-4 of test accuracy, mlp, breast_cancer, 20% noise | results/runs.jsonl |
-| `sd_mlp_breast_cancer_n40` | 5.42947 | sample sd (points) over seeds 0-4 of test accuracy, mlp, breast_cancer, 40% noise | results/runs.jsonl |
-| `sd_mlp_digits_n0` | 0.549348 | sample sd (points) over seeds 0-4 of test accuracy, mlp, digits, 0% noise | results/runs.jsonl |
-| `sd_mlp_digits_n20` | 1.63551 | sample sd (points) over seeds 0-4 of test accuracy, mlp, digits, 20% noise | results/runs.jsonl |
-| `sd_mlp_digits_n40` | 3.11695 | sample sd (points) over seeds 0-4 of test accuracy, mlp, digits, 40% noise | results/runs.jsonl |
-| `test_fraction_pct` | 30 | test split fraction (%) from the config | experiments/config.json |
-| `time_filter_over_logreg_digits_n0` | 5.02385 | ratio of mean fit_seconds, filter over logreg, digits, 0% noise, seeds 0-4 (indicative; machine unknown) | results/runs.jsonl |
-| `trend_bc_gain_lr_ci_high` | 3.27485 | upper end of 95% CI (points) of per-seed filter-minus-logreg gain, 40% minus 20% noise, breast_cancer, 5 seeds | results/runs.jsonl |
-| `trend_bc_gain_lr_ci_low` | -1.87135 | lower end of 95% CI (points) of per-seed filter-minus-logreg gain, 40% minus 20% noise, breast_cancer, 5 seeds | results/runs.jsonl |
-| `trend_dg_gain_lr_ci_high` | 3.85185 | upper end of 95% CI (points) of per-seed filter-minus-logreg gain, 40% minus 20% noise, digits, 5 seeds | results/runs.jsonl |
-| `trend_dg_gain_lr_ci_low` | 2.2963 | lower end of 95% CI (points) of per-seed filter-minus-logreg gain, 40% minus 20% noise, digits, 5 seeds | results/runs.jsonl |
+| `acc_filter_breast_noise0` | 96.6082 | mean test accuracy (%) of ours (filter) on breast_cancer, clean training labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise0_seed0` | 95.9064 | test accuracy (%) of ours (filter), breast_cancer, clean labels, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise0_seed1` | 95.9064 | test accuracy (%) of ours (filter), breast_cancer, clean labels, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise0_seed2` | 96.4912 | test accuracy (%) of ours (filter), breast_cancer, clean labels, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise0_seed3` | 98.2456 | test accuracy (%) of ours (filter), breast_cancer, clean labels, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise0_seed4` | 96.4912 | test accuracy (%) of ours (filter), breast_cancer, clean labels, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise20` | 95.2047 | mean test accuracy (%) of ours (filter) on breast_cancer, 20% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise20_seed0` | 95.9064 | test accuracy (%) of ours (filter), breast_cancer, 20% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise20_seed1` | 95.3216 | test accuracy (%) of ours (filter), breast_cancer, 20% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise20_seed2` | 94.152 | test accuracy (%) of ours (filter), breast_cancer, 20% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise20_seed3` | 95.9064 | test accuracy (%) of ours (filter), breast_cancer, 20% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise20_seed4` | 94.7368 | test accuracy (%) of ours (filter), breast_cancer, 20% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise40` | 83.9766 | mean test accuracy (%) of ours (filter) on breast_cancer, 40% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise40_seed0` | 89.4737 | test accuracy (%) of ours (filter), breast_cancer, 40% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise40_seed1` | 74.8538 | test accuracy (%) of ours (filter), breast_cancer, 40% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise40_seed2` | 73.6842 | test accuracy (%) of ours (filter), breast_cancer, 40% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise40_seed3` | 92.3977 | test accuracy (%) of ours (filter), breast_cancer, 40% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_breast_noise40_seed4` | 89.4737 | test accuracy (%) of ours (filter), breast_cancer, 40% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise0` | 96.5926 | mean test accuracy (%) of out-of-fold filtering + logistic regression (ours) on digits, clean training labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise0_seed0` | 96.4815 | test accuracy (%) of ours (filter), digits, clean labels, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise0_seed1` | 96.8519 | test accuracy (%) of ours (filter), digits, clean labels, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise0_seed2` | 96.1111 | test accuracy (%) of ours (filter), digits, clean labels, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise0_seed3` | 96.4815 | test accuracy (%) of ours (filter), digits, clean labels, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise0_seed4` | 97.037 | test accuracy (%) of ours (filter), digits, clean labels, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise20` | 95.1111 | mean test accuracy (%) of ours (filter) on digits, 20% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise20_seed0` | 95 | test accuracy (%) of ours (filter), digits, 20% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise20_seed1` | 94.8148 | test accuracy (%) of ours (filter), digits, 20% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise20_seed2` | 95.1852 | test accuracy (%) of ours (filter), digits, 20% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise20_seed3` | 94.0741 | test accuracy (%) of ours (filter), digits, 20% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise20_seed4` | 96.4815 | test accuracy (%) of ours (filter), digits, 20% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise40` | 92.6296 | mean test accuracy (%) of ours (filter) on digits, 40% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise40_seed0` | 92.7778 | test accuracy (%) of ours (filter), digits, 40% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise40_seed1` | 91.4815 | test accuracy (%) of ours (filter), digits, 40% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise40_seed2` | 94.8148 | test accuracy (%) of ours (filter), digits, 40% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise40_seed3` | 90.7407 | test accuracy (%) of ours (filter), digits, 40% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_filter_digits_noise40_seed4` | 93.3333 | test accuracy (%) of ours (filter), digits, 40% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise0` | 96.7251 | mean test accuracy (%) of logistic regression on breast_cancer, clean training labels (clean reference), mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise0_seed0` | 95.9064 | test accuracy (%) of logistic regression, breast_cancer, clean labels, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise0_seed1` | 95.9064 | test accuracy (%) of logistic regression, breast_cancer, clean labels, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise0_seed2` | 96.4912 | test accuracy (%) of logistic regression, breast_cancer, clean labels, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise0_seed3` | 98.8304 | test accuracy (%) of logistic regression, breast_cancer, clean labels, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise0_seed4` | 96.4912 | test accuracy (%) of logistic regression, breast_cancer, clean labels, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise20` | 92.2807 | mean test accuracy (%) of logistic regression on breast_cancer, 20% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise20_seed0` | 92.9825 | test accuracy (%) of logistic regression, breast_cancer, 20% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise20_seed1` | 89.4737 | test accuracy (%) of logistic regression, breast_cancer, 20% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise20_seed2` | 87.7193 | test accuracy (%) of logistic regression, breast_cancer, 20% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise20_seed3` | 97.076 | test accuracy (%) of logistic regression, breast_cancer, 20% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise20_seed4` | 94.152 | test accuracy (%) of logistic regression, breast_cancer, 20% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise40` | 80.3509 | mean test accuracy (%) of logistic regression on breast_cancer, 40% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise40_seed0` | 86.5497 | test accuracy (%) of logistic regression, breast_cancer, 40% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise40_seed1` | 69.0058 | test accuracy (%) of logistic regression, breast_cancer, 40% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise40_seed2` | 71.345 | test accuracy (%) of logistic regression, breast_cancer, 40% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise40_seed3` | 88.8889 | test accuracy (%) of logistic regression, breast_cancer, 40% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_breast_noise40_seed4` | 85.9649 | test accuracy (%) of logistic regression, breast_cancer, 40% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise0` | 96.8148 | mean test accuracy (%) of logistic regression on digits, clean training labels (clean reference), mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise0_seed0` | 97.2222 | test accuracy (%) of logistic regression, digits, clean labels, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise0_seed1` | 96.6667 | test accuracy (%) of logistic regression, digits, clean labels, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise0_seed2` | 95.5556 | test accuracy (%) of logistic regression, digits, clean labels, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise0_seed3` | 97.7778 | test accuracy (%) of logistic regression, digits, clean labels, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise0_seed4` | 96.8519 | test accuracy (%) of logistic regression, digits, clean labels, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise20` | 89.1111 | mean test accuracy (%) of logistic regression on digits, 20% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise20_seed0` | 89.0741 | test accuracy (%) of logistic regression, digits, 20% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise20_seed1` | 88.7037 | test accuracy (%) of logistic regression, digits, 20% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise20_seed2` | 87.7778 | test accuracy (%) of logistic regression, digits, 20% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise20_seed3` | 90.3704 | test accuracy (%) of logistic regression, digits, 20% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise20_seed4` | 89.6296 | test accuracy (%) of logistic regression, digits, 20% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise40` | 83.5926 | mean test accuracy (%) of logistic regression on digits, 40% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise40_seed0` | 83.8889 | test accuracy (%) of logistic regression, digits, 40% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise40_seed1` | 81.8519 | test accuracy (%) of logistic regression, digits, 40% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise40_seed2` | 82.963 | test accuracy (%) of logistic regression, digits, 40% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise40_seed3` | 85.1852 | test accuracy (%) of logistic regression, digits, 40% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `acc_logreg_digits_noise40_seed4` | 84.0741 | test accuracy (%) of logistic regression, digits, 40% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `acc_mlp_breast_noise0` | 96.7251 | mean test accuracy (%) of the MLP on breast_cancer, clean training labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_mlp_breast_noise20` | 84.2105 | mean test accuracy (%) of the MLP on breast_cancer, 20% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_mlp_breast_noise40` | 65.3801 | mean test accuracy (%) of the MLP on breast_cancer, 40% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_mlp_digits_noise0` | 97.3333 | mean test accuracy (%) of the MLP on digits, clean training labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_mlp_digits_noise20` | 82.4074 | mean test accuracy (%) of the MLP on digits, 20% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `acc_mlp_digits_noise40` | 64.8889 | mean test accuracy (%) of the MLP on digits, 40% symmetric training-label noise, clean test labels, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `ci95hi_drop_precision_vs_half_breast_noise20` | 29.0789 | upper end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_drop_precision_vs_half_breast_noise40` | 21.2415 | upper end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_drop_precision_vs_half_digits_noise20` | 16.3193 | upper end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_drop_precision_vs_half_digits_noise40` | 26.76 | upper end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_halfway_breast_noise20` | 2.16374 | upper end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_halfway_breast_noise40` | -1.63743 | upper end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_halfway_digits_noise20` | 3.12963 | upper end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_halfway_digits_noise40` | 4.22222 | upper end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_logreg_breast_noise0` | 0 | upper end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points, negative = ours lower), paired over 5 seeds, breast_cancer, clean labels | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_logreg_breast_noise20` | 5.49708 | upper end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_logreg_breast_noise40` | 4.79532 | upper end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_logreg_digits_noise0` | 0.333333 | upper end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points, negative = ours lower), paired over 5 seeds, digits, clean labels | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_logreg_digits_noise20` | 6.96296 | upper end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_logreg_digits_noise40` | 10.8148 | upper end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_mlp_breast_noise20` | 14.0351 | upper end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_mlp_breast_noise40` | 21.6374 | upper end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_mlp_digits_noise20` | 14.3704 | upper end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95hi_filter_vs_mlp_digits_noise40` | 31.1481 | upper end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_drop_precision_vs_half_breast_noise20` | 23.8285 | lower end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_drop_precision_vs_half_breast_noise40` | 15.0954 | lower end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_drop_precision_vs_half_digits_noise20` | 12.6689 | lower end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_drop_precision_vs_half_digits_noise40` | 25.5703 | lower end of the 95% bootstrap interval of (share of dropped samples truly mislabeled minus 50%), in points, over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_halfway_breast_noise20` | -0.935673 | lower end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_halfway_breast_noise40` | -8.0117 | lower end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_halfway_digits_noise20` | 1.01852 | lower end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_halfway_digits_noise40` | 0.574074 | lower end of the 95% bootstrap interval of ours minus the half-recovery accuracy (points, positive = more than half won back), paired over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_logreg_breast_noise0` | -0.350877 | lower end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points, negative = ours lower), paired over 5 seeds, breast_cancer, clean labels | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_logreg_breast_noise20` | 0.350877 | lower end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_logreg_breast_noise40` | 2.80702 | lower end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_logreg_digits_noise0` | -0.888889 | lower end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points, negative = ours lower), paired over 5 seeds, digits, clean labels | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_logreg_digits_noise20` | 4.77778 | lower end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_logreg_digits_noise40` | 7.03704 | lower end of the 95% bootstrap interval of ours (filter) minus logistic regression test accuracy (points), paired over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_mlp_breast_noise20` | 7.95322 | lower end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_mlp_breast_noise40` | 15.4386 | lower end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_mlp_digits_noise20` | 10.8519 | lower end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `ci95lo_filter_vs_mlp_digits_noise40` | 24.9259 | lower end of the 95% bootstrap interval of ours (filter) minus MLP test accuracy (points), paired over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `correct_dropped_breast_noise20` | 6.85687 | share (%) of correctly labeled training samples that the filter dropped, (n_dropped - n_dropped_noisy) / (n_train - n_noisy), breast_cancer, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `correct_dropped_breast_noise40` | 23.2419 | share (%) of correctly labeled training samples that the filter dropped, (n_dropped - n_dropped_noisy) / (n_train - n_noisy), breast_cancer, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `correct_dropped_digits_noise20` | 13.2351 | share (%) of correctly labeled training samples that the filter dropped, (n_dropped - n_dropped_noisy) / (n_train - n_noisy), digits, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `correct_dropped_digits_noise40` | 19.8945 | share (%) of correctly labeled training samples that the filter dropped, (n_dropped - n_dropped_noisy) / (n_train - n_noisy), digits, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_fraction_breast_noise0` | 1.8593 | share (%) of the training set dropped by the filter, breast_cancer, clean labels (every drop is a correctly labeled sample), mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_fraction_breast_noise20` | 23.3166 | share (%) of the training set dropped by the filter, breast_cancer, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_fraction_breast_noise40` | 44.5226 | share (%) of the training set dropped by the filter, breast_cancer, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_fraction_digits_noise0` | 3.46858 | share (%) of the training set dropped by the filter, digits, clean labels (every drop is a correctly labeled sample), mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_fraction_digits_noise20` | 30.0239 | share (%) of the training set dropped by the filter, digits, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_fraction_digits_noise40` | 50.4535 | share (%) of the training set dropped by the filter, digits, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_precision_breast_noise20` | 76.353 | share (%) of dropped training samples that were truly mislabeled, breast_cancer, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_precision_breast_noise40` | 68.2508 | share (%) of dropped training samples that were truly mislabeled, breast_cancer, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_precision_digits_noise20` | 64.6139 | share (%) of dropped training samples that were truly mislabeled, digits, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_precision_digits_noise40` | 76.1051 | share (%) of dropped training samples that were truly mislabeled, digits, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_precision_max` | 81.25 | highest per-run share (%) of dropped samples that were truly mislabeled, over all noisy runs (both datasets, 20% and 40% noise, seeds 0-4) | experiments/config.json, results/runs.jsonl |
+| `drop_precision_min` | 61.0687 | lowest per-run share (%) of dropped samples that were truly mislabeled, over all noisy runs (both datasets, 20% and 40% noise, seeds 0-4) | experiments/config.json, results/runs.jsonl |
+| `drop_recall_breast_noise20` | 92.5165 | share (%) of mislabeled training samples that the filter dropped, breast_cancer, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_recall_breast_noise40` | 78.9076 | share (%) of mislabeled training samples that the filter dropped, breast_cancer, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_recall_digits_noise20` | 98.4639 | share (%) of mislabeled training samples that the filter dropped, digits, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_recall_digits_noise40` | 97.5422 | share (%) of mislabeled training samples that the filter dropped, digits, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_correct_breast_noise20` | 5.52764 | correctly labeled samples dropped by the filter as a share (%) of the training set, breast_cancer, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_correct_breast_noise40` | 14.1709 | correctly labeled samples dropped by the filter as a share (%) of the training set, breast_cancer, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_correct_digits_noise20` | 10.6285 | correctly labeled samples dropped by the filter as a share (%) of the training set, digits, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_correct_digits_noise40` | 12.0605 | correctly labeled samples dropped by the filter as a share (%) of the training set, digits, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_mislabeled_breast_noise20` | 17.7889 | mislabeled samples dropped by the filter as a share (%) of the training set, breast_cancer, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_mislabeled_breast_noise40` | 30.3518 | mislabeled samples dropped by the filter as a share (%) of the training set, breast_cancer, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_mislabeled_digits_noise20` | 19.3954 | mislabeled samples dropped by the filter as a share (%) of the training set, digits, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `drop_share_mislabeled_digits_noise40` | 38.393 | mislabeled samples dropped by the filter as a share (%) of the training set, digits, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `dz_filter_vs_logreg_breast_noise20` | 0.890871 | Cohen's dz of ours (filter) minus logistic regression test accuracy, paired over 5 seeds, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `dz_filter_vs_logreg_breast_noise40` | 2.71888 | Cohen's dz of ours (filter) minus logistic regression test accuracy, paired over 5 seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `dz_filter_vs_logreg_digits_noise20` | 4.24337 | Cohen's dz of ours (filter) minus logistic regression test accuracy, paired over 5 seeds, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `dz_filter_vs_logreg_digits_noise40` | 3.99517 | Cohen's dz of ours (filter) minus logistic regression test accuracy, paired over 5 seeds, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `filter_folds` | 5 | number of cross-validation folds K used by the filter | experiments/config.json |
+| `flipped_low_seeds_max_breast_noise40` | 42.2111 | largest flipped share (%) of the training set among the two seeds where ours and logistic regression are least accurate, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `flipped_low_seeds_min_breast_noise40` | 41.7085 | smallest flipped share (%) of the training set among the two seeds where ours and logistic regression are least accurate, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `flipped_other_seeds_max_breast_noise40` | 37.9397 | largest flipped share (%) of the training set among the other three seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `flipped_other_seeds_min_breast_noise40` | 35.4271 | smallest flipped share (%) of the training set among the other three seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `gain_seed_max_digits_noise0` | 0.555556 | largest per-seed difference ours minus logistic regression test accuracy (points), digits, clean labels, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_seed_min_digits_noise0` | -1.2963 | smallest per-seed difference ours minus logistic regression test accuracy (points), digits, clean labels, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise0` | -0.116959 | ours minus logistic regression test accuracy (points, signed; negative = ours lower) on breast_cancer, clean labels, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise0_seed0` | 0 | ours minus logistic regression test accuracy (points), breast_cancer, clean labels, seed 0 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise0_seed1` | 0 | ours minus logistic regression test accuracy (points), breast_cancer, clean labels, seed 1 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise0_seed2` | 0 | ours minus logistic regression test accuracy (points), breast_cancer, clean labels, seed 2 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise0_seed3` | -0.584795 | ours minus logistic regression test accuracy (points), breast_cancer, clean labels, seed 3 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise0_seed4` | 0 | ours minus logistic regression test accuracy (points), breast_cancer, clean labels, seed 4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise20` | 2.92398 | ours minus logistic regression (best baseline) test accuracy (points, signed) on breast_cancer, 20% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise20_seed0` | 2.92398 | ours minus logistic regression test accuracy (points), breast_cancer, 20% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise20_seed1` | 5.84795 | ours minus logistic regression test accuracy (points), breast_cancer, 20% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise20_seed2` | 6.43275 | ours minus logistic regression test accuracy (points), breast_cancer, 20% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise20_seed3` | -1.16959 | ours minus logistic regression test accuracy (points), breast_cancer, 20% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise20_seed4` | 0.584795 | ours minus logistic regression test accuracy (points), breast_cancer, 20% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise40` | 3.62573 | ours minus logistic regression (best baseline) test accuracy (points, signed) on breast_cancer, 40% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise40_seed0` | 2.92398 | ours minus logistic regression test accuracy (points), breast_cancer, 40% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise40_seed1` | 5.84795 | ours minus logistic regression test accuracy (points), breast_cancer, 40% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise40_seed2` | 2.33918 | ours minus logistic regression test accuracy (points), breast_cancer, 40% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise40_seed3` | 3.50877 | ours minus logistic regression test accuracy (points), breast_cancer, 40% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_breast_noise40_seed4` | 3.50877 | ours minus logistic regression test accuracy (points), breast_cancer, 40% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise0` | -0.222222 | ours minus logistic regression test accuracy (points, signed; negative = ours lower) on digits, clean labels, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise0_seed0` | -0.740741 | ours minus logistic regression test accuracy (points), digits, clean labels, seed 0 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise0_seed1` | 0.185185 | ours minus logistic regression test accuracy (points), digits, clean labels, seed 1 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise0_seed2` | 0.555556 | ours minus logistic regression test accuracy (points), digits, clean labels, seed 2 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise0_seed3` | -1.2963 | ours minus logistic regression test accuracy (points), digits, clean labels, seed 3 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise0_seed4` | 0.185185 | ours minus logistic regression test accuracy (points), digits, clean labels, seed 4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise20` | 6 | ours minus logistic regression (best baseline) test accuracy (points, signed) on digits, 20% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise20_seed0` | 5.92593 | ours minus logistic regression test accuracy (points), digits, 20% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise20_seed1` | 6.11111 | ours minus logistic regression test accuracy (points), digits, 20% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise20_seed2` | 7.40741 | ours minus logistic regression test accuracy (points), digits, 20% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise20_seed3` | 3.7037 | ours minus logistic regression test accuracy (points), digits, 20% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise20_seed4` | 6.85185 | ours minus logistic regression test accuracy (points), digits, 20% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise40` | 9.03704 | ours minus logistic regression (best baseline) test accuracy (points, signed) on digits, 40% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise40_seed0` | 8.88889 | ours minus logistic regression test accuracy (points), digits, 40% noise, seed 0 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise40_seed1` | 9.62963 | ours minus logistic regression test accuracy (points), digits, 40% noise, seed 1 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise40_seed2` | 11.8519 | ours minus logistic regression test accuracy (points), digits, 40% noise, seed 2 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise40_seed3` | 5.55556 | ours minus logistic regression test accuracy (points), digits, 40% noise, seed 3 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_logreg_digits_noise40_seed4` | 9.25926 | ours minus logistic regression test accuracy (points), digits, 40% noise, seed 4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_mlp_breast_noise0` | -0.116959 | ours minus MLP test accuracy (points, signed) on breast_cancer, clean labels, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_mlp_breast_noise20` | 10.9942 | ours minus MLP test accuracy (points, signed) on breast_cancer, 20% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_mlp_breast_noise40` | 18.5965 | ours minus MLP test accuracy (points, signed) on breast_cancer, 40% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_mlp_digits_noise0` | -0.740741 | ours minus MLP (best baseline at this setting) test accuracy (points, signed; negative = ours lower) on digits, clean labels, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_mlp_digits_noise20` | 12.7037 | ours minus MLP test accuracy (points, signed) on digits, 20% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `gain_vs_mlp_digits_noise40` | 27.7407 | ours minus MLP test accuracy (points, signed) on digits, 40% noise, mean of paired differences over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `kept_noisy_low_seeds_min_breast_noise40` | 18.3962 | smallest mislabeled share (%) of the kept set among the two seeds where ours and logistic regression are least accurate, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `kept_noisy_other_seeds_max_breast_noise40` | 12.7753 | largest mislabeled share (%) of the kept set among the other three seeds, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `kept_noisy_share_breast_noise20` | 1.83072 | share (%) of the kept set that is mislabeled, (n_noisy - n_dropped_noisy) / (n_train - n_dropped), breast_cancer, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `kept_noisy_share_breast_noise40` | 14.9912 | share (%) of the kept set that is mislabeled, (n_noisy - n_dropped_noisy) / (n_train - n_dropped), breast_cancer, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `kept_noisy_share_digits_noise20` | 0.431891 | share (%) of the kept set that is mislabeled, (n_noisy - n_dropped_noisy) / (n_train - n_dropped), digits, 20% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `kept_noisy_share_digits_noise40` | 1.962 | share (%) of the kept set that is mislabeled, (n_noisy - n_dropped_noisy) / (n_train - n_dropped), digits, 40% noise, mean of per-seed ratios over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `logreg_c` | 1 | inverse regularization strength C of every logistic regression | experiments/config.json |
+| `logreg_max_iter` | 5000 | maximum solver iterations of every logistic regression (hard-coded in experiments/run.py) | experiments/run.py |
+| `mlp_hidden` | 64 | number of units in the single hidden layer of the MLP | experiments/config.json |
+| `mlp_max_iter` | 500 | maximum training iterations of the MLP | experiments/config.json |
+| `n_datasets` | 2 | number of datasets | experiments/config.json |
+| `n_noisy_runs` | 20 | number of noisy (dataset, noise rate, seed) runs per method: 2 datasets x 2 non-zero noise rates x 5 seeds | experiments/config.json, results/runs.jsonl |
+| `n_seeds` | 5 | number of seeds per setting (each sets the random split, noise draw, CV folds and MLP initialization) | experiments/config.json |
+| `n_seeds_differ_breast_noise0` | 1 | number of seeds in which ours and logistic regression differ in test accuracy, breast_cancer, clean labels | experiments/config.json, results/runs.jsonl |
+| `n_test_breast` | 171 | number of test samples per split on breast_cancer (same for every seed and noise rate) | results/runs.jsonl |
+| `n_test_digits` | 540 | number of test samples per split on digits (same for every seed and noise rate) | results/runs.jsonl |
+| `n_total_breast` | 569 | total number of samples in breast_cancer (training plus test of one split) | results/runs.jsonl |
+| `n_total_digits` | 1797 | total number of samples in digits (training plus test of one split) | results/runs.jsonl |
+| `n_train_breast` | 398 | number of training samples per split on breast_cancer (same for every seed and noise rate) | results/runs.jsonl |
+| `n_train_digits` | 1257 | number of training samples per split on digits (same for every seed and noise rate) | results/runs.jsonl |
+| `noise_cost_breast_noise20` | 4.44444 | test accuracy lost by logistic regression (points) on breast_cancer: clean-label mean minus 20%-noise mean, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `noise_cost_breast_noise40` | 16.3743 | test accuracy lost by logistic regression (points) on breast_cancer: clean-label mean minus 40%-noise mean, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `noise_cost_digits_noise20` | 7.7037 | test accuracy lost by logistic regression (points) on digits: clean-label mean minus 20%-noise mean, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `noise_cost_digits_noise40` | 13.2222 | test accuracy lost by logistic regression (points) on digits: clean-label mean minus 40%-noise mean, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `noise_rate_clean` | 0 | lowest noise rate (%): clean training labels | experiments/config.json |
+| `noise_rate_high` | 40 | higher symmetric training-label noise rate (%), requested flip probability | experiments/config.json |
+| `noise_rate_low` | 20 | lower non-zero symmetric training-label noise rate (%), requested flip probability | experiments/config.json |
+| `noisy_share_breast_noise20` | 19.196 | share (%) of all training samples whose label was flipped, breast_cancer, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `noisy_share_breast_noise40` | 38.593 | share (%) of all training samples whose label was flipped, breast_cancer, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `noisy_share_digits_noise20` | 19.6977 | share (%) of all training samples whose label was flipped, digits, 20% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `noisy_share_digits_noise40` | 39.3636 | share (%) of all training samples whose label was flipped, digits, 40% noise, mean over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `p_clean_logreg_vs_filter_breast_noise20` | 0.0486302 | p-value, two-sided paired t-test over 5 seeds, clean-label logistic regression vs ours (filter) trained at 20% noise, test accuracy, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_clean_logreg_vs_filter_breast_noise40` | 0.0275158 | p-value, two-sided paired t-test over 5 seeds, clean-label logistic regression vs ours (filter) trained at 40% noise, test accuracy, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_clean_logreg_vs_filter_digits_noise20` | 0.0529848 | p-value, two-sided paired t-test over 5 seeds, clean-label logistic regression vs ours (filter) trained at 20% noise, test accuracy, digits | experiments/config.json, results/runs.jsonl |
+| `p_clean_logreg_vs_filter_digits_noise40` | 0.0156594 | p-value, two-sided paired t-test over 5 seeds, clean-label logistic regression vs ours (filter) trained at 40% noise, test accuracy, digits | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_half_breast_noise20` | 6.52046e-05 | p-value, two-sided one-sample t-test over 5 seeds, share of dropped samples truly mislabeled vs 50%, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_half_breast_noise40` | 0.000545144 | p-value, two-sided one-sample t-test over 5 seeds, share of dropped samples truly mislabeled vs 50%, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_half_digits_noise20` | 0.000151772 | p-value, two-sided one-sample t-test over 5 seeds, share of dropped samples truly mislabeled vs 50%, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_half_digits_noise40` | 2.1437e-07 | p-value, two-sided one-sample t-test over 5 seeds, share of dropped samples truly mislabeled vs 50%, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_noisy_share_breast_noise20` | 4.76129e-06 | p-value, two-sided paired t-test over 5 seeds, share of dropped samples truly mislabeled vs share of all training samples mislabeled in the same run, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_noisy_share_breast_noise40` | 0.000427844 | p-value, two-sided paired t-test over 5 seeds, share of dropped samples truly mislabeled vs share of all training samples mislabeled in the same run, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_noisy_share_digits_noise20` | 7.78335e-07 | p-value, two-sided paired t-test over 5 seeds, share of dropped samples truly mislabeled vs share of all training samples mislabeled in the same run, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_precision_vs_noisy_share_digits_noise40` | 2.20481e-07 | p-value, two-sided paired t-test over 5 seeds, share of dropped samples truly mislabeled vs share of all training samples mislabeled in the same run, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_recall_vs_half_breast_noise20` | 4.54248e-06 | p-value, two-sided one-sample t-test over 5 seeds, share of mislabeled samples dropped vs 50%, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_recall_vs_half_breast_noise40` | 0.000562558 | p-value, two-sided one-sample t-test over 5 seeds, share of mislabeled samples dropped vs 50%, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_recall_vs_half_digits_noise20` | 4.91214e-09 | p-value, two-sided one-sample t-test over 5 seeds, share of mislabeled samples dropped vs 50%, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_drop_recall_vs_half_digits_noise40` | 2.62018e-08 | p-value, two-sided one-sample t-test over 5 seeds, share of mislabeled samples dropped vs 50%, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_halfway_breast_noise20` | 0.467605 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs the half-recovery accuracy (per-seed midpoint of clean-label and noisy-label logistic regression), breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_halfway_breast_noise40` | 0.0670469 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs the half-recovery accuracy (per-seed midpoint of clean-label and noisy-label logistic regression), breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_halfway_digits_noise20` | 0.0261628 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs the half-recovery accuracy (per-seed midpoint of clean-label and noisy-label logistic regression), digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_halfway_digits_noise40` | 0.0727858 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs the half-recovery accuracy (per-seed midpoint of clean-label and noisy-label logistic regression), digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_logreg_breast_noise0` | 0.373901 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs logistic regression test accuracy, breast_cancer, clean training labels | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_logreg_breast_noise20` | 0.117176 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs logistic regression test accuracy, breast_cancer, 20% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_logreg_breast_noise40` | 0.00369925 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs logistic regression test accuracy, breast_cancer, 40% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_logreg_digits_noise0` | 0.552889 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs logistic regression test accuracy, digits, clean training labels | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_logreg_digits_noise20` | 0.000688454 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs logistic regression test accuracy, digits, 20% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_logreg_digits_noise40` | 0.00086823 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs logistic regression test accuracy, digits, 40% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_mlp_breast_noise0` | 0.704 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs MLP test accuracy, breast_cancer, clean training labels | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_mlp_breast_noise20` | 0.00326808 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs MLP test accuracy, breast_cancer, 20% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_mlp_breast_noise40` | 0.000491848 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs MLP test accuracy, breast_cancer, 40% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_mlp_digits_noise20` | 0.000239335 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs MLP test accuracy, digits, 20% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_filter_vs_mlp_digits_noise40` | 0.000111491 | p-value, two-sided paired t-test over 5 seeds, ours (filter) vs MLP test accuracy, digits, 40% symmetric training-label noise | experiments/config.json, results/runs.jsonl |
+| `p_logreg_vs_mlp_breast_noise0` | 1 | p-value, two-sided paired t-test over 5 seeds, logistic regression vs MLP test accuracy, breast_cancer, clean training labels | experiments/config.json, results/runs.jsonl |
+| `p_logreg_vs_mlp_breast_noise20` | 0.00304948 | p-value, two-sided paired t-test over 5 seeds, logistic regression vs MLP test accuracy, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_logreg_vs_mlp_breast_noise40` | 0.00142896 | p-value, two-sided paired t-test over 5 seeds, logistic regression vs MLP test accuracy, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_logreg_vs_mlp_digits_noise20` | 0.000115704 | p-value, two-sided paired t-test over 5 seeds, logistic regression vs MLP test accuracy, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_logreg_vs_mlp_digits_noise40` | 5.53506e-05 | p-value, two-sided paired t-test over 5 seeds, logistic regression vs MLP test accuracy, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_mlp_vs_filter_digits_noise0` | 0.0309058 | p-value, two-sided paired t-test over 5 seeds, MLP vs ours (filter) test accuracy, digits, clean training labels | experiments/config.json, results/runs.jsonl |
+| `p_mlp_vs_logreg_digits_noise0` | 0.037841 | p-value, two-sided paired t-test over 5 seeds, MLP vs logistic regression test accuracy, digits, clean training labels | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_logreg_breast_noise20` | 0.0304234 | p-value, two-sided paired t-test over 5 seeds, logistic regression with clean vs 20%-noise training labels (same splits), test accuracy, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_logreg_breast_noise40` | 0.0143543 | p-value, two-sided paired t-test over 5 seeds, logistic regression with clean vs 40%-noise training labels (same splits), test accuracy, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_logreg_digits_noise20` | 1.47685e-06 | p-value, two-sided paired t-test over 5 seeds, logistic regression with clean vs 20%-noise training labels (same splits), test accuracy, digits | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_logreg_digits_noise40` | 6.10566e-06 | p-value, two-sided paired t-test over 5 seeds, logistic regression with clean vs 40%-noise training labels (same splits), test accuracy, digits | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_mlp_vs_logreg_breast_noise20` | 0.00203964 | p-value, two-sided paired t-test over 5 seeds, test accuracy lost to noise by the MLP vs by logistic regression, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_mlp_vs_logreg_breast_noise40` | 0.000837658 | p-value, two-sided paired t-test over 5 seeds, test accuracy lost to noise by the MLP vs by logistic regression, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_mlp_vs_logreg_digits_noise20` | 0.000113082 | p-value, two-sided paired t-test over 5 seeds, test accuracy lost to noise by the MLP vs by logistic regression, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `p_noise_cost_mlp_vs_logreg_digits_noise40` | 8.2854e-05 | p-value, two-sided paired t-test over 5 seeds, test accuracy lost to noise by the MLP vs by logistic regression, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `p_trend_drop_fraction_breast` | 3.58366e-06 | p-value, two-sided paired t-test over 5 seeds, share of the training set dropped at 40% noise vs with clean labels, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_drop_fraction_digits` | 2.02343e-08 | p-value, two-sided paired t-test over 5 seeds, share of the training set dropped at 40% noise vs with clean labels, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_drop_precision_breast` | 0.0254304 | p-value, two-sided paired t-test over 5 seeds, share of dropped samples truly mislabeled at 20% vs at 40% noise, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_drop_precision_digits` | 0.000360771 | p-value, two-sided paired t-test over 5 seeds, share of dropped samples truly mislabeled at 40% vs at 20% noise, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_drop_recall_breast` | 0.0219176 | p-value, two-sided paired t-test over 5 seeds, share of mislabeled samples dropped at 20% vs at 40% noise, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_drop_recall_digits` | 0.016306 | p-value, two-sided paired t-test over 5 seeds, share of mislabeled samples dropped at 20% vs at 40% noise, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_logreg_breast_noise40_vs_noise0` | 0.00340878 | p-value, two-sided paired t-test over 5 seeds, gain of ours over logistic regression at 40% noise vs with clean labels, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_logreg_breast_noise40_vs_noise20` | 0.663335 | p-value, two-sided paired t-test over 5 seeds, gain of ours over logistic regression at 40% vs at 20% noise, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_logreg_digits_noise40_vs_noise0` | 0.00020223 | p-value, two-sided paired t-test over 5 seeds, gain of ours over logistic regression at 40% noise vs with clean labels, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_logreg_digits_noise40_vs_noise20` | 0.00247732 | p-value, two-sided paired t-test over 5 seeds, gain of ours over logistic regression at 40% vs at 20% noise, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_mlp_breast_noise40_vs_noise0` | 0.000275585 | p-value, two-sided paired t-test over 5 seeds, gain of ours over the MLP at 40% noise vs with clean labels, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_mlp_breast_noise40_vs_noise20` | 0.0531733 | p-value, two-sided paired t-test over 5 seeds, gain of ours over the MLP at 40% vs at 20% noise, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_mlp_digits_noise40_vs_noise0` | 7.50218e-05 | p-value, two-sided paired t-test over 5 seeds, gain of ours over the MLP at 40% noise vs with clean labels, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_gain_vs_mlp_digits_noise40_vs_noise20` | 0.00046115 | p-value, two-sided paired t-test over 5 seeds, gain of ours over the MLP at 40% vs at 20% noise, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_noise_cost_logreg_breast` | 0.0122205 | p-value, two-sided paired t-test over 5 seeds, accuracy lost by logistic regression at 40% vs at 20% noise, breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_noise_cost_logreg_digits` | 9.81101e-05 | p-value, two-sided paired t-test over 5 seeds, accuracy lost by logistic regression at 40% vs at 20% noise, digits | experiments/config.json, results/runs.jsonl |
+| `p_trend_recovered_breast` | 0.612963 | p-value, two-sided paired t-test over 5 seeds, per-seed share of the logistic-regression noise cost won back at 20% vs at 40% noise (per-seed ratios, not the ratio of means), breast_cancer | experiments/config.json, results/runs.jsonl |
+| `p_trend_recovered_digits` | 0.0609661 | p-value, two-sided paired t-test over 5 seeds, per-seed share of the logistic-regression noise cost won back at 20% vs at 40% noise (per-seed ratios, not the ratio of means), digits | experiments/config.json, results/runs.jsonl |
+| `precision_over_flipped_breast_noise20` | 3.97755 | seed-mean drop precision divided by seed-mean flipped share of the training set, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `precision_over_flipped_breast_noise40` | 1.76848 | seed-mean drop precision divided by seed-mean flipped share of the training set, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `precision_over_flipped_digits_noise20` | 3.28028 | seed-mean drop precision divided by seed-mean flipped share of the training set, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `precision_over_flipped_digits_noise40` | 1.93339 | seed-mean drop precision divided by seed-mean flipped share of the training set, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `recovered_breast_noise20` | 65.7895 | share (%) of logistic-regression accuracy lost to 20% noise that ours wins back on breast_cancer: (mean ours - mean noisy logreg) / (mean clean logreg - mean noisy logreg), means over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `recovered_breast_noise40` | 22.1429 | share (%) of logistic-regression accuracy lost to 40% noise that ours wins back on breast_cancer: (mean ours - mean noisy logreg) / (mean clean logreg - mean noisy logreg), means over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `recovered_digits_noise20` | 77.8846 | share (%) of logistic-regression accuracy lost to 20% noise that ours wins back on digits: (mean ours - mean noisy logreg) / (mean clean logreg - mean noisy logreg), means over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `recovered_digits_noise40` | 68.3473 | share (%) of logistic-regression accuracy lost to 40% noise that ours wins back on digits: (mean ours - mean noisy logreg) / (mean clean logreg - mean noisy logreg), means over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `recovered_seed_max_breast_noise20` | 100 | largest per-seed share (%) of the logistic-regression noise cost that ours wins back, breast_cancer, 20% noise, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `recovered_seed_min_breast_noise20` | -66.6667 | smallest per-seed share (%) of the logistic-regression noise cost that ours wins back, breast_cancer, 20% noise, seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_filter_breast_noise0` | 0.960917 | sample standard deviation (points) of test accuracy of ours (filter) on breast_cancer, clean training labels, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_filter_breast_noise20` | 0.76248 | sample standard deviation (points) of test accuracy of ours (filter) on breast_cancer, 20% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_filter_breast_noise40` | 8.95138 | sample standard deviation (points) of test accuracy of ours (filter) on breast_cancer, 40% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_filter_digits_noise0` | 0.360992 | sample standard deviation (points) of test accuracy of ours (filter) on digits, clean training labels, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_filter_digits_noise20` | 0.874498 | sample standard deviation (points) of test accuracy of ours (filter) on digits, 20% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_filter_digits_noise40` | 1.59517 | sample standard deviation (points) of test accuracy of ours (filter) on digits, 40% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_gain_vs_logreg_breast_noise0` | 0.261528 | sample sd (points) over seeds 0-4 of the paired difference ours minus logistic regression test accuracy, breast_cancer, clean labels | experiments/config.json, results/runs.jsonl |
+| `std_gain_vs_logreg_breast_noise20` | 3.28216 | sample sd (points) over seeds 0-4 of the paired difference ours minus logistic regression test accuracy, breast_cancer, 20% noise | experiments/config.json, results/runs.jsonl |
+| `std_gain_vs_logreg_breast_noise40` | 1.33354 | sample sd (points) over seeds 0-4 of the paired difference ours minus logistic regression test accuracy, breast_cancer, 40% noise | experiments/config.json, results/runs.jsonl |
+| `std_gain_vs_logreg_digits_noise0` | 0.768016 | sample sd (points) over seeds 0-4 of the paired difference ours minus logistic regression test accuracy, digits, clean labels | experiments/config.json, results/runs.jsonl |
+| `std_gain_vs_logreg_digits_noise20` | 1.41397 | sample sd (points) over seeds 0-4 of the paired difference ours minus logistic regression test accuracy, digits, 20% noise | experiments/config.json, results/runs.jsonl |
+| `std_gain_vs_logreg_digits_noise40` | 2.26199 | sample sd (points) over seeds 0-4 of the paired difference ours minus logistic regression test accuracy, digits, 40% noise | experiments/config.json, results/runs.jsonl |
+| `std_logreg_breast_noise0` | 1.21266 | sample standard deviation (points) of test accuracy of logistic regression on breast_cancer, clean training labels, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_logreg_breast_noise20` | 3.73079 | sample standard deviation (points) of test accuracy of logistic regression on breast_cancer, 20% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_logreg_breast_noise40` | 9.38956 | sample standard deviation (points) of test accuracy of logistic regression on breast_cancer, 40% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_logreg_digits_noise0` | 0.821939 | sample standard deviation (points) of test accuracy of logistic regression on digits, clean training labels, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_logreg_digits_noise20` | 0.974644 | sample standard deviation (points) of test accuracy of logistic regression on digits, 20% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_logreg_digits_noise40` | 1.25325 | sample standard deviation (points) of test accuracy of logistic regression on digits, 40% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_mlp_breast_noise0` | 1.21266 | sample standard deviation (points) of test accuracy of the MLP on breast_cancer, clean training labels, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_mlp_breast_noise20` | 3.98777 | sample standard deviation (points) of test accuracy of the MLP on breast_cancer, 20% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_mlp_breast_noise40` | 5.42947 | sample standard deviation (points) of test accuracy of the MLP on breast_cancer, 40% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_mlp_digits_noise0` | 0.549348 | sample standard deviation (points) of test accuracy of the MLP on digits, clean training labels, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_mlp_digits_noise20` | 1.63551 | sample standard deviation (points) of test accuracy of the MLP on digits, 20% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `std_mlp_digits_noise40` | 3.11695 | sample standard deviation (points) of test accuracy of the MLP on digits, 40% training-label noise, over seeds 0-4 | experiments/config.json, results/runs.jsonl |
+| `test_fraction` | 30 | share (%) of each dataset held out as the stratified test set | experiments/config.json |
+| `test_samples_differ_breast_noise0` | 1 | largest per-seed difference between ours and logistic regression counted in test samples, breast_cancer, clean labels | experiments/config.json, results/runs.jsonl |
+| `wins_logreg_vs_mlp_noisy` | 20 | number of noisy runs (both datasets, 20% and 40% noise, seeds 0-4) where plain logistic regression has strictly higher test accuracy than the MLP | experiments/config.json, results/runs.jsonl |
+| `wins_vs_logreg_noisy` | 19 | number of noisy runs (both datasets, 20% and 40% noise, seeds 0-4) where ours has strictly higher test accuracy than logistic regression | experiments/config.json, results/runs.jsonl |
+| `wins_vs_mlp_noisy` | 20 | number of noisy runs (both datasets, 20% and 40% noise, seeds 0-4) where ours has strictly higher test accuracy than the MLP | experiments/config.json, results/runs.jsonl |

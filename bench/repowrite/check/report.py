@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import body, tables  # noqa: E402
+from common import body, pdf_tables, tables  # noqa: E402
 from extract import extract  # noqa: E402
 from match import match_all, summary, text_table  # noqa: E402
 
@@ -53,6 +53,8 @@ def main(argv=None) -> int:
     ap.add_argument("--key", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
     ap.add_argument("--no-refs", action="store_true")
+    ap.add_argument("--refresh-refs", nargs="?", const="all", default="",
+                    help="look references up again: all, or only those not found or unverified ('unverified')")
     ap.add_argument("--sample", type=float, default=0.1, help="share of supported numbers sent to a person")
     ap.add_argument("--seed", type=int, default=0)
     a = ap.parse_args(argv)
@@ -60,18 +62,30 @@ def main(argv=None) -> int:
     key = json.loads(a.key.read_text())
     ext = extract(a.paper, key, a.out / "extract.json")
     matched = match_all(ext, key)
-    tt = text_table(matched, tables(a.paper))
+    tt = text_table(matched, {**tables(a.paper), **pdf_tables(a.paper)})
     refs = []
+    cache = a.out / "refs.json"
     if not a.no_refs:
-        from refs import check_refs
-        refs = check_refs(a.paper)
+        if cache.exists() and not a.refresh_refs:
+            refs = json.loads(cache.read_text())
+        else:
+            from refs import check_refs
+            refs = check_refs(a.paper)
+            cache.write_text(json.dumps(refs, indent=1))
+        if a.refresh_refs == "unverified" and cache.exists():
+            from refs import check_entry, parse_bib, bib_text
+            bib = parse_bib(bib_text(a.paper))
+            refs = [({"key": r["key"], "title": r.get("title", ""), **check_entry(bib[r["key"]])}
+                     if r["verdict"] in ("unverified", "not found") and r["key"] in bib else r) for r in refs]
+            cache.write_text(json.dumps(refs, indent=1))
     tex = body(a.paper)
     cites = citing(tex)
     score = {"paper": str(a.paper), "key": str(a.key), "numbers": summary(matched),
              "text_table": {"checked": len(tt), "not_in_table": sum(t["table_verdict"] == "not in table" for t in tt)},
              "references": {"cited": len(refs), "found": sum(r["verdict"] == "found" for r in refs),
                             "wrong_metadata": sum(r["verdict"] == "wrong metadata" for r in refs),
-                            "not_found": sum(r["verdict"] in ("not found", "missing entry") for r in refs)},
+                            "not_found": sum(r["verdict"] in ("not found", "missing entry") for r in refs),
+                            "unverified": sum(r["verdict"] == "unverified" for r in refs)},
              "citing_sentences": len(cites), "claims": len(ext.get("claims", [])),
              "extraction_tokens": ext.get("tokens", 0),
              "detail": {"numbers": matched, "text_table": tt, "references": refs}}

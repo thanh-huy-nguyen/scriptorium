@@ -1,16 +1,21 @@
-\begin{table*}[t]
+\begin{table}[t]
 \centering
 \small
-\caption{What the out-of-fold filter drops at 20\% and 40\% label noise. Precision is the share of dropped samples that were flipped, recall the share of flipped samples that were dropped, and $p$ tests precision against 50\% (two-sided one-sample $t$-test). Recovered is the share of logistic regression's accuracy loss that the filter regains (our definition). Means over 5\src{n_seeds} seeds; clean-label rows are omitted because precision and recall are undefined there. The filter removes mostly flipped samples in every setting.}
+\caption{What the filter removes under noise and how much lost accuracy ours wins back (all in \%, means over 5\src{n_seeds} seeds). Flipped and left in kept set: mislabeled share of the training set before and after filtering. Removed: share of the training set dropped. Correct dropped: share of correctly labeled samples dropped. Won back: Eq.~\eqref{eq:wonback}.}
 \label{tab:drops}
-\begin{tabular}{lccccc}
+\begin{tabular}{lrrrr}
 \toprule
-Setting & Dropped & Precision (\%) & $p$ vs 50\% & Recall (\%) & Recovered (\%) \\
+ & \multicolumn{2}{c}{Digits} & \multicolumn{2}{c}{Breast cancer} \\ \cmidrule(lr){2-3} \cmidrule(lr){4-5} Quantity & 20\%\src{noise_rate_low} & 40\%\src{noise_rate_high} & 20\%\src{noise_rate_low} & 40\%\src{noise_rate_high} \\
 \midrule
-Digits, 20\% & 377.4\src{dropped_digits_n20} & 64.6\src{precision_digits_n20} & $1.5\times 10^{-4}$\src{p_prec_dg20_gt50} & 98.5\src{recall_digits_n20} & 77.9\src{recovered_digits_n20} \\
-Digits, 40\% & 634.2\src{dropped_digits_n40} & 76.1\src{precision_digits_n40} & $2.1\times 10^{-7}$\src{p_prec_dg40_gt50} & 97.5\src{recall_digits_n40} & 68.3\src{recovered_digits_n40} \\
-Breast cancer, 20\% & 92.8\src{dropped_breast_cancer_n20} & 76.4\src{precision_breast_cancer_n20} & $6.5\times 10^{-5}$\src{p_prec_bc20_gt50} & 92.5\src{recall_breast_cancer_n20} & 65.8\src{recovered_breast_cancer_n20} \\
-Breast cancer, 40\% & 177.2\src{dropped_breast_cancer_n40} & 68.3\src{precision_breast_cancer_n40} & $5.5\times 10^{-4}$\src{p_prec_bc40_gt50} & 78.9\src{recall_breast_cancer_n40} & 22.1\src{recovered_breast_cancer_n40} \\
+Flipped & 19.7\src{noisy_share_digits_noise20} & 39.4\src{noisy_share_digits_noise40} & 19.2\src{noisy_share_breast_noise20} & 38.6\src{noisy_share_breast_noise40} \\
+Left in kept set & 0.4\src{kept_noisy_share_digits_noise20} & 2.0\src{kept_noisy_share_digits_noise40} & 1.8\src{kept_noisy_share_breast_noise20} & 15.0\src{kept_noisy_share_breast_noise40} \\
+\midrule
+Removed & 30.0\src{drop_fraction_digits_noise20} & 50.5\src{drop_fraction_digits_noise40} & 23.3\src{drop_fraction_breast_noise20} & 44.5\src{drop_fraction_breast_noise40} \\
+Drop precision & 64.6\src{drop_precision_digits_noise20} & 76.1\src{drop_precision_digits_noise40} & 76.4\src{drop_precision_breast_noise20} & 68.3\src{drop_precision_breast_noise40} \\
+Drop recall & 98.5\src{drop_recall_digits_noise20} & 97.5\src{drop_recall_digits_noise40} & 92.5\src{drop_recall_breast_noise20} & 78.9\src{drop_recall_breast_noise40} \\
+Correct dropped & 13.2\src{correct_dropped_digits_noise20} & 19.9\src{correct_dropped_digits_noise40} & 6.9\src{correct_dropped_breast_noise20} & 23.2\src{correct_dropped_breast_noise40} \\
+\midrule
+Won back & 77.9\src{recovered_digits_noise20} & 68.3\src{recovered_digits_noise40} & 65.8\src{recovered_breast_noise20} & 22.1\src{recovered_breast_noise40} \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}

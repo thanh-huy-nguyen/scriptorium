@@ -1,0 +1,18 @@
+\subsection{Refitting wins back part of the lost accuracy}\label{sec:results_accuracy}
+
+\input{table_accuracy}
+
+\paragraph{Filtering mostly beats training on all noisy labels.}
+Ours has a higher mean test accuracy than logistic regression with the same settings in every noisy setting and is ahead in all noisy runs but one (Table~\ref{tab:accuracy}, Fig.~\ref{fig:teaser}c). The difference is established on digits at both rates and on breast cancer at the higher rate, but not on breast cancer at the lower rate ($p = 0.12$\src{p_filter_vs_logreg_breast_noise20}). We ran no random-drop or oracle control, so we do not attribute the gain to removing the right samples.
+
+\paragraph{The clean-label reference is not reached.}
+The filter's mean test accuracy stays below the clean-label reference in all four noisy settings (gray marks in Fig.~\ref{fig:teaser}c). Both gaps at the lower rate are borderline: the gap on digits just misses the five percent level ($p = 0.053$\src{p_clean_logreg_vs_filter_digits_noise20}), and the gap on breast cancer just passes it ($p = 0.049$\src{p_clean_logreg_vs_filter_breast_noise20}). Both gaps at the higher rate also pass it. Because the test likely overstates significance, we read all four gap verdicts as tentative.
+
+\paragraph{The share of lost accuracy won back differs by setting.}
+On seed means, the filter wins back much of the lost accuracy on digits at both rates (Table~\ref{tab:drops}). The same holds on breast cancer at the lower rate. There, however, the gain over logistic regression is not established, and the share of lost accuracy won back is unstable, ranging from $-67$\%\src{recovered_seed_min_breast_noise20} to 100\%\src{recovered_seed_max_breast_noise20} across seeds.
+
+\paragraph{Breast cancer at the higher rate is the weak case.}
+The filter wins back only a small part of the loss there. The two seeds where ours and logistic regression are least accurate have the most flipped labels (41.7\src{flipped_low_seeds_min_breast_noise40} to 42.2\%\src{flipped_low_seeds_max_breast_noise40}, others 35.4\src{flipped_other_seeds_min_breast_noise40} to 37.9\%\src{flipped_other_seeds_max_breast_noise40}) and the largest mislabeled shares of the kept set (at least 18\%\src{kept_noisy_low_seeds_min_breast_noise40}, others at most 13\%\src{kept_noisy_other_seeds_max_breast_noise40}). This is an association over five seeds; our runs do not show what causes it.
+
+\paragraph{A larger model does not make filtering unnecessary here.}
+The MLP trained on all noisy labels is less accurate than ours in every noisy run (Table~\ref{tab:accuracy}). Logistic regression also beats it in every noisy run, so this gap says nothing about what filtering adds or about larger models in general.

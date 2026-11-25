@@ -1,25 +1,140 @@
-{"findings": [
- {"file": "01_intro.tex", "key": "patrini2017making", "quote": "Loss correction needs a noise rate or transition matrix \\citep{patrini2017making}.", "verdict": "supported", "evidence": "Abstract: the correction procedures work 'provided that we know the probability of each class being corrupted into another', and these probabilities can be estimated.", "fix": ""},
- {"file": "01_intro.tex", "key": "han2018coteaching", "quote": "Many selection methods need a clean validation set, or the training dynamics of deep networks, as in small-loss selection and co-teaching \\citep{han2018coteaching,song2023learning}.", "verdict": "supported", "evidence": "Abstract: Co-teaching relies on the memorization effect (networks fit clean labels first) and selects possibly clean samples per mini-batch during training.", "fix": ""},
- {"file": "01_intro.tex", "key": "song2023learning", "quote": "Many selection methods need a clean validation set, or the training dynamics of deep networks, as in small-loss selection and co-teaching \\citep{han2018coteaching,song2023learning}.", "verdict": "unverifiable", "evidence": "", "fix": "The survey abstract and card do not say which selection methods need a clean validation set. Cite the survey for the general statement that selection methods exist (e.g. 'Sample selection methods are surveyed by \\citet{song2023learning}'), or drop the validation-set clause."},
- {"file": "01_intro.tex", "key": "brodley1999identifying", "quote": "Filtering with cross-validated predictions is older \\citep{brodley1999identifying}", "verdict": "unverifiable", "evidence": "", "fix": "The abstract says only that a set of learning algorithms act as noise filters on the training data; it does not mention cross-validation. Check the full text for the fold scheme, or write 'Filtering training data with classifiers as noise filters is older'."},
- {"file": "01_intro.tex", "key": "northcutt2021confident", "quote": "confident learning uses out-of-sample predictions too, but adds per-class thresholds and noise-count estimation \\citep{northcutt2021confident}.", "verdict": "supported", "evidence": "Abstract: pruning noisy data, counting with probabilistic thresholds to estimate noise, and ranking examples; card says it estimates the noise joint distribution with per-class thresholds.", "fix": ""},
- {"file": "02_related.tex", "key": "song2023learning", "quote": "Surveys group methods for deep networks \\citep{song2023learning}", "verdict": "supported", "evidence": "Abstract: reviews 62 robust training methods for deep networks, categorized into five groups.", "fix": ""},
- {"file": "02_related.tex", "key": "frenay2014classification", "quote": "for classical classifiers \\citep{frenay2014classification} into a few families.", "verdict": "supported", "evidence": "Abstract: reviews label noise-robust, cleansing and tolerant algorithms for classification (three categories).", "fix": ""},
- {"file": "02_related.tex", "key": "patrini2017making", "quote": "Loss correction estimates a matrix of class-corruption probabilities and adjusts the loss \\citep{patrini2017making}.", "verdict": "supported", "evidence": "Abstract: two loss-correction procedures using class-corruption probabilities, which the paper also shows how to estimate.", "fix": ""},
- {"file": "02_related.tex", "key": "ghosh2017robust", "quote": "Noise-tolerant losses are chosen so that the minimizer survives label noise \\citep{ghosh2017robust}.", "verdict": "supported", "evidence": "Abstract: sufficient conditions on a loss so that risk minimization is inherently tolerant to label noise; mean absolute error meets them.", "fix": ""},
- {"file": "02_related.tex", "key": "bootkrajang2014learning", "quote": "Noise models can also sit inside logistic regression \\citep{bootkrajang2014learning,lee2021individual}.", "verdict": "supported", "evidence": "Abstract: a label-noise robust Kernel Logistic Regression classifier.", "fix": ""},
- {"file": "02_related.tex", "key": "lee2021individual", "quote": "Noise models can also sit inside logistic regression \\citep{bootkrajang2014learning,lee2021individual}.", "verdict": "supported", "evidence": "Abstract: label noise logistic regression with a flexible transition model (binary case).", "fix": ""},
- {"file": "02_related.tex", "key": "han2018coteaching", "quote": "Co-teaching has two networks exchange their small-loss samples \\citep{han2018coteaching}.", "verdict": "supported", "evidence": "Abstract: each network selects data of possibly clean labels in a mini-batch and passes them to its peer, which trains on them.", "fix": ""},
- {"file": "02_related.tex", "key": "yu2019how", "quote": "Co-teaching+ selects among the samples on which the two networks disagree \\citep{yu2019how}.", "verdict": "supported", "evidence": "Abstract: keeps prediction-disagreement data only, then each network selects small-loss data among them.", "fix": ""},
- {"file": "02_related.tex", "key": "pleiss2020identifying", "quote": "Area Under the Margin ranks samples by their training dynamics \\citep{pleiss2020identifying}.", "verdict": "supported", "evidence": "Abstract: the AUM statistic exploits differences in the training dynamics of clean and mislabeled samples.", "fix": ""},
- {"file": "02_related.tex", "key": "brodley1999identifying", "quote": "remove training instances that models trained on other folds misclassify, with single-algorithm, majority-vote and consensus variants.", "verdict": "unverifiable", "evidence": "", "fix": "The single-algorithm, majority-vote and consensus variants are in the abstract, but 'trained on other folds' is not. Verify in the full text, or write 'remove training instances that classifiers misclassify, with single-algorithm, majority-vote and consensus variants'."},
- {"file": "02_related.tex", "key": "northcutt2021confident", "quote": "Confident learning prunes instances using out-of-sample predicted probabilities, per-class thresholds and an estimate of the number of label errors \\citep{northcutt2021confident}.", "verdict": "supported", "evidence": "Abstract: pruning noisy data, counting with probabilistic thresholds to estimate noise; the card describes per-class thresholds.", "fix": ""},
- {"file": "03_method.tex", "key": "brodley1999identifying", "quote": "The rule instantiates the cross-validated filter of \\citet{brodley1999identifying} with logistic regression.", "verdict": "unverifiable", "evidence": "", "fix": "The abstract confirms a single-algorithm filter but does not mention cross-validation. Confirm in the full text, or write 'The rule is the single-algorithm filter of \\citet{brodley1999identifying} with logistic regression and out-of-fold predictions'."},
- {"file": "03_method.tex", "key": "scriptorium2026", "quote": "Every number in this paper is recomputed from the released results and every reference is checked against its bibliographic record, with the Scriptorium agent pipeline~\\citep{scriptorium2026}.", "verdict": "unverifiable", "evidence": "", "fix": "No card or abstract exists for this key (self-reference). Confirm the bib entry points to a real, citable record, or describe the pipeline in a footnote instead."},
- {"file": "05_results.tex", "key": "zhang2021understanding", "quote": "This is consistent with a flexible model fitting the wrong labels \\citep{zhang2021understanding}", "verdict": "supported", "evidence": "Abstract: large networks trained with SGD easily fit a random labeling of the training data.", "fix": ""},
- {"file": "06_discussion.tex", "key": "brodley1999identifying", "quote": "The simplest cross-validated filter, the single-algorithm rule of \\citet{brodley1999identifying}, finds most flipped labels and turns them into accuracy.", "verdict": "supported", "evidence": "The citation names the single-algorithm filter, which the abstract evaluates; the result claim is the paper's own.", "fix": ""},
- {"file": "06_discussion.tex", "key": "zhang2021understanding", "quote": "which fits the view that large models fit wrong labels \\citep{zhang2021understanding}, though we did not test that view.", "verdict": "supported", "evidence": "Abstract: convolutional networks easily fit a random labeling; depth-two networks have perfect finite-sample expressivity.", "fix": ""},
- {"file": "06_discussion.tex", "key": "han2018coteaching", "quote": "Methods that select small-loss samples during deep training \\citep{han2018coteaching} address a harder setting than ours.", "verdict": "supported", "evidence": "Abstract: Co-teaching selects possibly clean samples per mini-batch while training deep networks on noisy MNIST, CIFAR-10 and CIFAR-100. 'Harder' is the authors' judgment.", "fix": ""},
- {"file": "06_discussion.tex", "key": "northcutt2021confident", "quote": "We do not compare against co-teaching or confident learning \\citep{northcutt2021confident}", "verdict": "supported", "evidence": "The citation only names confident learning, which the paper introduces.", "fix": ""}
-]}
+{
+ "findings": [
+  {
+   "file": "01_intro.tex",
+   "key": "song2023learning",
+   "quote": "Common repairs ask for something this practitioner may not have: a clean validation set, a hand-chosen confidence threshold, or a noise rate that sets how many samples to drop and must itself be estimated~\\citep{song2023learning}.",
+   "verdict": "unverifiable",
+   "evidence": "",
+   "fix": "The abstract and card say the survey reviews robust training methods and analyzes noise rate estimation. Neither mentions a clean validation set, a hand-chosen confidence threshold, or a noise rate that sets how many samples to drop. Rewrite to what cards.md backs: \"Some repairs rely on quantities this practitioner does not know, such as class corruption probabilities~\\citep{patrini2017making} or the noise rate~\\citep{liu2016classification}, which then have to be estimated.\" Drop the validation-set and threshold examples unless a source for them is checked in the paper body."
+  },
+  {
+   "file": "01_intro.tex",
+   "key": "brodley1999identifying",
+   "quote": "The filter is the simplest member of the classification filtering family~\\citep{brodley1999identifying} and a close relative of confident learning~\\citep{northcutt2021confident}; we claim no new method.",
+   "verdict": "supported",
+   "evidence": "Abstract: classifiers created by learning algorithms \"serve as noise filters for the training data\", and single algorithm filters are among those evaluated. The citation names the filtering family; \"simplest member\" is the authors' own description.",
+   "fix": ""
+  },
+  {
+   "file": "01_intro.tex",
+   "key": "northcutt2021confident",
+   "quote": "The filter is the simplest member of the classification filtering family~\\citep{brodley1999identifying} and a close relative of confident learning~\\citep{northcutt2021confident}; we claim no new method.",
+   "verdict": "supported",
+   "evidence": "Abstract: confident learning identifies label errors in datasets and includes pruning noisy data. The citation names the method; the relation to our filter is the authors' own comparison.",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "brodley1999identifying",
+   "quote": "\\citet{brodley1999identifying} built such filters from one learning algorithm or from several that vote.",
+   "verdict": "supported",
+   "evidence": "Abstract: \"We evaluate single algorithm, majority vote and consensus filters\", built from classifiers that serve as noise filters. The abstract and card do not say the classifiers are held out, which \"such filters\" carries over from the preceding sentence; confirm that detail in the paper body.",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "northcutt2021confident",
+   "quote": "Confident learning~\\citep{northcutt2021confident} combines pruning with an estimate, from probabilistic thresholds, of how given and true labels are jointly distributed.",
+   "verdict": "supported",
+   "evidence": "Abstract: \"pruning noisy data, counting with probabilistic thresholds to estimate noise\" combined \"to directly estimate the joint distribution between noisy (given) labels and uncorrupted (unknown) labels\".",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "han2018coteaching",
+   "quote": "Co-teaching~\\citep{han2018coteaching} trains two networks that each select possibly clean samples in every mini-batch for the other to learn from.",
+   "verdict": "supported",
+   "evidence": "Abstract: two deep networks are trained simultaneously; in every mini-batch each selects data with possibly clean labels, shares the selection, and updates on the data selected by its peer.",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "wei2020combating",
+   "quote": "Related methods use per-sample losses to find likely clean samples during training~\\citep{wei2020combating,li2020dividemix}.",
+   "verdict": "supported",
+   "evidence": "Abstract: a joint loss is computed \"for each training example\" and \"small-loss examples\" are selected to update both networks, in a method for learning with noisy labels. The abstract does not use the word clean; small-loss selection is the step the sentence describes.",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "li2020dividemix",
+   "quote": "Related methods use per-sample losses to find likely clean samples during training~\\citep{wei2020combating,li2020dividemix}.",
+   "verdict": "supported",
+   "evidence": "Abstract: DivideMix \"models the per-sample loss distribution with a mixture model to dynamically divide the training data into a labeled set with clean samples and an unlabeled set with noisy samples\".",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "frenay2014classification",
+   "quote": "Surveys cover types of label noise and ways to learn despite it~\\citep{frenay2014classification,song2023learning}.",
+   "verdict": "supported",
+   "evidence": "Abstract: proposes \"a taxonomy of the types of label noise\" and reviews label noise-robust, label noise cleansing and label noise-tolerant algorithms.",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "song2023learning",
+   "quote": "Surveys cover types of label noise and ways to learn despite it~\\citep{frenay2014classification,song2023learning}.",
+   "verdict": "supported",
+   "evidence": "Abstract: describes the label noise problem and reviews 62 robust training methods, which backs \"ways to learn despite it\". Types of label noise are backed by the co-cited survey frenay2014classification.",
+   "fix": ""
+  },
+  {
+   "file": "02_related.tex",
+   "key": "patrini2017making",
+   "quote": "Loss correction adjusts the loss using class corruption probabilities, which can be estimated from data~\\citep{patrini2017making}.",
+   "verdict": "supported",
+   "evidence": "Abstract: two loss correction procedures need \"the probability of each class being corrupted into another\", and the paper shows how to estimate these probabilities in an end-to-end framework.",
+   "fix": ""
+  },
+  {
+   "file": "03_method.tex",
+   "key": "stone1974crossvalidatory",
+   "quote": "We shuffle $D$ into $K$ cross-validation folds~\\citep{stone1974crossvalidatory}, stratified on the given labels, and write $D_{k(i)}$ for the fold that contains sample $i$.",
+   "verdict": "supported",
+   "evidence": "Abstract: applies \"a generalized form of the cross-validation criterion\" to the choice and assessment of prediction. The citation names cross-validation; shuffling, K folds and stratification are the authors' own procedure.",
+   "fix": ""
+  },
+  {
+   "file": "04_setup.tex",
+   "key": "pedregosa2012scikitlearn",
+   "quote": "We use two small datasets from scikit-learn~\\citep{pedregosa2012scikitlearn}",
+   "verdict": "supported",
+   "evidence": "Abstract: \"Scikit-learn is a Python module integrating a wide range of state-of-the-art machine learning algorithms\". The citation names the tool.",
+   "fix": ""
+  },
+  {
+   "file": "04_setup.tex",
+   "key": "mangasarian1995breast",
+   "quote": "breast cancer~\\citep{mangasarian1995breast}",
+   "verdict": "supported",
+   "evidence": "The citation names the dataset. Abstract: breast cancer diagnosis from cell characteristics of fine needle aspirates, with a system trained on samples from 569 patients.",
+   "fix": ""
+  },
+  {
+   "file": "04_setup.tex",
+   "key": "scriptorium2026",
+   "quote": "With the Scriptorium agent pipeline~\\citep{scriptorium2026}, we recomputed the reported numbers from the saved run records and settings and checked the references against their bibliographic records.",
+   "verdict": "supported",
+   "evidence": "The citation only names the tool; the bibliography entry is the Scriptorium software. No card or abstract exists for it, and the checks described are the authors' own actions.",
+   "fix": ""
+  },
+  {
+   "file": "08_discussion.tex",
+   "key": "han2018coteaching",
+   "quote": "We ran neither co-teaching~\\citep{han2018coteaching} nor confident learning~\\citep{northcutt2021confident}, compared no other filtering rule and claim no advantage over these methods.",
+   "verdict": "supported",
+   "evidence": "The citation only names the method; the abstract introduces Co-teaching. The rest is the authors' statement about their own experiments.",
+   "fix": ""
+  },
+  {
+   "file": "08_discussion.tex",
+   "key": "northcutt2021confident",
+   "quote": "We ran neither co-teaching~\\citep{han2018coteaching} nor confident learning~\\citep{northcutt2021confident}, compared no other filtering rule and claim no advantage over these methods.",
+   "verdict": "supported",
+   "evidence": "The citation only names the method; the abstract introduces confident learning. The rest is the authors' statement about their own experiments.",
+   "fix": ""
+  }
+ ]
+}

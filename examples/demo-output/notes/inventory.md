@@ -1,79 +1,159 @@
 # Inventory
 
-Repository root: `examples/demo`. Files present: `brief.md`, `README.md`, `scriptorium.toml`, `experiments/run.py`, `experiments/config.json`, `results/runs.jsonl`, `paper/sources.py` (empty template, only a commented example), `paper/cvpr.sty`, `paper/ieeenat_fullname.bst`. No figures, tables, notebooks, logs, checkpoints or other result files exist. The run is a demo (README: "a tiny research repository to try Scriptorium on").
+All paths are relative to the repository root. Approximate values in this file (marked "approx.") were worked out by
+hand from `results/runs.jsonl` to find gaps. Do not print them; every printed number needs a recipe in
+`paper/sources.py`.
+
+## Files in the repository
+
+| Path | What it is |
+|---|---|
+| `brief.md` | Authors' claims, must-cite work, scope limit |
+| `README.md` | Study description; says output is already in `results/runs.jsonl` (its `cd examples/demo` path does not match this folder) |
+| `experiments/run.py` | The whole implementation: data loading, noise, three methods, output (77 lines) |
+| `experiments/config.json` | All experiment settings |
+| `results/runs.jsonl` | The only result file (90 records) |
+| `run_console.log` | Empty (0 bytes) |
+| `scriptorium.toml` | Paper settings: CVPR template, `mode = "review"` (anonymous), `page_limit = 4`, figure theme `harbor` |
+| `paper/cvpr.sty`, `paper/ieeenat_fullname.bst` | Venue style files |
+| `paper/sources.py` | Recipe file; only a commented example, no recipes yet |
+
+There is no `main.tex`, no `refs.bib`, and no requirements or environment file.
 
 ## Research question and method
 
-Question: does dropping training samples that out-of-fold predictions disagree with their given (noisy) label help a linear classifier under label noise, without a clean validation set or a noise-rate estimate?
-
-Method ("filter"), implemented in `experiments/run.py`, function `main()`, lines 64-71:
-1. Fit a standardized logistic regression (`logreg()`, line 35) with `StratifiedKFold(5, shuffle=True, random_state=seed)` and `cross_val_predict` on the noisy training labels.
-2. `keep = oof == ytr_noisy`; every sample whose out-of-fold prediction differs from its noisy label is dropped.
-3. Refit `logreg()` on the kept samples and score on the clean test labels.
-
-Noise model (`flip()`, line 27): symmetric. Each training label is selected with probability `rate` (independent Bernoulli draw from `np.random.default_rng(seed)`) and replaced by a label drawn uniformly from the other classes. Test labels are never corrupted. The returned `is_noisy` mask is exactly the set of flipped samples (the `noisy & True` is a no-op).
+Question (brief.md): does dropping the training samples whose out-of-fold prediction disagrees with their given label,
+then refitting, help a linear classifier under label noise? Implementation is entirely in `experiments/run.py`
+(`main()`, lines 39-73). Per (dataset, noise rate, seed): `train_test_split` with `test_size=test_fraction`,
+`stratify=y` (clean labels), `random_state=seed`; `flip(ytr, rate, k, rng)` (lines 27-32) with
+`rng = np.random.default_rng(seed)` selects each **training** label independently with probability `rate` and replaces
+it with a uniformly chosen *different* class (symmetric noise; test labels stay clean). `logreg()` (lines 35-36) is
+`StandardScaler()` + `LogisticRegression(C=logreg_C, max_iter=5000)`. Method `filter` (lines 63-71):
+`StratifiedKFold(filter_folds, shuffle=True, random_state=seed)` stratified on the noisy labels;
+`cross_val_predict(logreg(), Xtr, ytr_noisy, cv=cv)` gives hard out-of-fold predictions; `keep = oof == ytr_noisy`;
+a fresh `logreg()` (scaler refit too) is fit on the kept samples and scored on the clean test set. One filtering pass,
+no confidence threshold, no per-class threshold. The filter reads neither the noise rate nor any clean data;
+`is_noisy` is used only to count `n_dropped_noisy`.
 
 ## Datasets
 
-Both are scikit-learn built-ins, loaded in `run.py` line 24 (`LOADERS`); no files are downloaded or stored. Selected by `datasets` in `experiments/config.json`.
-- `digits` (`load_digits`): 10 classes, 8x8 images as 64 features. From the result file: n_train 1257, n_test 540 (1797 total).
-- `breast_cancer` (`load_breast_cancer`): 2 classes. From the result file: n_train 398, n_test 171 (569 total). Feature count (30) is not stated in any file here; it is a property of the scikit-learn loader.
-- Split: `train_test_split(test_size=0.3, stratify=y, random_state=seed)`, so the split changes with the seed. No separate validation set; the filter uses cross-validation inside the training set.
-- Noise is added to training labels only.
+Both come from `sklearn.datasets` (`LOADERS`, `run.py` line 24; listed in `config.json` key `datasets`). Split:
+random stratified train/test, test fraction 0.3, redrawn for every seed. No validation set. Sizes are from the result
+records.
+
+| Key in results | Loader | n_train | n_test | Total (train + test) |
+|---|---|---|---|---|
+| `digits` | `load_digits` | 1257 | 540 | 1797 |
+| `breast_cancer` | `load_breast_cancer` | 398 | 171 | 569 |
+
+Number of classes and features is **not stated in any repository file**. `run.py` computes `k = len(np.unique(y))` but
+does not save it. (From scikit-learn's documentation, not this repo: digits has 10 classes and 64 features;
+breast_cancer has 2 classes and 30 features.)
+
+Realized noisy training labels (`n_noisy`, min-max over 5 seeds; it varies because flipping is Bernoulli):
+
+| Dataset | noise 0.0 | noise 0.2 | noise 0.4 |
+|---|---|---|---|
+| digits | 0 | 229-259 | 487-502 |
+| breast_cancer | 0 | 65-83 | 141-168 |
 
 ## Baselines and ablations
 
-Names in the `method` field of `results/runs.jsonl`:
-- `logreg`: standardized logistic regression (`C=1.0`, `max_iter=5000`) trained on the noisy labels. Baseline, and the model the filter wraps.
-- `mlp`: `StandardScaler` + `MLPClassifier`, one hidden layer of 64 units, `max_iter=500`, `random_state=seed`, other sklearn defaults, trained on the noisy labels. The "larger model" in the brief.
-- `filter`: ours (above).
-- No ablations (no varying of fold count, `C`, hidden size, or filter variants). No clean-label oracle baseline (training on the true labels is not run). The 0% noise condition acts as the clean reference. No other noise-robust methods (co-teaching, confident learning) are run, although the brief says to cite them.
+| `method` value | Meaning | Role |
+|---|---|---|
+| `filter` | Out-of-fold filtering + refit logistic regression | Ours |
+| `logreg` | Logistic regression on standardized features, noisy labels | Baseline; at `noise` = 0.0 it is the clean-label reference |
+| `mlp` | `StandardScaler` + `MLPClassifier(hidden_layer_sizes=(64,), max_iter=500, random_state=seed)`, noisy labels | "Larger model" baseline; all other MLP arguments are library defaults (nothing tuned) |
+
+Ablations: **none**. No variation of fold count, C, MLP size, noise type, or filtering rule.
 
 ## Result files
 
-- `results/runs.jsonl`: JSON lines, 90 records, written by `experiments/run.py` (the README says it need not be rerun). One record per (dataset, noise, seed, method): 2 datasets x 3 noise rates x 5 seeds x 3 methods = 90. All cells are complete (verified: 90 lines; the breast_cancer, noise 0.4, seed 0 triple is present). Seeds 0-4, so n = 5 per cell. Fields:
-  - `dataset`: `digits` or `breast_cancer`.
-  - `noise`: symmetric label-flip rate on training labels, 0.0, 0.2 or 0.4 (a fraction, not a percent).
-  - `seed`: 0-4. It sets the split, the noise draw, the CV folds and the MLP initialization. All three methods share the same split and noisy labels within a seed.
-  - `n_train`, `n_test`: sample counts.
-  - `n_noisy`: number of training labels actually flipped (realized, so it deviates from `noise * n_train`). Example: breast_cancer, noise 0.4, seed 0 has n_noisy 142 of 398.
-  - `method`: `logreg`, `mlp` or `filter`.
-  - `test_acc`: accuracy (fraction in [0,1]) on the clean test split.
-  - `fit_seconds`: wall-clock fit time. For `filter` it includes the 5-fold CV and the refit. Machine and load are unknown, so treat as indicative only.
-  - `n_dropped` (`filter` rows only): number of training samples removed.
-  - `n_dropped_noisy` (`filter` rows only): of those dropped, how many were actually flipped. Precision of the filter is `n_dropped_noisy / n_dropped`. Recall is `n_dropped_noisy / n_noisy` (undefined when `n_noisy = 0`).
-  - Observed at noise 0.0: the filter still drops samples (digits seed 0: `n_dropped` 42, `n_dropped_noisy` 0) and its test_acc is lower than logreg there (0.965 vs 0.972 in that one seed).
-  - Observed in one seed (breast_cancer, noise 0.4, seed 0): logreg 0.865, mlp 0.673, filter 0.895; `n_dropped` 159, `n_dropped_noisy` 114. These are single-record observations, not summaries. No aggregate has been computed.
-- `.scriptorium/*` (`state.json`, `events.jsonl`, `run.log`, `lock.json`, `history.git/`): tool bookkeeping, not results. Not read for numbers.
+- `results/runs.jsonl`: JSON Lines, written by `experiments/run.py` (overwritten on each run). 90 records =
+  2 datasets x 3 noise rates x 5 seeds (0-4) x 3 methods; the grid is complete with no duplicates. This is the only
+  result file and the final one; there are no exploratory, debug or old runs.
+  - One record = one method on one (dataset, noise, seed).
+  - `dataset` (str: `digits`, `breast_cancer`)
+  - `noise` (float: 0.0, 0.2, 0.4; requested flip probability)
+  - `seed` (int 0-4; sets split, noise draw, CV folds and MLP initialization)
+  - `n_train`, `n_test` (sample counts); `n_noisy` (training labels actually flipped)
+  - `method` (str, see above)
+  - `test_acc` (fraction in [0, 1] on clean test labels)
+  - `fit_seconds` (wall-clock seconds). The timer is read after `test_acc` is computed, so it includes test scoring
+    for all methods; for `filter` it also includes cross-validation and the refit.
+  - `filter` records only: `n_dropped` (training samples removed), `n_dropped_noisy` (removed samples whose label had
+    been flipped)
+  - Records are ordered by dataset, noise, seed, then logreg, mlp, filter.
+  - Pairing: for a fixed (dataset, noise, seed), all three methods share the split and noisy labels. For a fixed
+    (dataset, seed), the split is also the same across noise rates.
 
 ## Settings the paper may report
 
-`experiments/config.json` (read by `run.py` as `CFG`):
-- `datasets`: `["digits", "breast_cancer"]`
-- `noise_rates`: `[0.0, 0.2, 0.4]`
-- `seeds`: `[0, 1, 2, 3, 4]`
-- `test_fraction`: 0.3
-- `logreg_C`: 1.0
-- `mlp_hidden`: 64
-- `mlp_max_iter`: 500
-- `filter_folds`: 5
+| Setting | Value | Source (file, key or line) |
+|---|---|---|
+| Datasets | digits, breast_cancer | `experiments/config.json` `datasets` |
+| Noise rates | 0.0, 0.2, 0.4 | `config.json` `noise_rates` |
+| Seeds | 0-4 (5) | `config.json` `seeds` |
+| Test fraction | 0.3 | `config.json` `test_fraction` |
+| Logistic regression C | 1.0 | `config.json` `logreg_C` |
+| Logistic regression max iterations | 5000 | `run.py` line 36 (hard-coded) |
+| MLP hidden units (one layer) | 64 | `config.json` `mlp_hidden` |
+| MLP max iterations | 500 | `config.json` `mlp_max_iter` |
+| Filter folds K | 5 | `config.json` `filter_folds` |
+| Noise model | symmetric, training labels only | `run.py` `flip`, lines 27-32 |
 
-Hard-coded in `run.py` (not in config): `LogisticRegression(max_iter=5000)`, `StandardScaler` in every model, stratified splits and folds, MLP `random_state=seed`, symmetric noise with a uniform choice among the other classes. The sklearn version is not recorded anywhere.
-
-`scriptorium.toml`: venue CVPR 2026 workshop, 4 main-text pages, template `cvpr`, review mode (anonymous), author "Demo Author". It is not an experimental setting.
+Not recorded: scikit-learn and numpy versions, solver and penalty (library defaults), hardware, run date, convergence
+warnings.
 
 ## Existing figures or tables
 
-None. `paper/` holds only `cvpr.sty`, `ieeenat_fullname.bst` and `sources.py` (no recipes yet; no `.tex`, no `.bib`).
+None. No images, plotting scripts, or table files in the repository.
 
 ## Gaps
 
-- "Recovers most of the accuracy that noise costs": the data support computing it (accuracy of `filter` against `logreg` and against the 0% noise `logreg`, per dataset and noise rate), but a "recovered fraction" must be defined by the authors. No clean-label reference at the same split exists beyond the 0% condition.
-- "Most dropped samples are truly mislabeled": supported by `n_dropped_noisy / n_dropped` for noisy conditions. At 0% noise precision is 0 by definition (nothing is mislabeled), so report precision at 0.2 and 0.4 only. Only precision and recall can be computed; there is no per-sample record of which samples were dropped.
-- "Beats an MLP": `mlp` rows exist for every cell. A comparison on the shared (dataset, noise, seed) triples is possible (n = 5 per cell). No significance tests exist. With five seeds, power is low. Whether it holds on both datasets and both noise levels is untested until computed.
-- "Costs little when labels are clean": the 0% noise rows are the evidence. In the one record seen, the filter drops 42 clean digits samples and loses accuracy relative to logreg. The size of the cost is not aggregated and must be computed before the claim is worded.
-- Scope: two small sklearn datasets, linear model plus one small MLP, one noise type (symmetric), no scaling or deep-network experiment. The brief itself forbids claiming scaling.
-- Missing comparisons the brief asks to cite but the repository cannot support with data: co-teaching, confident learning, and the Song et al. survey are not run (no code or results). They can be cited as related work only.
-- No ablation over folds, `C`, or MLP size; MLP settings are untuned, and it is not stated whether the MLP converged within `max_iter=500` (sklearn ConvergenceWarning not logged). The MLP's poor accuracy under heavy noise may reflect memorization, but no file tests that explanation.
-- No variance beyond seeds: the split changes with the seed, so seed variance mixes split and noise variance. Realized noise rate varies per seed (see `n_noisy`).
-- `paper/sources.py` has no recipes yet. Every number printed in the paper needs one reading `results/runs.jsonl` or `experiments/config.json`.
+### Brief claims against the data
+
+1. **"The filter recovers most of the accuracy that label noise costs a linear model."** Supported only in part.
+   Recovered share = (filter - noisy logreg) / (clean logreg - noisy logreg), from seed means, approx.: digits 20%:
+   0.78; digits 40%: 0.68; breast_cancer 20%: 0.66; **breast_cancer 40%: about 0.22** (per seed about 0.09 to 0.35).
+   "Most" is false for breast_cancer at 40% noise. Filter beats noisy logreg in 19 of 20 noisy (dataset, rate, seed)
+   runs; the exception is breast_cancer, 0.2, seed 3 (filter 0.9591, logreg 0.9708).
+2. **"Most of the samples it drops are truly mislabeled."** Supported for noisy settings: `n_dropped_noisy /
+   n_dropped` is above 0.5 in all 20 noisy runs (approx. range 0.61 to 0.81). False by construction at noise 0.0,
+   where the filter still drops samples (digits 34-49 of 1257; breast_cancer 5-9 of 398) and none are mislabeled.
+   The claim must be scoped to noisy training sets. Recall (`n_dropped_noisy / n_noisy`) is also computable (approx.
+   0.97-0.99 digits; 0.89-0.96 breast_cancer 20%; 0.70-0.88 breast_cancer 40%).
+3. **"It beats a larger model (an MLP) trained on the same noisy labels."** Filter is above MLP in all 20 noisy runs.
+   At noise 0.0 it is not: digits, MLP above filter in 5 of 5 seeds; breast_cancer, filter above in 1 seed, tied in 3,
+   below in 1. Plain `logreg` is also above `mlp` in all 20 noisy runs, so the gap to the MLP does not isolate the
+   effect of filtering. The MLP is a single untuned configuration, and there is no MLP + filter run. Parameter counts
+   are not recorded.
+4. **"It costs little when the labels are clean."** Supported: at noise 0.0 the mean filter minus logreg accuracy is
+   approx. -0.2 points (digits; filter lower in 2 seeds, higher in 3) and -0.1 points (breast_cancer; tied in 4 seeds,
+   lower in 1).
+- "Needs no clean validation set and no noise-rate estimate" (brief, idea paragraph): true of the code (a design
+  property, not a measured result). C and K are fixed in the config; the repository does not show how they were chosen.
+
+### Missing evidence
+
+- **Must-cite methods were not run:** no co-teaching and no confident learning results, so no comparison with them can
+  be claimed. The `filter` method is close in kind to out-of-fold classification filtering and to confident learning
+  (cross-validated predictions used to prune labels), so novelty wording needs care and a related-work check.
+- No controls: no random dropping of the same number of samples, no oracle that drops exactly the flipped samples.
+  The clean-label reference is `logreg` at noise 0.0.
+- No ablation of K, C, number of filtering passes, or a no-refit variant.
+- Only symmetric (uniform) noise; no class-dependent or instance-dependent noise; only the rates 0.0, 0.2, 0.4.
+- Only two small datasets and linear or small MLP models. brief.md forbids claims about deep networks or large data.
+- No statistical tests stored. n = 5 seeds per cell. Seeds are random re-splits of the same data, so test sets overlap
+  across seeds and the 5 runs are not independent samples.
+- Large seed spread at breast_cancer 40% (`test_acc`: logreg 0.690 to 0.889; filter 0.737 to 0.924).
+- Filtering removes a large share of the training set at 40% noise (approx. half for digits, 40-47% for
+  breast_cancer).
+- No predictions, per-sample outputs, dropped-sample indices, per-class drop counts or learned weights are saved, so
+  the result file supports no per-class analysis and no qualitative figure of dropped samples.
+- `fit_seconds` exists but hardware is not recorded; the brief makes no runtime claim.
+
+### Inconsistencies
+
+None found between `config.json`, `run.py`, and the grid, sizes and fields in `results/runs.jsonl`. `run_console.log`
+is empty, so there is no log of the run that produced the file.

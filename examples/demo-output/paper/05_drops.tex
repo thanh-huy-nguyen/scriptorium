@@ -1,0 +1,12 @@
+\subsection{Under noise, the kept set is much cleaner}\label{sec:results_drops}
+
+\input{table_drops}
+
+\paragraph{Removal grows with noise and exceeds the flipped share.}
+The filter is never told the noise rate, yet it removes more samples as that rate grows. In every noisy setting, it removes a larger share of the training set than was flipped (Table~\ref{tab:drops}, Fig.~\ref{fig:teaser}b). With clean labels, where every drop is correctly labeled, it removes only 3.5\%\src{drop_fraction_digits_noise0} of the training set on digits and 1.9\%\src{drop_fraction_breast_noise0} on breast cancer.
+
+\paragraph{The filter selects far better than chance.}
+Removing as many samples at random would, in expectation, leave the mislabeled share unchanged, with drop precision equal to the flipped share and drop recall equal to the share of the training set removed. In every noisy setting, the filter does much better: its kept set has a far smaller mislabeled share than the training set, and its drop precision and recall are well above those chance levels (Table~\ref{tab:drops}). Most drops are mislabeled in every noisy run, but a sizable minority are correctly labeled, with drop precision ranging from 61\%\src{drop_precision_min} to 81\%\src{drop_precision_max} across these runs. The kept set has by far the largest mislabeled share on breast cancer at the higher rate.
+
+\paragraph{Heavier noise worsens both kinds of error.}
+On seed means, the filter at the higher rate misses more of the flipped labels and also discards a larger share of the correctly labeled samples on both datasets (Table~\ref{tab:drops}). Its drop precision stays above the flipped share, but by a smaller factor than at the lower rate.

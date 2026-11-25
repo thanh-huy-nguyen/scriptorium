@@ -1,48 +1,80 @@
 {
-  "summary": "The paper studies a single rule, the single-algorithm cross-validated filter of Brodley and Friedl: fit logistic regression out-of-fold on noisy labels, drop disagreements, refit. On digits and breast cancer with symmetric noise (5 seeds) it reports about 71% pooled precision for dropped samples, accuracy gains over logistic regression and an untuned MLP, and a small clean-label cost. It states openly that it makes no claim beyond this scope.",
+  "summary": "The paper studies a one-pass filter that drops every training sample whose out-of-fold logistic regression prediction disagrees with its given label and then refits, and it states that this is classification filtering and not a new method. On digits and breast cancer with symmetric noise, the refit model beats unfiltered logistic regression in 19 of 20 noisy runs, loses little on clean labels, drops mostly mislabeled samples, and recovers much of the lost accuracy except on breast cancer at 40% noise.",
   "strengths": [
-    "Candid framing: the paper says the idea is not new (Brodley and Friedl) and that its contribution is a measurement. The limitations are specific.",
-    "The rule needs no clean set and no noise rate, so it is easy for a practitioner to adopt. The precision and recall analysis tests the mechanism and does not only report accuracy.",
-    "Paired seeds, explicit tests, and honest reporting of non-significant cells (breast cancer at low noise, unstable breast cancer at high noise) and of the clean-label cost.",
-    "Short and readable, and a good fit for a 4-page workshop format."
+    "The claims are scoped with unusual care. The paper says it proposes no new method, shows the weak case (breast cancer at 40% noise), marks where five seeds do not establish a difference, and states that the lead over the MLP is no evidence for filtering.",
+    "The procedure is simple and fully specified (Sec. 3 and Sec. 4): hard disagreement, a fixed number of folds and C, and standardization refit inside each fold and again before the final fit. A reader could reproduce it from the page.",
+    "The paper measures what is removed (drop share, precision and recall) as well as test accuracy, and it includes clean labels, so the cost of filtering is visible.",
+    "The paired per-seed view (Fig. 2) shows how consistent the gain is, which seed means alone would hide.",
+    "Fig. 1a conveys the pipeline without the text and openly shows a correctly labeled sample being dropped."
   ],
   "weaknesses": [
     {
-      "issue": "The novelty is close to zero and the paper concedes this. The rule is the 1999 single-algorithm filter, and confident learning (which the paper cites as the closest relative) is not compared. The reader cannot tell whether the simple rule gives anything that the established methods do not.",
-      "where": "Sec. 2 (Cross-validated filtering), Sec. 6 limitations, contribution 1",
+      "issue": "What a reader learns beyond the 1999 prior work is not established. The filter is the single-algorithm classification filter of Brodley and Friedl. Their abstract already reports that filtering improves accuracy for noise levels up to 30% and evaluates how much good data is discarded and how much bad data is kept. Both headline results here (accuracy gain and what is removed) therefore have a direct antecedent. The stated difference, 'We measure what it drops on clean as well as noisy labels', does not tell the reader which finding is new. To my knowledge their learners also included a linear one, which the authors should check.",
+      "where": "Sec. 2, paragraph 'Filtering mislabeled samples'; Sec. 1, third paragraph and contribution list",
       "severity": "major",
-      "suggestion": "Run cleanlab's find_label_issues, or at least a per-class-threshold variant, on the same splits and same seeds. Report precision, recall and accuracy beside the plain rule. Without that, state in the contribution list that this is a replication-style measurement and drop the framing of a new filter."
+      "suggestion": "After reading the paper by Brodley and Friedl, state in two or three sentences what they found (including filter precision) and what this study adds, for example symmetric noise at 40%, per-run precision and recall for logistic regression, or the residual noise analysis proposed below. Frame the paper openly as a small measurement or replication study. Merge the first contribution ('A filter that needs only the noisy training set') into the setup, since describing a known filter is not a contribution."
     },
     {
-      "issue": "The headline comparison with the MLP is weak evidence of significance. The MLP is untuned, has no early stopping and no regularization, and it is trained on noisy labels while the filter has the extra benefit of cleaning. A 28-point gap says the MLP overfits noise, not that a filtered linear model is better than neural nets. The abstract and the third contribution lean on this comparison.",
-      "where": "Abstract, Sec. 5.3, Table 1",
+      "issue": "The gap that motivates the work does not hold as written. The second introduction paragraph contrasts the filter with methods that use corruption probabilities or the noise rate, yet it says these are then estimated, so the practitioner does not have to know them. Classification filtering already needs neither a noise rate nor a clean set, and the paper presents confident learning as a close relative that estimates what it needs from the data. Still, 'without knowing the noise rate' carries the title, the third abstract sentence, the italic central claim and the first contribution.",
+      "where": "Title; abstract; Sec. 1, second and third paragraphs",
       "severity": "major",
-      "suggestion": "Add the same filter applied to the MLP (filter then train the MLP), and an early-stopped or weight-decayed MLP. This shows whether the filter helps any model. Otherwise play down the MLP result in the abstract and the contribution list."
+      "suggestion": "Replace the gap with the question the data can answer: how much a single linear out-of-fold filter recovers on small data, what it removes, and where it fails. Change the title to name that question and its scope (small datasets, symmetric noise). Keep the 'needs no noise rate' property as one sentence in Sec. 3, and italicize a measured finding in the introduction instead of a property of the design."
     },
     {
-      "issue": "The evidence base is too narrow to support a broad takeaway. There are two small scikit-learn datasets (digits, breast cancer), one symmetric noise type, 5 seeds, and no ablation over folds or C. Real label noise is class- or instance-dependent, and symmetric noise is the easy case for out-of-fold disagreement. The advice 'a simple first thing to try' is not backed by a setting that matters to practitioners.",
-      "where": "Sec. 4, Sec. 6",
+      "issue": "The most informative result available from the runs is absent: how noisy the training set still is after filtering. From the seed means, the flipped share among kept samples is roughly 0.4% and 2% on digits at 20% and 40% noise, and roughly 2% and 15% on breast cancer. This says directly what the filter achieves and shows that breast cancer at 40% is left with far more noise than the other settings. Precision against one half and recall do not let a reader see this. The small residual noise on digits at 40%, next to a remaining accuracy gap, also suggests that the two datasets fall short for different reasons.",
+      "where": "Sec. 4.1, Table 1, Fig. 1b; Sec. 4.2, paragraph 'Recovery is partial'",
       "severity": "major",
-      "suggestion": "Add class-dependent (pair-flip) noise, which is a few lines of code, and at least one real-feature benchmark with noisy labels (for example CIFAR-10N features from a frozen encoder). Increase the seeds to 20 or more since runs are cheap. If this is not possible, say in the abstract that the result is for symmetric noise on tabular-scale data."
+      "suggestion": "Add a recipe computing (n_noisy - n_dropped_noisy) / (n_train - n_dropped) per seed from results/runs.jsonl and print it as a 'Noise left' column in Table 1 beside 'Flip.'. Add the share of correctly labeled samples that are discarded (from the means, about 20% on digits and 23% on breast cancer at 40%), which makes 'a sizable minority' concrete. Build Sec. 4.1 around these two quantities. Present the link to lost clean samples on digits as a hypothesis, since there is no control for it."
     },
     {
-      "issue": "Several claims are stronger than the data allow. 'Beats plain logistic regression in all but one paired noisy run' and 'in every noisy setting' sit beside a breast cancer cell whose sd is about 9 points and a non-significant low-noise cell, and the recovered share there is only about a fifth. With 5 seeds and 6 cells and no multiple-comparison correction, the p-values are indicative at best.",
-      "where": "Abstract, Sec. 1, Sec. 5.2, Table 2",
+      "issue": "The reader cannot tell when the finding should transfer. The paper never says that one task has ten classes and the other two, or what the inputs are. Symmetric 40% noise in a binary task is close to the point where labels carry no information, whereas with ten classes the true label remains far more frequent than any wrong one. This is a plausible reason for the different behavior at 40%. Both clean-label references are also near 97%, so the out-of-fold model is tested only where a linear model fits very well. Nothing ties the study to a vision problem a workshop attendee has.",
+      "where": "Sec. 4, 'Data and noise'; Sec. 4.2; Sec. 5",
+      "severity": "major",
+      "suggestion": "State in words the number of classes and the input type of each dataset, and discuss what that implies at 40% noise. Say that the filter depends on an accurate out-of-fold model and was tested only on tasks where the clean linear model is very accurate. Use the saved runs to show that on breast cancer at 40% the two seeds with the most flipped labels are also the two where both unfiltered and filtered models score lowest (descriptive, five seeds). In the introduction, name linear probes on pretrained image features as a motivating use and say clearly that it was not tested."
+    },
+    {
+      "issue": "No other treatment of label noise is compared, so the size of the gain cannot be judged. The baselines are no treatment and an untuned MLP that the paper itself says does not isolate filtering. Confident learning, voting filters, a noise-tolerant logistic regression and simply stronger regularization (C is fixed at 1) are all cheap alternatives for this base model. The limitation appears only at the end, while the title and contributions read as an endorsement of this filter.",
+      "where": "Sec. 4 'Methods'; Sec. 4.2 'The MLP gap does not isolate filtering'; Sec. 5",
+      "severity": "major",
+      "suggestion": "Say in the introduction that the only comparison that tests filtering is against the same model without it, and that no alternative noise treatment was run. Add the choice of C to the limitations and next steps. Cut the MLP paragraph to one or two sentences and use the space for the residual noise analysis. If the MLP stays, relate it to the verified report in northcutt2021pervasive that lower-capacity models may be more useful when many labels are wrong."
+    },
+    {
+      "issue": "The same results are shown repeatedly in a four-page paper. Fig. 1b repeats the Flip., Drop and Prec. columns of Table 1, and the comparison of the filter with logistic regression appears in Fig. 1c, Table 2 and Fig. 2. Fig. 1c also uses bars on an axis that does not start at zero, which inflates the visual gaps.",
+      "where": "Fig. 1b-c, Table 1, Table 2, Fig. 2",
       "severity": "minor",
-      "suggestion": "Report the number of seeds with a gain per cell in the main text, state the number of tests, and use more seeds. Soften 'in every noisy setting' to match the breast cancer cells."
+      "suggestion": "Keep one accuracy figure and the accuracy table. For example, move the paired-gain plot, which has a true zero, into Fig. 1c and delete the separate Fig. 2. Use the freed space for the comparison with prior work and the 'Noise left' analysis."
     },
     {
-      "issue": "Practical significance is not shown. The filter costs about five times the fit time and drops 2 to 4% of clean samples on clean data. The paper does not compare with cheaper alternatives such as a noise-tolerant loss or strong L2 regularization, which are the obvious competitors for a linear model.",
-      "where": "Sec. 5.4, Sec. 2 (noise-robust logistic regression)",
+      "issue": "Statistical caveats crowd out the takeaways. Variants of 'the seeds do not establish' recur in both figure captions, Sec. 4.2 and Sec. 5, yet no p value or interval is printed, and Sec. 4 calls the tests descriptive. The test of whether more than half of the loss is won back uses a threshold that no reader needs.",
+      "where": "Fig. 1 caption, Fig. 2 caption, Sec. 4.2, Sec. 5",
       "severity": "minor",
-      "suggestion": "Add a tuned-C logistic regression and one noise-aware logistic regression baseline (for example Bootkrajang and Kaban) to show whether the filter's gain survives a stronger linear baseline."
+      "suggestion": "Mark in Table 2 which paired differences pass the test, or print the 95% intervals already available, and state the weak case once in the text. Delete the sentences on the one-half threshold. Shorten the Fig. 1 caption to what is needed to read the panels."
+    },
+    {
+      "issue": "The comparison of drop precision across noise rates mixes in the change of base rate. Precision rising on digits does not mean the filter selects better at 40%: relative to the flipped share, enrichment falls on both datasets (about 3.3 to 1.9 times on digits and 4.0 to 1.8 times on breast cancer). Likewise, 'Removal adapts to the labels' follows largely from the design, since flipped labels create disagreements, and the removed share exceeds the flipped share, so it is not an estimate of the noise rate.",
+      "where": "Sec. 4.1, paragraphs 'Removal adapts to the labels' and 'Heavier noise shifts what is dropped'",
+      "severity": "minor",
+      "suggestion": "Rewrite the last paragraph of Sec. 4.1 in terms of the noise left after filtering and the share of correct labels lost. State that the removed share grows with noise but overshoots the flipped share."
+    },
+    {
+      "issue": "Placement among related filters is thin where it matters most. A full paragraph covers sample selection for deep networks, while other data filters and noise-tolerant logistic regression, the nearest alternatives for this setting, are missing. Several references also point to preprints or give no venue (co-teaching, DivideMix, scikit-learn).",
+      "where": "Sec. 2; references",
+      "severity": "minor",
+      "suggestion": "Shorten the deep-network paragraph and add one or two sentences citing the verified keys saez2016inffc, wilson1972asymptotic, verbaeten2003ensemble and bootkrajang2012labelnoise, keeping to what was verified for each (title only for the last two). Cite the published venues: NeurIPS 2018 for co-teaching, ICLR 2020 for DivideMix and JMLR 2011 for scikit-learn."
+    },
+    {
+      "issue": "The first sentences of 'Checks and statistics' report that numbers and references were checked with a paper-writing agent pipeline. This does not help a reader judge the method or the evidence, takes space in a short paper and draws attention away from the study.",
+      "where": "Sec. 4, 'Checks and statistics', first sentence and its reference",
+      "severity": "minor",
+      "suggestion": "Remove the sentence and the citation from the experiments section. If the venue requires a disclosure of tool use, place it where the venue policy asks for it."
     }
   ],
   "questions": [
-    "Does the filter's gain over logistic regression persist when C is tuned by cross-validation on the noisy labels?",
-    "How does the rule compare with confident learning on the same splits in precision and in accuracy?",
-    "Does the precision stay above chance under class-dependent noise, where flipped labels can agree with a plausible second class?",
-    "Would repeating the filter for several rounds change precision or the clean-label cost?"
+    "Did Brodley and Friedl evaluate a linear learner on its own and a zero-noise condition? Which findings here differ from theirs?",
+    "Does the flipped share left in the kept set order the five breast cancer seeds at 40% noise in the same way as test accuracy does?",
+    "How much of the remaining gap to the clean-label reference on digits at 40% noise could come from training on about half of the samples?",
+    "Would stronger regularization alone, with no filtering, recover a similar share of the lost accuracy?",
+    "In which vision setting do the authors expect a practitioner to apply this, and does anything in the current runs speak to it?"
   ],
   "scores": {"soundness": 3, "presentation": 3, "contribution": 2},
   "overall": 4,

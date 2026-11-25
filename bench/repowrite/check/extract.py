@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from common import ask, body, chunks
+from common import ask, pdf_chunks
 
 FIELD = {"type": "string"}
 SCHEMA = {
@@ -35,7 +35,8 @@ SCHEMA = {
     "required": ["numbers", "claims"],
 }
 
-PROMPT = """You annotate the numbers in one part of a research paper, written in LaTeX, for a faithfulness check.
+PROMPT = """You annotate the numbers in one part of a research paper, given as the text of its compiled PDF
+(two-column pages read column by column; table rows appear as lines of cells), for a faithfulness check.
 
 The study behind the paper uses this vocabulary. Map every number onto it: use the vocabulary's key (e.g. "logreg",
 "noise=0.2", "mean") when the paper's wording refers to it, "" when the paper does not say, and "other" when the paper
@@ -53,7 +54,7 @@ For each number give:
 - comparator: "<" for "p < 0.001", ">" for "more than", "~" for "about", else "=";
 - context: the sentence, or for a table cell "caption | row label | column label";
 - where, attributed_to (only for a number in a sentence that points to a table or figure for it: "Table 2", or
-  the label inside \\ref{{...}}, e.g. "tab:main");
+  as printed, e.g. "Table 2");
 - numbers written in words ("five seeds", "a fifth") count too: give them as printed;
 - kind: "result" for outcomes of the study, "setup" for settings and dataset facts, "other" for anything else;
 - dataset, method, versus (the method compared against, for differences and p-values), condition, metric,
@@ -85,7 +86,7 @@ def extract(paper: Path, key: dict, cache: Path | None = None) -> dict:
     if cache and cache.exists():
         return json.loads(cache.read_text())
     res = {"numbers": [], "claims": [], "tokens": 0}
-    for i, part in enumerate(chunks(body(paper))):
+    for i, part in enumerate(pdf_chunks(paper)):
         r = ask(PROMPT.format(vocab=vocab_text(key), text=part), SCHEMA)
         for n in r["data"].get("numbers", []):
             n["chunk"] = i

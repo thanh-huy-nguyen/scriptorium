@@ -1,12 +1,18 @@
-{"caption": "What the out-of-fold filter drops at 20\\% and 40\\% label noise. Precision is the share of dropped samples that were flipped, recall the share of flipped samples that were dropped, and $p$ tests precision against 50\\% (two-sided one-sample $t$-test). Recovered is the share of logistic regression's accuracy loss that the filter regains (our definition). Means over 5\\src{n_seeds} seeds; clean-label rows are omitted because precision and recall are undefined there. The filter removes mostly flipped samples in every setting.",
- "label": "tab:drops",
- "columns": ["Setting", "Dropped", "Precision (\\%)", "$p$ vs 50\\%", "Recall (\\%)", "Recovered (\\%)"],
- "rows": [
-  {"cells": [{"text": "Digits, 20\\%"}, {"key": "dropped_digits_n20"}, {"key": "precision_digits_n20"}, {"key": "p_prec_dg20_gt50"}, {"key": "recall_digits_n20"}, {"key": "recovered_digits_n20"}]},
-  {"cells": [{"text": "Digits, 40\\%"}, {"key": "dropped_digits_n40"}, {"key": "precision_digits_n40"}, {"key": "p_prec_dg40_gt50"}, {"key": "recall_digits_n40"}, {"key": "recovered_digits_n40"}]},
-  {"cells": [{"text": "Breast cancer, 20\\%"}, {"key": "dropped_breast_cancer_n20"}, {"key": "precision_breast_cancer_n20"}, {"key": "p_prec_bc20_gt50"}, {"key": "recall_breast_cancer_n20"}, {"key": "recovered_breast_cancer_n20"}]},
-  {"cells": [{"text": "Breast cancer, 40\\%"}, {"key": "dropped_breast_cancer_n40"}, {"key": "precision_breast_cancer_n40"}, {"key": "p_prec_bc40_gt50"}, {"key": "recall_breast_cancer_n40"}, {"key": "recovered_breast_cancer_n40"}]}
- ],
- "decimals": 1,
- "width": "full",
- "rule_after": []}
+{
+  "caption": "What the filter removes under noise and how much lost accuracy ours wins back (all in \\%, means over 5\\src{n_seeds} seeds). Flipped and left in kept set: mislabeled share of the training set before and after filtering. Removed: share of the training set dropped. Correct dropped: share of correctly labeled samples dropped. Won back: Eq.~\\eqref{eq:wonback}.",
+  "label": "tab:drops",
+  "align": "lrrrr",
+  "columns": [" & \\multicolumn{2}{c}{Digits} & \\multicolumn{2}{c}{Breast cancer} \\\\ \\cmidrule(lr){2-3} \\cmidrule(lr){4-5} Quantity", "20\\%\\src{noise_rate_low}", "40\\%\\src{noise_rate_high}", "20\\%\\src{noise_rate_low}", "40\\%\\src{noise_rate_high}"],
+  "rows": [
+    {"cells": [{"text": "Flipped"}, {"key": "noisy_share_digits_noise20"}, {"key": "noisy_share_digits_noise40"}, {"key": "noisy_share_breast_noise20"}, {"key": "noisy_share_breast_noise40"}]},
+    {"cells": [{"text": "Left in kept set"}, {"key": "kept_noisy_share_digits_noise20"}, {"key": "kept_noisy_share_digits_noise40"}, {"key": "kept_noisy_share_breast_noise20"}, {"key": "kept_noisy_share_breast_noise40"}]},
+    {"cells": [{"text": "Removed"}, {"key": "drop_fraction_digits_noise20"}, {"key": "drop_fraction_digits_noise40"}, {"key": "drop_fraction_breast_noise20"}, {"key": "drop_fraction_breast_noise40"}]},
+    {"cells": [{"text": "Drop precision"}, {"key": "drop_precision_digits_noise20"}, {"key": "drop_precision_digits_noise40"}, {"key": "drop_precision_breast_noise20"}, {"key": "drop_precision_breast_noise40"}]},
+    {"cells": [{"text": "Drop recall"}, {"key": "drop_recall_digits_noise20"}, {"key": "drop_recall_digits_noise40"}, {"key": "drop_recall_breast_noise20"}, {"key": "drop_recall_breast_noise40"}]},
+    {"cells": [{"text": "Correct dropped"}, {"key": "correct_dropped_digits_noise20"}, {"key": "correct_dropped_digits_noise40"}, {"key": "correct_dropped_breast_noise20"}, {"key": "correct_dropped_breast_noise40"}]},
+    {"cells": [{"text": "Won back"}, {"key": "recovered_digits_noise20"}, {"key": "recovered_digits_noise40"}, {"key": "recovered_breast_noise20"}, {"key": "recovered_breast_noise40"}]}
+  ],
+  "best": {},
+  "decimals": 1,
+  "rule_after": [1, 5]
+}

@@ -1,182 +1,292 @@
-import json
+"""Teaser: the out-of-fold filter (top row), what it removes and what the refit model gains (bottom row).
+
+The scatter positions in the top row are hand-placed and schematic. Every number in the bottom row, the number of
+folds and the noise rates come from recipes in paper/sources.py.
+"""
+
 import numpy as np
-from matplotlib.patches import FancyBboxPatch, Rectangle
+from matplotlib.lines import Line2D
+from matplotlib.patches import Circle, FancyBboxPatch, Patch
+
 import scriptorium_diagram as sd
-
 import scriptorium_fig as sf
-from matplotlib.colors import to_rgb
+
+H = 3.33
+d = sd.canvas("full", height=H)
+W = d.W
+
+OURS = sf.color("Ours", ours=True)
+PARTNER = sf.color("Logistic regression", partner=True)
+REF = sf.color("Clean-label reference", reference=True)
+LIGHT = sf.tint(OURS, 0.74)
+INK = d.pal["text"]
+EDGE = d.pal["edge"]
+GRID = d.pal["grid"]
+TITLE = d.sizes["title"]
+HEAD = d.sizes["heading"]
+LABEL = d.sizes["text"]
+NOTE = d.sizes["note"]
+NEUTRAL = d.soft["fills"][3]
 
 
-def mix(c, t):
-    return tuple(t + (1 - t) * v for v in to_rgb(c))
+def line(p, q, color=EDGE, lw=0.7, z=5):
+    d.ax.plot([p[0], q[0]], [p[1], q[1]], color=color, lw=lw, zorder=z, solid_capstyle="round")
 
 
-PUR = sf.color("filter", ours=True)
-LIGHT, LAV = mix(PUR, 0.6), mix(PUR, 0.9)
-RED, BLUE, ORANGE = sf.color("flip", partner=True), sf.color("logreg"), sf.color("mlp")
-GRAY, INK, EDGE = "#D9D9D9", "#2B2B2B", "#999999"
-
-# ---- data from the repository's raw runs
-rows = [json.loads(l) for l in open("results/runs.jsonl")]
-acc = {}
-for r in rows:
-    acc.setdefault((r["dataset"], round(r["noise"] * 100), r["method"]), []).append(100 * r["test_acc"])
-prec = [100 * r["n_dropped_noisy"] / r["n_dropped"] for r in rows
-        if r["method"] == "filter" and r["dataset"] == "digits" and abs(r["noise"] - 0.4) < 1e-9
-        and r["n_dropped"] > 0]
-PREC = float(np.mean(prec))
-
-try:
-    from sklearn.datasets import load_digits
-    _D = load_digits()
-    IMAGES, TARGET, REAL = _D.images, _D.target, True
-except ImportError:
-    # sklearn is not installed here: draw schematic 5x7 pixel digits (the caption says so)
-    G = ["01110 10001 10011 10101 11001 10001 01110", "00100 01100 00100 00100 00100 00100 01110",
-         "01110 10001 00001 00110 01000 10000 11111", "11110 00001 00001 01110 00001 00001 11110",
-         "00010 00110 01010 10010 11111 00010 00010", "11111 10000 11110 00001 00001 10001 01110",
-         "00110 01000 10000 11110 10001 10001 01110", "11111 00001 00010 00100 01000 01000 01000",
-         "01110 10001 10001 01110 10001 10001 01110", "01110 10001 10001 01111 00001 00010 01100"]
-    IMAGES = np.array([[[int(c) for c in row] for row in g.split()] for g in G], dtype=float)
-    TARGET, REAL = np.arange(10), False
-
-d = sd.canvas("full", height=2.0)
-ax = d.ax
+def rounded(x, y, w, h, fill="white", edge=EDGE, lw=0.8, r=0.035, z=4):
+    d.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle=f"round,pad=0,rounding_size={r}", facecolor=fill,
+                                  edgecolor=edge, linewidth=lw, zorder=z))
 
 
-def rbox(x, y, w, h, fc, ec, lw=0.8, r=0.02, z=3):
-    ax.add_patch(FancyBboxPatch((x + r, y + r), w - 2 * r, h - 2 * r,
-                                boxstyle=f"round,pad={r},rounding_size={r}",
-                                fc=fc, ec=ec, lw=lw, zorder=z))
+def marker(x, y, filled, r=0.028):
+    """A schematic sample: the given class is the marker (filled or open), never a colour."""
+    d.ax.add_patch(Circle((x, y), r, facecolor=INK if filled else "white", edgecolor=INK, linewidth=0.8,
+                          zorder=6))
 
 
-def cross(cx, cy, s=0.035, z=8):
-    for a, b in (((-s, -s), (s, s)), ((-s, s), (s, -s))):
-        ax.plot([cx + a[0], cx + b[0]], [cy + a[1], cy + b[1]], color=RED, lw=1.4,
-                zorder=z, solid_capstyle="round")
+def cross(x, y, s=0.048, lw=1.2):
+    """Long thin arms, so that the filled or open centre of a struck point stays visible."""
+    for dy in (s, -s):
+        line((x - s, y - dy), (x + s, y + dy), color=OURS, lw=lw, z=8)
 
 
-def thumb(x, y, w, h, idx):
-    # real 8x8 sklearn digit image, upscaled
-    ax.imshow(IMAGES[idx % len(IMAGES)], cmap="gray_r", extent=(x, x + w, y, y + h), zorder=5,
-              interpolation="nearest", aspect="auto")
-    ax.add_patch(Rectangle((x, y), w, h, fc="none", ec=EDGE, lw=0.4, zorder=6))
+def check(x, y, s=0.05, lw=1.8):
+    d.ax.plot([x - s, x - 0.25 * s, x + s], [y, y - 0.75 * s, y + 0.8 * s], color=EDGE, lw=lw, zorder=8,
+              solid_capstyle="round", solid_joinstyle="round")
 
 
-def tag(x, y, w, h, val, flipped):
-    rbox(x, y, w, h, "white", RED if flipped else EDGE, lw=1.1 if flipped else 0.4, r=0.01)
-    ax.text(x + w / 2, y + h / 2 - 0.003, str(val), fontsize=8, ha="center", va="center",
-            color=INK, zorder=6)
+def model_card(cx, cy, ours=False, w=0.40, h=0.28):
+    """A small card with an S-shaped curve: a logistic regression."""
+    color = OURS if ours else EDGE
+    rounded(cx - w / 2, cy - h / 2, w, h, edge=color, lw=1.6 if ours else 0.9, r=0.045)
+    t = np.linspace(-1, 1, 80)
+    s = 1 / (1 + np.exp(-5.5 * t))
+    s = (s - s[0]) / (s[-1] - s[0])
+    d.ax.plot(cx + 0.34 * w * t, cy - 0.27 * h + 0.54 * h * s, color=color, lw=1.4, zorder=6,
+              solid_capstyle="round")
 
 
-# ---- panels
-X1, W1 = 0.08, 1.45
-X2, W2 = 1.75, 1.85
-X3, W3 = 3.82, 2.85
-d.panel(X1, 0.08, W1, 1.84, "Noisy labels", step=1, k=0)
-d.panel(X2, 0.08, W2, 1.84, "Drop disagreements", step=2, k=0)
-d.panel(X3, 0.08, W3, 1.84, "Refit", step=3, k=0)
-d.arrow((X1 + W1 + 0.01, 1.0), (X2 - 0.01, 1.0), color=LIGHT, width=3.0)
-d.arrow((X2 + W2 + 0.01, 1.0), (X3 - 0.01, 1.0), color=LIGHT, width=3.0)
+# ---------------------------------------------------------------------------
+# Row 1, panel (a): five equal tiles
+# ---------------------------------------------------------------------------
+ROW1_Y = 1.69
+d.panel(0.0, ROW1_Y, W, H - ROW1_Y, fill=NEUTRAL)
+d.text(0.09, H - 0.14, "(a) Filter noisy labels", size=TITLE, ha="left", bg=NEUTRAL, case=None)
 
-# ---- panel 1: digit thumbnails with class tags
-flipped = {2, 7, 10, 13, 19, 22}
-cw, ch = 0.225, 0.29
-gx = X1 + (W1 - 6 * cw) / 2
-top = 1.63
-for i in range(24):
-    r, c = divmod(i, 6)
-    x = gx + c * cw
-    y = top - (r + 1) * ch
-    idx = i * 13
-    t = int(TARGET[idx % len(IMAGES)])
-    fl = i in flipped
-    thumb(x + 0.02, y + 0.12, 0.185, 0.17, idx)
-    tag(x + 0.04, y + 0.01, 0.145, 0.1, (t + 3) % 10 if fl else t, fl)
-rbox(X1 + 0.28, 0.29, 0.145, 0.1, "white", RED, lw=1.1, r=0.01)
-d.text(X1 + 0.47, 0.34, "flipped tag", size=7.5, ha="left")
-d.text(X1 + W1 / 2, 0.16, "~20-40% flipped", size=7.5)
+MARGIN, GAP = 0.07, 0.17
+TW = (W - 2 * MARGIN - 4 * GAP) / 5
+TY, TOP = ROW1_Y + 0.05, H - 0.285
+TITLE_Y = TOP - 0.13
+SY, SW = TY + 0.50, 1.04                     # scatter area shared by the input, drop and refit tiles
+LOW_Y = TY + 0.215                           # middle of the strip under the scatter
+NOTE_Y = LOW_Y - 0.025                       # one height for the two-line notes of stages 1 and 3
 
-# ---- panel 2: out-of-fold prediction
-fw, fg = 0.28, 0.05
-fx0 = X2 + 0.125
-fy, fh = 1.5, 0.17
-for k in range(5):
-    x = fx0 + k * (fw + fg)
-    last = k == 4
-    rbox(x, fy, fw, fh, LAV if last else GRAY, PUR if last else EDGE, lw=1.2 if last else 0.5, r=0.02)
-    d.text(x + fw / 2, fy + fh / 2, str(k + 1), size=7, color=INK)
-# bracket under folds 1-4 -> network card
-bl, br, by_ = fx0, fx0 + 4 * fw + 3 * fg, fy - 0.06
-bc = (bl + br) / 2
-ax.plot([bl, bl, br, br], [by_ + 0.03, by_, by_, by_ + 0.03], color=PUR, lw=1.0, zorder=4)
-d.arrow((bc, by_ - 0.005), (bc, 1.3), color=PUR, width=1.4)
-d.icon("network", bc, 1.14, 0.3, color=PUR)
-d.text(bc, 0.88, "fit on 4", size=7.5)
-# held-out fold 5 container
-cx0, cx1, cy0, cy1 = X2 + 1.08, X2 + 1.80, 0.78, 1.26
-rbox(cx0, cy0, cx1 - cx0, cy1 - cy0, LAV, PUR, lw=1.0, r=0.03, z=2)
-f5 = fx0 + 4 * (fw + fg) + fw / 2
-d.arrow((f5, fy - 0.01), (f5, cy1 + 0.01), color=PUR, width=1.4)
-d.arrow((bc + 0.2, 1.14), (cx0 - 0.01, 1.14), color=PUR, width=1.4)
-for j, (idx, fl) in enumerate([(5, False), (6, True), (8, False)]):
-    x = cx0 + 0.05 + j * 0.225
-    t = int(TARGET[idx % len(IMAGES)])
-    thumb(x, 1.04, 0.17, 0.16, idx)
-    tag(x + 0.015, 0.93, 0.14, 0.09, (t + 3) % 10 if fl else t, fl)
-    if fl:
-        cross(x + 0.085, 1.12, s=0.05, z=9)
-d.text(cx0 + 0.03, 0.845, "predict 5", size=7.5, ha="left")
-# stacked precision bar
-bx, bw, bb, bh = X2 + 0.1, W2 - 0.2, 0.32, 0.18
-cxl = cx1 - 0.08
-ax.plot([cxl, cxl], [cy0, bb + bh], color=PUR, lw=0.8, ls=(0, (2, 2)), zorder=3)
-d.text(bx, 0.68, "crossed = dropped", size=7.5, ha="left", color=INK)
-wf = bw * PREC / 100
-ax.add_patch(Rectangle((bx + wf, bb), bw - wf, bh, fc=LAV, ec=PUR, lw=1.0, zorder=3))
-ax.add_patch(Rectangle((bx, bb), wf, bh, fc=PUR, ec=PUR, lw=1.0, zorder=4))
-d.text(bx + wf / 2, bb + bh / 2, f"flipped {PREC:.0f}%", size=7.5, color="white", bg=PUR)
-d.text(bx + bw, bb - 0.09, f"clean {100 - PREC:.0f}%", size=7.5, color=PUR, ha="right")
-d.text(bx, 0.55, "all dropped, digits, 40% noise", size=7, ha="left")
-ax.set_xlim(0, d.W)
-ax.set_ylim(0, d.H)
+STEP_R, STEP_GAP = 0.085, 0.055
+tiles, xs = [], []
+for i, title in enumerate(["Noisy labels", "Predict", "Compare", "Drop", "Refit once"]):
+    x = MARGIN + i * (TW + GAP)
+    xs.append(x)
+    tiles.append(d.box(x, TY, TW, TOP - TY, fill="white", edge="white"))
+    if i:                                    # stage number directly left of the stage title, centred as one unit
+        left = x + (TW - 2 * STEP_R - STEP_GAP - sd.text_width(title, HEAD)) / 2
+        d.step(left + STEP_R, TITLE_Y, i, r=STEP_R)
+        d.text(left + 2 * STEP_R + STEP_GAP, TITLE_Y, title, size=HEAD, ha="left")
+    else:
+        d.text(x + TW / 2, TITLE_Y, title, size=HEAD)
+d.flow(tiles, width=2.4, color=EDGE, gap=0.015)
 
-# ---- panel 3: grouped bars
-methods = [("logreg", "Logistic regression", BLUE), ("mlp", "MLP", ORANGE), ("filter", "Filter (ours)", PUR)]
-lx = X3 + 0.1
-for (name, lab, col), wl in zip(methods, [0.98, 0.3, 0.72]):
-    ax.add_patch(Rectangle((lx, 1.57), 0.09, 0.09, fc=col, ec="none", zorder=4))
-    d.text(lx + 0.12, 1.615, lab, size=7.5, ha="left")
-    lx += 0.12 + wl + 0.02
-fig = d.fig
-aw, ah = 1.05, 0.78
-for g, (ds, title) in enumerate([("digits", "Digits"), ("breast_cancer", "Breast cancer")]):
-    gx0 = X3 + 0.38 + g * 1.32
-    ax0 = fig.add_axes([gx0 / d.W, 0.45 / d.H, aw / d.W, ah / d.H])
-    ax0.set_facecolor("none")
-    rng = np.random.default_rng(0)
-    for m, (key, lab, col) in enumerate(methods):
-        for n, noise in enumerate([0, 20, 40]):
-            v = np.array(acc[(ds, noise, key)])
-            x = n + (m - 1) * 0.28
-            ax0.bar(x, v.mean(), 0.26, color=col, ec="none", zorder=2)
-            ax0.errorbar(x, v.mean(), yerr=v.std(ddof=1), color=INK, lw=0.7, capsize=1.2, capthick=0.7, zorder=3)
-            ax0.scatter(x + rng.uniform(-0.06, 0.06, len(v)), v, s=7, color="white", ec=INK, lw=0.4, zorder=4)
-    ref = np.mean(acc[(ds, 0, "filter")])
-    ax0.axhline(ref, color=PUR, lw=0.6, ls=(0, (3, 2)), zorder=1)
-    ax0.set_ylim(50, 100)
-    ax0.set_xlim(-0.55, 2.55)
-    ax0.set_xticks([0, 1, 2], ["0", "20", "40"], fontsize=7.5)
-    ax0.set_yticks([50, 75, 100])
-    ax0.tick_params(length=2, width=0.5, pad=1.5, labelsize=7.5)
-    ax0.set_title(title, fontsize=8, pad=3)
-    if g == 0:
-        ax0.set_ylabel("test accuracy (%)", fontsize=7.5, labelpad=1)
-    for s in ("top", "right"):
-        ax0.spines[s].set_visible(False)
-    for s in ("left", "bottom"):
-        ax0.spines[s].set_linewidth(0.5)
-    ax0.grid(axis="y", color="#E6E8EB", lw=0.4, zorder=0)
-d.text(X3 + W3 / 2 + 0.1, 0.17, "label noise (%)", size=7.5)
+# Schematic points as offsets inside the scatter area
+FILLED = [(0.06, 0.08), (0.19, 0.04), (0.33, 0.07), (0.05, 0.21), (0.28, 0.19), (0.42, 0.18), (0.32, 0.31),
+          (0.07, 0.34)]
+OPEN = [(0.70, 0.49), (0.85, 0.53), (0.99, 0.46), (0.68, 0.34), (0.80, 0.41), (1.00, 0.29), (0.74, 0.21),
+        (0.91, 0.14)]
+# (x, y, filled): three given labels that disagree with the cluster the point sits deep inside
+WRONG = [(0.18, 0.21, False), (0.91, 0.36, True), (0.84, 0.24, True)]
+ACROSS = (0.635, 0.115, True)                # correctly labeled, just across the border between the clusters
+
+
+def scatter(i, dropped=True):
+    ox = xs[i] + (TW - SW) / 2
+    points = [(x, y, True) for x, y in FILLED] + [(x, y, False) for x, y in OPEN]
+    if dropped:
+        points += WRONG + [ACROSS]
+    for x, y, filled in points:
+        marker(ox + x, SY + y, filled)
+    return ox
+
+
+# Input: the noisy training set, and what the filter does without. One wrong label is marked, and so is the
+# correctly labeled sample that stage 3 drops.
+ox = scatter(0)
+wx, wy = ox + WRONG[0][0], SY + WRONG[0][1]
+d.text(ox - 0.01, SY + 0.47, "Wrong label", size=NOTE, ha="left")
+line((wx, SY + 0.40), (wx, wy + 0.04))
+cx0, cy0 = ox + ACROSS[0], SY + ACROSS[1]
+# "Correct label" sits low and to the right of its point, clear of the filled cluster and of the pills
+d.text(ox + 0.75, SY - 0.025, "Correct label", size=NOTE)
+line((cx0 + 0.030, cy0 - 0.029), (ox + 0.72, SY + 0.036))
+PILL_H, PILL_GAP, PILL_FOOT = 0.15, 0.025, 0.05             # PILL_FOOT: white space under the lower pill
+for k, text in enumerate(["Needs no clean set", "Needs no noise rate"]):
+    cy = TY + PILL_FOOT + PILL_H / 2 + (1 - k) * (PILL_H + PILL_GAP)
+    pw = sd.text_width(text, NOTE) + 0.14
+    rounded(xs[0] + (TW - pw) / 2, cy - PILL_H / 2, pw, PILL_H, lw=0.7, r=PILL_H / 2 - 0.001)
+    d.text(xs[0] + TW / 2, cy, text, size=NOTE)
+
+# Stage 1: fit on the other folds, predict the held-out fold
+folds = int(sf.recipe("filter_folds"))
+STRIP_W, FG = 1.04, 0.022
+BW = (STRIP_W - (folds - 1) * FG) / folds
+sx = xs[1] + (TW - STRIP_W) / 2
+by, bh = TY + 0.36, 0.19
+for j in range(folds):
+    held = j == folds - 1
+    rounded(sx + j * (BW + FG), by, BW, bh, fill=OURS if held else GRID, edge=OURS if held else EDGE, lw=0.7,
+            r=0.025)
+rest_w = (folds - 1) * (BW + FG) - FG        # width of the folds that the model is fit on
+card_x = sx + rest_w / 2
+card_y = by + bh + 0.275
+model_card(card_x, card_y)
+# fit: a bracket over the other folds, with an arrow up into the card
+brace_y = by + bh + 0.04
+d.ax.plot([sx + 0.012, sx + 0.012, sx + rest_w - 0.012, sx + rest_w - 0.012],
+          [brace_y - 0.025, brace_y, brace_y, brace_y - 0.025], color=EDGE, lw=0.8, zorder=5,
+          solid_capstyle="round", solid_joinstyle="round")
+d.arrow((card_x, brace_y), (card_x, card_y - 0.15), width=1.1, color=EDGE, head=0.65)
+# predict: from the card into the held-out fold
+held_x = sx + (folds - 1) * (BW + FG) + BW / 2
+d.arrow((card_x + 0.235, card_y + 0.02), (held_x + 0.005, by + bh + 0.025), curve=0.38, width=1.6, color=EDGE,
+        head=0.85)
+d.text(xs[1] + TW / 2, NOTE_Y, "Out-of-fold,\neach in turn", size=NOTE)
+
+# Stage 2: compare the given label with the out-of-fold prediction
+cg, cp, ci = xs[2] + 0.25, xs[2] + 0.70, xs[2] + 1.04
+head_y = TITLE_Y - 0.21
+d.text(cg, head_y, "Given", size=NOTE)
+d.text(cp, head_y, "Predicted", size=NOTE)
+line((xs[2] + 0.08, head_y - 0.095), (xs[2] + TW - 0.08, head_y - 0.095), color=GRID, lw=1.0)
+for k, (given, predicted) in enumerate([(True, True), (False, True), (True, False)]):
+    y = head_y - 0.245 - 0.23 * k
+    marker(cg, y, given, r=0.043)
+    marker(cp, y, predicted, r=0.043)
+    if given == predicted:
+        check(ci, y)
+    else:
+        cross(ci, y, s=0.045, lw=1.8)
+
+# Stage 3: drop every mismatch, here three wrong labels and one correct one
+ox = scatter(3)
+for x, y, _ in WRONG + [ACROSS]:
+    cross(ox + x, SY + y)
+d.text(xs[3] + TW / 2, NOTE_Y, "Correct label,\ndropped", size=NOTE)
+line((ox + ACROSS[0], SY + ACROSS[1] - 0.06), (ox + ACROSS[0], NOTE_Y + 0.15))
+
+# Stage 4: refit once on the kept set; the decision line spans only the height of the points
+ox = scatter(4, dropped=False)
+line((ox + 0.424, SY + 0.52), (ox + 0.651, SY + 0.03), color=OURS, lw=2.0)
+model_card(xs[4] + TW / 2, LOW_Y + 0.025, ours=True)
+
+# ---------------------------------------------------------------------------
+# Row 2: measured outcomes
+# ---------------------------------------------------------------------------
+ROW2_H = ROW1_Y - 0.04
+B_W = 3.36
+CX = B_W + 0.05
+TITLE2_Y = ROW2_H - 0.14
+LEGEND_Y = ROW2_H - 0.345
+AY, AH = 0.50, 0.69
+for x0, w0, title in ((0.0, B_W, "(b) What it removes"), (CX, W - CX, "(c) What it gains and costs")):
+    d.panel(x0, 0.0, w0, ROW2_H, fill=NEUTRAL)
+    d.text(x0 + 0.09, TITLE2_Y, title, size=TITLE, ha="left", bg=NEUTRAL, case=None)
+
+DATASETS = [("digits", "Digits"), ("breast", "Breast cancer")]
+RATES = [("noise0", "Clean"), ("noise20", f"{sf.recipe('noise_rate_low'):.0f}%"),
+         ("noise40", f"{sf.recipe('noise_rate_high'):.0f}%")]
+SETTINGS = [(ds, rate) for ds, _ in DATASETS for rate, _ in RATES]
+POS = np.array([0.0, 1.0, 2.0, 3.45, 4.45, 5.45])      # the same six settings, with a small gap between datasets
+XLIM = (-0.55, 6.0)
+
+
+def plot_axes(x, w):
+    ax = d.fig.add_axes([x / W, AY / H, w / W, AH / H])
+    ax.set_facecolor("white")
+    ax.set_xlim(*XLIM)
+    ax.set_xticks(POS, [name for _ in DATASETS for _, name in RATES])
+    ax.tick_params(axis="x", length=0, pad=2.0, labelsize=NOTE)
+    ax.tick_params(axis="y", length=2.0, pad=1.0, labelsize=NOTE)
+    ax.grid(False)
+    ax.grid(True, axis="y", color=GRID, linewidth=0.6)
+    ax.set_axisbelow(True)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    for g, (_, name) in enumerate(DATASETS):
+        mid = POS[3 * g + 1]
+        d.text(x + (mid - XLIM[0]) / (XLIM[1] - XLIM[0]) * w, 0.277, name, size=NOTE, bg=NEUTRAL)
+    d.text(x + w / 2, 0.112, "Training label noise", size=LABEL, bg=NEUTRAL)
+    return ax
+
+
+def legend(ax, handles, labels, xc, **kw):
+    """One legend row above the axes, at the same height in both panels (xc in inches)."""
+    return ax.legend(handles, labels, loc="center", bbox_to_anchor=(xc / W, LEGEND_Y / H),
+                     bbox_transform=d.fig.transFigure, ncol=len(labels), frameon=False, fontsize=NOTE,
+                     handlelength=1.1, handletextpad=0.4, borderaxespad=0.0, borderpad=0.0, **kw)
+
+
+# (b) share of the training set removed, split by whether the dropped sample was mislabeled
+BX = 0.56
+axb = plot_axes(BX, B_W - BX - 0.06)
+axb.set_ylim(0, 55)
+axb.set_yticks([0, 20, 40])
+axb.set_ylabel("Training set\nremoved (%)", fontsize=LABEL, labelpad=1.5, linespacing=1.1)
+BAR = 0.52
+# The mislabeled share of the training set: a tick in two stubs, one on each side of the bar, so that it never
+# covers the boundary between the two segments.
+SHARE_TICK = dict(color=INK, lw=1.5, solid_capstyle="butt")
+STUB_GAP, STUB = 0.05, 0.16                   # from the bar edge to the stub, and the stub's length (x units)
+for x, (ds, rate) in zip(POS, SETTINGS):
+    if rate == "noise0":                      # clean labels: every drop is a correctly labeled sample
+        wrong, right = 0.0, sf.recipe(f"drop_fraction_{ds}_{rate}")
+    else:
+        wrong = sf.recipe(f"drop_share_mislabeled_{ds}_{rate}")
+        right = sf.recipe(f"drop_share_correct_{ds}_{rate}")
+        axb.bar(x, wrong, BAR, color=OURS, edgecolor=OURS, linewidth=0.8, zorder=2)
+    axb.bar(x, right, BAR, bottom=wrong, color=LIGHT, edgecolor=OURS, linewidth=0.8, zorder=2)
+    if rate != "noise0":
+        share = sf.recipe(f"noisy_share_{ds}_{rate}")
+        # dark, not gray: gray stands only for the clean-label reference of panel (c)
+        for side in (-1, 1):
+            inner = x + side * (BAR / 2 + STUB_GAP)
+            axb.plot([inner, inner + side * STUB], [share, share], zorder=4, **SHARE_TICK)
+legend(axb, [Patch(facecolor=OURS, edgecolor=OURS, linewidth=0.8),
+             Patch(facecolor=LIGHT, edgecolor=OURS, linewidth=0.8),
+             # the same two stubs: dash lengths are in line widths and fill the 1.1 em handle
+             Line2D([], [], color=INK, lw=SHARE_TICK["lw"], linestyle=(0, (2.0, 1.5)), dash_capstyle="butt")],
+       ["Mislabeled", "Correctly labeled", "Mislabeled in training set"], B_W / 2, columnspacing=0.8)
+
+# (c) paired gain of ours over logistic regression (a true zero), with the clean-label reference on the same
+# scale: its height above zero is the accuracy that noise costs logistic regression.
+CAX = CX + 0.53                               # the y label clears its panel edge by as much as in (b)
+axc = plot_axes(CAX, W - CAX - 0.07)
+axc.set_ylim(-3, 18)
+axc.set_yticks([0, 5, 10, 15])
+axc.set_ylabel("Accuracy gain\n(points)", fontsize=LABEL, labelpad=1.5, linespacing=1.1)
+CBAR = 0.60
+JITTER = np.array([-0.22, -0.12, 0.10, 0.17, 0.24])             # fixed by seed, clear of the error bar
+for x, (ds, rate) in zip(POS, SETTINGS):
+    mean = sf.recipe(f"gain_vs_logreg_{ds}_{rate}")
+    sdev = sf.recipe(f"std_gain_vs_logreg_{ds}_{rate}")
+    seeds = [sf.recipe(f"gain_vs_logreg_{ds}_{rate}_seed{s}") for s in range(5)]
+    axc.bar(x, mean, CBAR, color=OURS, linewidth=0, zorder=2)
+    axc.errorbar(x, mean, yerr=sdev, fmt="none", ecolor=INK, elinewidth=0.8, capsize=2.0, capthick=0.8,
+                 zorder=4)
+    axc.plot(x + JITTER, seeds, ls="none", marker="o", ms=2.3, mfc="white", mec=INK, mew=0.5, zorder=5)
+    if rate != "noise0":
+        cost = sf.recipe(f"noise_cost_{ds}_{rate}")
+        axc.plot([x - 0.45, x + 0.45], [cost, cost], color=REF, lw=2.0, solid_capstyle="butt", zorder=3)
+# zero is logistic regression itself, so the line takes that method's color
+axc.axhline(0, color=PARTNER, lw=1.1, zorder=3)
+legend(axc, [Patch(facecolor=OURS, linewidth=0), Line2D([], [], color=PARTNER, lw=1.1),
+             Line2D([], [], color=REF, lw=2.0)],
+       ["Ours", "Logistic regression", "Clean-label reference"], (CX + W) / 2, columnspacing=0.9)
 
 d.save("teaser")

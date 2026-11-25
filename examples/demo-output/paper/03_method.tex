@@ -1,13 +1,18 @@
-\section{Out-of-Fold Disagreement Filter}\label{sec:method}
+\section{Out-of-Fold Label Filtering}\label{sec:method}
 
-The out-of-fold filter takes a training set $\mathcal{D}=\{(x_i,\tilde{y}_i)\}_{i=1}^{n}$ with observed, possibly flipped labels $\tilde{y}_i$ and returns a classifier trained on a subset $\mathcal{S}\subseteq\mathcal{D}$. The classifier $f$ is a standardized logistic regression that maps a feature vector $x$ to a predicted class. The true label $y_i$ is never seen.
+\paragraph{Setting.}
+The filter changes which samples logistic regression is fit on. The training set $D=\{(x_i,\tilde{y}_i)\}_{i=1}^{n}$ has $n$ samples, each a feature vector $x_i$ with a given label $\tilde{y}_i$ that may be wrong. The base model $f_D$ maps a feature vector to a class. It chains standardization and logistic regression, both fit on the set in its subscript. The logistic regression baseline is $f_D$, trained on all given labels without filtering.
 
-\paragraph{Procedure.}
-First, split $\mathcal{D}$ into $K$ stratified folds and let $k(i)$ be the fold that contains sample $i$. The out-of-fold prediction of sample $i$ is the class predicted by $f$ fit on all folds except $k(i)$:
+\paragraph{Out-of-fold check.}
+A model that has never seen a sample cannot have memorized a wrong label for it, so we check each given label with such a model. We shuffle $D$ and split it into $K$ cross-validation folds~\citep{stone1974crossvalidatory}, stratified on the given labels, and write $D_{k(i)}$ for the fold that contains sample $i$. We fit the base model, standardization included, on the other folds. The class it predicts for sample $i$ is the out-of-fold prediction $\hat{y}_i = f_{D \setminus D_{k(i)}}(x_i)$.
+
+\paragraph{Keep rule and refit.}
+We keep a sample only if its out-of-fold prediction equals its given label. The kept set is
 \begin{equation}
-  \hat{y}_i = f_{-k(i)}(x_i).
+  D_{\mathrm{keep}} = \{(x_i,\tilde{y}_i) \in D : \hat{y}_i = \tilde{y}_i\}.
+  \label{eq:keep}
 \end{equation}
-Second, keep the samples whose out-of-fold prediction agrees with their label, $\mathcal{S}=\{i:\hat{y}_i=\tilde{y}_i\}$, and drop every sample where the two disagree. Third, refit $f$ on $\mathcal{S}$ with the given labels. We use $K=5$\src{filter_folds}. The folds are stratified on the noisy labels, and the feature standardization is fit inside each training fold, as part of $f$. For digits, the predicted class is the argmax of the model's class scores, and a sample is dropped whenever it differs from the given label. The rule has no threshold, uses no noise rate and holds out no clean data. It costs $K+1$ fits.
+We fit a new standardization and logistic regression on this set, which gives the refit model $f_{D_{\mathrm{keep}}}$ (Fig.~\ref{fig:teaser}a).
 
-\paragraph{Why disagreement may mark a flipped label.}
-Under symmetric noise, most labels in the other folds are correct, so a model fit on them can learn the class structure of the data. A flipped label contradicts that structure, so the out-of-fold model should often predict the true class and the sample is dropped. This is an argument for small, nearly linearly separable problems with symmetric noise, not a guarantee. Class-dependent noise, where a linear model's errors follow the flips, is the obvious case where it can fail, and we did not test it. The measured evidence is the precision and recall in Section~\ref{sec:results}. The filter also drops clean samples that the model gets wrong, and Section~\ref{sec:results} measures what these drops cost. The rule is the single-algorithm filter of \citet{brodley1999identifying} with logistic regression and out-of-fold predictions.
+\paragraph{What the filter does not need.}
+The filter needs no clean validation set or noise-rate estimate. It makes one pass over hard predictions, with no confidence threshold or per-class rule. The number of drops is the number of disagreements. We fix $K$ and the inverse regularization strength $C$ without tuning (Section~\ref{sec:setup}).

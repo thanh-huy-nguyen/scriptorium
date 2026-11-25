@@ -193,7 +193,7 @@ The report (`report.md` and `report.html`) lists what to change first.
 regression with out-of-fold label filtering, under 0%, 20% and 40% label noise on two datasets, five seeds each.
 
 <p align="center">
-  <a href="examples/demo-output/paper.pdf"><img src="assets/example_pages.png" width="100%" alt="The first three pages of the paper Scriptorium wrote from the demo study"></a>
+  <a href="examples/demo-output/paper.pdf"><img src="assets/example_pages.png" width="100%" alt="The pages of the paper Scriptorium wrote from the demo study"></a>
 </p>
 
 Scriptorium wrote [this 4-page CVPR-format paper](examples/demo-output/paper.pdf) with no human edits to the text,
@@ -205,25 +205,28 @@ critiques, the reviews, and the [HTML report](examples/demo-output/notes/report.
 
 | What the final checks found | |
 |:--|:--|
-| Numbers | 85 tagged, from 169 recipes, all recompute from `results/runs.jsonl`; only 23 of them sit in running text, the rest in tables |
-| Citations | 15, all fetched; every citing sentence checked against the cited abstract |
+| Numbers | 107 tagged, from 329 recipes, all recompute from `results/runs.jsonl`; 30 of them sit in running text, the rest in tables |
+| Citations | 17 cited, all fetched; every citing sentence checked against the cited abstract |
 | Build | 4 pages of main text in the CVPR kit, no undefined references, no overfull lines |
-| Reviews | 4.25 before and after the revision: the LLM reviewers call the study too narrow for CVPR (two datasets, weak baselines) and find places where the text describes table content the tables do not show |
-| Cost | 102 agent sessions, about 600k output tokens, 40 minutes of wall time |
+| Reviews | 4.5 before and after the revision: the LLM reviewers call the study too narrow for CVPR (two datasets, no random-drop or oracle control, no competing method) and ask the introduction to say what was unknown |
+| Cost | 93 agent sessions, about 2.6M output tokens, 130 minutes of wall time |
 
 What the run shows:
 
-- **The venue study shaped the paper.** It read six recent CVPR papers on learning with noisy labels and wrote a
-  playbook; one of its rules made Figure 1 the method overview, since four pages leave no room for two diagrams.
-- **The paper reports what did not work.** The statistician found 6 of 21 comparisons not significant, and the paper
-  says so where it matters instead of rounding them into wins; it credits the filter to Brodley and Friedl and presents
-  the work as a measurement of a known idea.
-- **Figures and pages were sent back.** A critic returned Figure 1 because its y axis started at 50 and exaggerated a
-  drop; the page inspector found tables printed pages from their first mention and a caption promising bold entries
-  the table did not have. Each problem went to the agent that owned it.
-- **What is left is listed, not hidden.** The final report lists two paragraphs that still print three numbers, a name
-  variant inside a table spec, and a figure caption that still calls the method's bars purple; the last one led to a
-  fix in how the inspector routes caption problems.
+- **The venue study shaped Figure 1.** It read six recent CVPR papers on noisy labels and wrote a playbook that asked
+  for Figure 1 on page 1, with numbered stages, a correctly labeled sample shown being dropped, and a small accuracy
+  panel that includes the weak case. The paper's framework figure does each of these.
+- **The paper reports what did not work.** It presents the work as a measurement of a known filter, credits the filter
+  to Brodley and Friedl, and says where the gain is not significant (breast cancer at the lower noise rate) and that
+  refitting wins back only part of the lost accuracy.
+- **Figures and pages were sent back.** The figure critic returned Figure 1 because a "correct label, dropped" sample
+  read as a fourth wrong label; the page inspector found a table 55 pt wider than its column, a float far from its
+  first mention, a section heading broken inside a word and decimal points that did not line up. Each problem went to
+  the agent that owned it.
+- **What is left is listed, not hidden.** The final report keeps one storytelling note: a results paragraph prints six
+  numbers where the rules allow two. In the last layout round the typesetter fixed the typesetting of nine fetched
+  references (dashes, an accent, arXiv notes); the reference check now fingerprints what an entry says rather than how
+  it is typeset, so such fixes pass and changes of content still fail.
 
 ## Venues, presets and configuration
 

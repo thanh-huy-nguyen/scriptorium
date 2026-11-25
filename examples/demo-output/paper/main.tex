@@ -9,16 +9,34 @@
 \usepackage{amssymb}
 \usepackage{xcolor}
 \makeatletter\@ifpackageloaded{hyperref}{}{\usepackage[hidelinks]{hyperref}}\makeatother
+% Unicode engines (XeTeX, LuaTeX) have no OpenType shapes for the Type 1 families that cvpr.sty loads through
+% the times package, so bold and italic are lost. Load the TeX Gyre equivalents there; pdfTeX needs nothing.
+\usepackage{iftex}
+\ifPDFTeX\else
+  \usepackage[no-math]{fontspec}
+  \defaultfontfeatures{Extension=.otf, UprightFont=*-regular, BoldFont=*-bold, ItalicFont=*-italic,
+    BoldItalicFont=*-bolditalic, Ligatures=TeX}
+  \setmainfont{texgyretermes}
+  \setsansfont{texgyreheros}
+  \setmonofont[Ligatures=ResetAll]{texgyrecursor}
+  \defaultfontfeatures{}
+\fi
 
 \def\paperID{*****}
 \def\confName{CVPR}
 \def\confYear{2026}
 
-\title{Out-of-Fold Filtering of Symmetric Label Noise for a Linear Model: A Small Measurement Study}
+\title{Drop What the Model Disagrees With: Out-of-Fold Filtering for Label Noise}
 \author{Anonymous Authors \\ Anonymous Institution}
 
 \begin{document}
-\maketitle
+% Fig. 1 spans both columns under the title. Inside this box \maketitle must not open a second \twocolumn.
+\twocolumn[{%
+  \renewcommand\twocolumn[1][]{#1}%
+  \maketitle
+  \input{fig_teaser}
+  \vspace{\dbltextfloatsep}
+}]
 
 \begin{abstract}
 \input{abstract}
@@ -28,8 +46,10 @@
 \input{02_related}
 \input{03_method}
 \input{04_setup}
-\input{05_results}
-\input{06_discussion}
+\input{05_drops}
+\input{06_accuracy}
+\input{07_clean}
+\input{08_discussion}
 
 {\small
 \bibliographystyle{ieeenat_fullname}

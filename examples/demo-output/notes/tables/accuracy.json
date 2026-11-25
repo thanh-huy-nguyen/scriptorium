@@ -1,0 +1,14 @@
+{
+ "caption": "Test accuracy (\\%) on clean test labels by dataset and symmetric training-label noise rate. Mean $\\pm$ sd over 5\\src{n_seeds} seeds, each a re-drawn stratified split with 540\\src{n_test_digits} test samples on digits and 171\\src{n_test_breast} on breast cancer. Logistic regression with clean labels is the clean-label reference. Bold marks the best column mean, ties included. Ours has the highest mean in each noisy setting, but not with clean labels.",
+ "label": "tab:accuracy",
+ "width": "full",
+ "columns": ["& \\multicolumn{3}{c}{Digits} & \\multicolumn{3}{c}{Breast cancer} \\\\ \\cmidrule(lr){2-4} \\cmidrule(lr){5-7} Method", "Clean", "20\\%\\src{noise_rate_low}", "40\\%\\src{noise_rate_high}", "Clean", "20\\%\\src{noise_rate_low}", "40\\%\\src{noise_rate_high}"],
+ "rows": [
+  {"cells": [{"text": "Logistic regression"}, {"key": "acc_logreg_digits_noise0", "sd": "std_logreg_digits_noise0"}, {"key": "acc_logreg_digits_noise20", "sd": "std_logreg_digits_noise20"}, {"key": "acc_logreg_digits_noise40", "sd": "std_logreg_digits_noise40"}, {"key": "acc_logreg_breast_noise0", "sd": "std_logreg_breast_noise0"}, {"key": "acc_logreg_breast_noise20", "sd": "std_logreg_breast_noise20"}, {"key": "acc_logreg_breast_noise40", "sd": "std_logreg_breast_noise40"}]},
+  {"cells": [{"text": "MLP"}, {"key": "acc_mlp_digits_noise0", "sd": "std_mlp_digits_noise0"}, {"key": "acc_mlp_digits_noise20", "sd": "std_mlp_digits_noise20"}, {"key": "acc_mlp_digits_noise40", "sd": "std_mlp_digits_noise40"}, {"key": "acc_mlp_breast_noise0", "sd": "std_mlp_breast_noise0"}, {"key": "acc_mlp_breast_noise20", "sd": "std_mlp_breast_noise20"}, {"key": "acc_mlp_breast_noise40", "sd": "std_mlp_breast_noise40"}]},
+  {"cells": [{"text": "Filter (ours)"}, {"key": "acc_filter_digits_noise0", "sd": "std_filter_digits_noise0"}, {"key": "acc_filter_digits_noise20", "sd": "std_filter_digits_noise20"}, {"key": "acc_filter_digits_noise40", "sd": "std_filter_digits_noise40"}, {"key": "acc_filter_breast_noise0", "sd": "std_filter_breast_noise0"}, {"key": "acc_filter_breast_noise20", "sd": "std_filter_breast_noise20"}, {"key": "acc_filter_breast_noise40", "sd": "std_filter_breast_noise40"}], "ours": true}
+ ],
+ "best": {"1": "max", "2": "max", "3": "max", "4": "max", "5": "max", "6": "max"},
+ "decimals": 1,
+ "rule_after": []
+}
