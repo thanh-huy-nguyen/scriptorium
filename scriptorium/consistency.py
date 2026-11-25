@@ -52,7 +52,10 @@ def sentences(t: str) -> list[str]:
 
 
 def files(cfg: Config) -> dict[str, str]:
-    return {p.name: _strip(p.read_text()) for p in sorted(cfg.paper.glob("*.tex")) if p.name not in ("main.tex", "checklist.tex")}
+    from .latex import included
+    inc = included(cfg.paper)          # what the paper typesets, once main.tex inputs its sections
+    paths = sorted(inc) if len(inc) > 1 else sorted(cfg.paper.glob("*.tex"))
+    return {p.name: _strip(p.read_text()) for p in paths if p.name not in ("main.tex", "checklist.tex")}
 
 
 def front(name: str) -> bool:

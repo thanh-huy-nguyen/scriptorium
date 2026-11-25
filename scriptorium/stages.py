@@ -114,6 +114,9 @@ def checks(cfg: Config, files: list[str] | None = None, build: bool = True, page
     """The code-side checks shared by every writing stage. The Scriptorium citation is repaired first, then checked."""
     from . import selfcite
     selfcite.ensure(cfg)
+    if not files:                       # only what the paper typesets; never an agent's leftover scratch file
+        inc = latex.included(cfg.paper)
+        files = [str(p) for p in inc] if len(inc) > 1 else None
     errs: list[str] = val_problems(cfg, files) + selfcite.problems(cfg)
     if (cfg.work / "tables").exists():
         errs += T.build(cfg, read_json(cfg.work / "numbers.json") or {})
@@ -121,7 +124,7 @@ def checks(cfg: Config, files: list[str] | None = None, build: bool = True, page
     errs += [f"consistency: {e}" for e in cerrs]
     ok, out = anchor.check(cfg, *(files or []))
     if not ok:
-        errs.append("numbers that do not recompute (PaperAnchor):\n" + out[-3000:])
+        errs.append("numbers that do not recompute (PaperAnchor):\n" + anchor.failures_first(out))
     errs += cite.problems(cite.verify(cfg.root))
     if build:
         b = latex.build(cfg)
@@ -510,7 +513,7 @@ class Draft(Stage):
         if files:
             ok, out = anchor.check(cfg, *files)
             if not ok:
-                errs.append("numbers that do not recompute (PaperAnchor):\n" + out[-3000:])
+                errs.append("numbers that do not recompute (PaperAnchor):\n" + anchor.failures_first(out))
         rep = cite.verify(cfg.root)
         errs += [e for e in cite.problems(rep)]
         errs += val_problems(cfg, files)

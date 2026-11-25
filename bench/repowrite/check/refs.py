@@ -6,12 +6,14 @@ Verdicts per cited entry:
     not found      no record with a title this close in Crossref, OpenAlex, Semantic Scholar or arXiv, all of which
                    answered
     unverified     not found, but at least one database did not answer (rate limit); rerun later
-Requests carry a generic client name and no personal details.
+Requests carry a generic client name and no personal details. Without a key, OpenAlex shares one free daily budget
+among everyone on the network's IP address; set OPENALEX_API_KEY (free at openalex.org) to use your own.
 """
 from __future__ import annotations
 
 import difflib
 import json
+import os
 import re
 import time
 import urllib.parse
@@ -92,7 +94,9 @@ def lookup(title: str) -> list[dict]:
             yr = ((it.get("issued") or {}).get("date-parts") or [[None]])[0][0]
             au = (it.get("author") or [{}])[0].get("family", "")
             out.append({"title": (it.get("title") or [""])[0], "year": yr, "first": norm(au), "src": "crossref"})
-    r = _get(f"https://api.openalex.org/works?search={q}&per-page=5&select=title,publication_year,authorships")
+    key = os.environ.get("OPENALEX_API_KEY", "")
+    r = _get(f"https://api.openalex.org/works?search={q}&per-page=5&select=title,publication_year,authorships"
+             + (f"&api_key={urllib.parse.quote(key)}" if key else ""))
     if r:
         for it in json.loads(r).get("results", []):
             au = ((it.get("authorships") or [{}])[0].get("author") or {}).get("display_name", "")

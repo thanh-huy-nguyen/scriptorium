@@ -39,6 +39,26 @@ class Build:
         return f"{self.pages} pages{mp}, {len(self.undefined)} undefined refs, {self.overfull} overfull boxes"
 
 
+_INPUT_RE = re.compile(r"\\(?:input|include|subfile)\s*\{([^}]+)\}")
+
+
+def included(paper: Path, main: str = "main.tex") -> list[Path]:
+    """The .tex files the paper actually typesets: main.tex and every file it inputs, recursively, in order.
+    Scratch files an agent leaves in paper/ are not among them, so checks never read them."""
+    out: list[Path] = []
+
+    def walk(p: Path) -> None:
+        if p in out or not p.exists():
+            return
+        out.append(p)
+        text = re.sub(r"(?<!\\)%.*", "", p.read_text(errors="replace"))
+        for m in _INPUT_RE.finditer(text):
+            name = m.group(1).strip()
+            walk(paper / (name if name.endswith(".tex") else name + ".tex"))
+    walk(paper / main)
+    return out
+
+
 def run_figures(cfg: Config) -> list[str]:
     from .sealing import jail_env
     errors = []

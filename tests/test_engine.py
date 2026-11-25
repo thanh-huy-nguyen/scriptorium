@@ -130,3 +130,36 @@ class EngineTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RollbackNotesTest(unittest.TestCase):
+    """A rolled-back revision takes its table specs with it, and checks read only what the paper typesets."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        (self.tmp / "paper").mkdir()
+        (self.tmp / ".scriptorium" / "tables").mkdir(parents=True)
+        self.cfg = type("Cfg", (), {"paper": self.tmp / "paper", "work": self.tmp / ".scriptorium"})()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_restore_brings_back_table_specs(self):
+        (self.cfg.work / "tables" / "main.json").write_text("{}")
+        (self.cfg.paper / "01_intro.tex").write_text("before")
+        state.snapshot(self.cfg, "pre_revise1")
+        (self.cfg.work / "tables" / "contrasts.json").write_text('{"rows": ["new"]}')   # added by the revision
+        (self.cfg.paper / "01_intro.tex").write_text("after")
+        state.restore(self.cfg, "pre_revise1")
+        self.assertEqual((self.cfg.paper / "01_intro.tex").read_text(), "before")
+        self.assertFalse((self.cfg.work / "tables" / "contrasts.json").exists())
+        self.assertTrue((self.cfg.work / "tables" / "main.json").exists())
+
+    def test_included_skips_scratch_files(self):
+        from scriptorium import latex
+        p = self.cfg.paper
+        (p / "main.tex").write_text("\\input{01_intro}\n% \\input{old}\n")
+        (p / "01_intro.tex").write_text("Text \\input{table_main}")
+        (p / "table_main.tex").write_text("a & b")
+        (p / "table_zz_probe.tex").write_text("scratch")
+        self.assertEqual([f.name for f in latex.included(p)], ["main.tex", "01_intro.tex", "table_main.tex"])

@@ -1,6 +1,7 @@
 """Collect the M0 pilot: every scored paper, its errors per type, the run's cost, and the decision table of plan v5.
 
-    python bench/repowrite/pilot_summary.py --runs workspace/bench/pilot/runs --out workspace/bench/pilot/report.md
+    python bench/repowrite/pilot_summary.py --runs workspace/bench/pilot/runs --out workspace/bench/pilot/report.md \
+        [--audit workspace/bench/pilot/audit]
 
 A run folder is RUNS/<system>/<task>/<rep>/ with run.json (usage) and score/ (from check/report.py). Errors are the
 checker's verdicts until people have labeled the sheets; labeled sheets (human_verdict, supported, within_evidence
@@ -15,8 +16,13 @@ from collections import defaultdict
 from pathlib import Path
 
 
-def human(score: Path) -> dict | None:
-    """Hand-confirmed errors from labeled sheets, or None if the sheets are not labeled yet."""
+def human(score: Path, audit: dict | None = None) -> dict | None:
+    """Hand-confirmed errors from the audit (audit/import_labels.py), else from labeled sheets, else None."""
+    run = str(score.parent.resolve())
+    if audit and run in audit:
+        e = audit[run]
+        return {"number": e["Numbers"], "citation": e["Citations"], "claim": e["Claims"],
+                "reference": e["References"]}
     def rows(name):
         p = score / name
         return list(csv.DictReader(p.open())) if p.exists() else []
@@ -32,17 +38,20 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", required=True, type=Path)
     ap.add_argument("--out", required=True, type=Path)
+    ap.add_argument("--audit", type=Path, help="folder with human_errors.json from audit/import_labels.py")
     a = ap.parse_args(argv)
+    hj = a.audit / "human_errors.json" if a.audit else None
+    audit = json.loads(hj.read_text()) if hj and hj.exists() else None
     table = []
     for score in sorted(a.runs.glob("*/*/*/score/score.json")):
         run = score.parent.parent
         system, task, rep = run.parent.parent.name, run.parent.name, run.name
         s = json.loads(score.read_text())
         usage = json.loads((run / "run.json").read_text()) if (run / "run.json").exists() else {}
-        h = human(score.parent)
+        h = human(score.parent, audit)
         machine = {"number": s["numbers"]["errors"], "text_table": s["text_table"]["not_in_table"],
                    "reference": s["references"]["not_found"] + s["references"]["wrong_metadata"]}
-        errs = ({**h, "text_table": machine["text_table"], "reference": machine["reference"]} if h else machine)
+        errs = ({"reference": machine["reference"], **h, "text_table": machine["text_table"]} if h else machine)
         table.append({"system": system, "task": task, "rep": rep, "source": "people" if h else "checker",
                       "errors": errs, "total": sum(errs.values()), "result_numbers": s["numbers"]["result_numbers"],
                       "output_tokens": usage.get("output_tokens")})

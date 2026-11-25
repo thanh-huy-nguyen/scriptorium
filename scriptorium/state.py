@@ -66,6 +66,11 @@ def _add_usage(cfg: Config, name: str, recs: list[dict]) -> None:
     save(cfg, s)
 
 
+# notes in .scriptorium that paper files are regenerated from; a rollback restores them with paper/, or a later
+# stage rebuilds a rolled-back table from its spec and prints numbers whose recipes were rolled back
+NOTES_BUILT_FROM = ("tables", "numbers.json", "numbers.md")
+
+
 def snapshot(cfg: Config, name: str) -> Path:
     dst = cfg.work / "snapshots" / name
     if dst.exists():
@@ -74,6 +79,16 @@ def snapshot(cfg: Config, name: str) -> Path:
     for pdf in (cfg.paper / "figures").glob("*.pdf") if (cfg.paper / "figures").exists() else []:
         (dst / "figures").mkdir(parents=True, exist_ok=True)
         shutil.copy2(pdf, dst / "figures" / pdf.name)
+    notes = cfg.work / "snapshots" / f"{name}.notes"     # the notes paper files are built from (table specs)
+    if notes.exists():
+        shutil.rmtree(notes)
+    notes.mkdir(parents=True)
+    for rel in NOTES_BUILT_FROM:
+        src = cfg.work / rel
+        if src.is_dir():
+            shutil.copytree(src, notes / rel)
+        elif src.is_file():
+            shutil.copy2(src, notes / rel)
     return dst
 
 
@@ -87,3 +102,15 @@ def restore(cfg: Config, name: str) -> None:
     shutil.copytree(cfg.paper, keep, ignore=shutil.ignore_patterns("*.log", "*.aux", "__pycache__"))
     shutil.rmtree(cfg.paper)
     shutil.copytree(src, cfg.paper)
+    notes = cfg.work / "snapshots" / f"{name}.notes"
+    if notes.exists():                   # snapshots from before this was kept have no notes; leave those as they are
+        for rel in NOTES_BUILT_FROM:
+            cur, old = cfg.work / rel, notes / rel
+            if cur.is_dir():
+                shutil.rmtree(cur)
+            elif cur.is_file():
+                cur.unlink()
+            if old.is_dir():
+                shutil.copytree(old, cur)
+            elif old.is_file():
+                shutil.copy2(old, cur)

@@ -60,6 +60,14 @@ def check(cfg: Config, *files: str) -> tuple[bool, str]:
     return r.returncode == 0, (r.stdout + r.stderr).strip()
 
 
+def failures_first(out: str, limit: int = 3000) -> str:
+    """The check's report with its failing lines first, so a long report cut to `limit` keeps every failure."""
+    lines = out.splitlines()
+    bad = [l for l in lines if l.startswith(("FAIL", "MISSING", "ERROR"))]
+    rest = [l for l in lines if l not in bad]
+    return "\n".join(bad + rest)[:limit]
+
+
 def numbers(cfg: Config) -> dict:
     r = subprocess.run([cfg.py(), "-c", _NUMBERS, str(cfg.root)], cwd=cfg.root, env=env(cfg), text=True,
                        capture_output=True, timeout=3600)

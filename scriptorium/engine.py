@@ -26,7 +26,10 @@ def run_stage(cfg: Config, st: S.Stage, echo=print) -> dict:
     while True:
         res = S.finish(cfg, st)
         for e in res["errors"]:
-            echo("    check: " + e.splitlines()[0][:220])
+            lines = e.splitlines() or [""]
+            echo("    check: " + lines[0][:220])
+            for d in [l for l in lines[1:] if l.startswith(("FAIL", "MISSING", "ERROR"))][:3]:
+                echo("      " + d[:220])        # the failing lines, so the log says what the check found
         if res["status"] != "fix":
             if res["status"] == "done":
                 echo(f"{st.name} done" + (f" with {len(res['errors'])} open problem(s)" if res["errors"] else ""))
